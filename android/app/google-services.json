@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674750679479",
+    "project_id": "flutternexora",
+    "storage_bucket": "flutternexora.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674750679479:android:e75cb4ca38d4bc58e78032",
+        "android_client_info": {
+          "package_name": "com.example.startapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE1VwSIoYwyJdW0r7xkIaPKn2JhQ9i0rQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
