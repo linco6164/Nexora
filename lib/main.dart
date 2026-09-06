@@ -94,7 +94,7 @@ class _MainAppState extends State<MainApp> {
       builder: (context, currentMode, _) {
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Login Demo',
+          title: 'Nexora Store 🚀',
           debugShowCheckedModeBanner: false,
           themeMode: currentMode,
           theme: ThemeData(

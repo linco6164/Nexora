@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:shorebird_code_push/shorebird_code_push.dart';
 
 import 'api_service.dart';
 import 'main.dart';
@@ -33,6 +34,9 @@ class NotificationService {
       _localNotifications =
       FlutterLocalNotificationsPlugin();
 
+  final ShorebirdUpdater _shorebirdUpdater =
+      ShorebirdUpdater();
+
   StreamSubscription<RemoteMessage>?
       _foregroundSubscription;
 
@@ -42,11 +46,12 @@ class NotificationService {
   StreamSubscription<String>?
       _tokenRefreshSubscription;
 
-  /*
-   * NORMAL CHANNEL
-   *
-   * Sound + vibration enabled.
-   */
+  static const int _shorebirdNotificationId =
+      9001;
+
+  static const int _shorebirdRestartNotificationId =
+      9002;
+
   static const AndroidNotificationChannel
       _notificationChannel =
       AndroidNotificationChannel(
@@ -58,11 +63,6 @@ class NotificationService {
     enableVibration: true,
   );
 
-  /*
-   * SILENT CHANNEL
-   *
-   * No sound + no vibration.
-   */
   static const AndroidNotificationChannel
       _silentNotificationChannel =
       AndroidNotificationChannel(
@@ -73,6 +73,18 @@ class NotificationService {
     importance: Importance.high,
     playSound: false,
     enableVibration: false,
+  );
+
+  static const AndroidNotificationChannel
+      _updateNotificationChannel =
+      AndroidNotificationChannel(
+    'nexora_updates',
+    'Actualizări Nexora',
+    description:
+        'Notificări despre actualizările aplicației Nexora',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
   );
 
   static Future<void> initialize() async {
@@ -185,6 +197,14 @@ class NotificationService {
         initialMessage,
       );
     }
+
+    /*
+     * Shorebird
+     *
+     * Nu blocăm pornirea aplicației.
+     * Verificarea se face în background.
+     */
+    _checkForShorebirdUpdate();
   }
 
   Future<void> _initializeLocalNotifications()
@@ -210,20 +230,181 @@ class NotificationService {
             .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>();
 
-    /*
-     * Create normal channel.
-     */
     await androidPlugin
         ?.createNotificationChannel(
       _notificationChannel,
     );
 
-    /*
-     * Create silent channel.
-     */
     await androidPlugin
         ?.createNotificationChannel(
       _silentNotificationChannel,
+    );
+
+    await androidPlugin
+        ?.createNotificationChannel(
+      _updateNotificationChannel,
+    );
+  }
+
+  Future<void> _checkForShorebirdUpdate() async {
+    if (!_shorebirdUpdater.isAvailable) {
+      debugPrint(
+        '[Shorebird] Updater unavailable.',
+      );
+
+      return;
+    }
+
+    /*
+     * Lăsăm aplicația să pornească înainte
+     * de a face request-ul de rețea.
+     */
+    await Future<void>.delayed(
+      const Duration(seconds: 3),
+    );
+
+    try {
+      debugPrint(
+        '[Shorebird] Checking for update...',
+      );
+
+      final status =
+          await _shorebirdUpdater.checkForUpdate(
+        track: UpdateTrack.stable,
+      );
+
+      debugPrint(
+        '[Shorebird] Update status: $status',
+      );
+
+      switch (status) {
+        case UpdateStatus.outdated:
+          await _handleShorebirdUpdateAvailable();
+          break;
+
+        case UpdateStatus.restartRequired:
+          await _showShorebirdRestartNotification();
+          break;
+
+        case UpdateStatus.upToDate:
+          debugPrint(
+            '[Shorebird] App is up to date.',
+          );
+          break;
+
+        case UpdateStatus.unavailable:
+          debugPrint(
+            '[Shorebird] Update status unavailable.',
+          );
+          break;
+      }
+    } catch (error) {
+      debugPrint(
+        '[Shorebird] Update check failed: $error',
+      );
+    }
+  }
+
+  Future<void> _handleShorebirdUpdateAvailable()
+      async {
+    debugPrint(
+      '[Shorebird] Update available.',
+    );
+
+    /*
+     * Notificăm utilizatorul imediat.
+     */
+    await _showShorebirdUpdateNotification();
+
+    /*
+     * Descărcăm patch-ul.
+     *
+     * Shorebird îl va aplica la următoarea
+     * pornire a aplicației.
+     */
+    try {
+      debugPrint(
+        '[Shorebird] Downloading update...',
+      );
+
+      await _shorebirdUpdater.update(
+        track: UpdateTrack.stable,
+      );
+
+      debugPrint(
+        '[Shorebird] Update downloaded successfully.',
+      );
+
+      await _showShorebirdRestartNotification();
+    } on UpdateException catch (error) {
+      debugPrint(
+        '[Shorebird] Update download failed: '
+        '${error.message}',
+      );
+    } catch (error) {
+      debugPrint(
+        '[Shorebird] Update download failed: $error',
+      );
+    }
+  }
+
+  Future<void> _showShorebirdUpdateNotification()
+      async {
+    const androidDetails =
+        AndroidNotificationDetails(
+      'nexora_updates',
+      'Actualizări Nexora',
+      channelDescription:
+          'Notificări despre actualizările aplicației Nexora',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+      autoCancel: true,
+    );
+
+    const notificationDetails =
+        NotificationDetails(
+      android: androidDetails,
+    );
+
+    await _localNotifications.show(
+      _shorebirdNotificationId,
+      'Actualizare Nexora disponibilă',
+      'O versiune nouă a aplicației este disponibilă.',
+      notificationDetails,
+      payload: 'shorebird_update',
+    );
+  }
+
+  Future<void> _showShorebirdRestartNotification()
+      async {
+    const androidDetails =
+        AndroidNotificationDetails(
+      'nexora_updates',
+      'Actualizări Nexora',
+      channelDescription:
+          'Notificări despre actualizările aplicației Nexora',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+      autoCancel: true,
+    );
+
+    const notificationDetails =
+        NotificationDetails(
+      android: androidDetails,
+    );
+
+    await _localNotifications.show(
+      _shorebirdRestartNotificationId,
+      'Nexora a fost actualizată',
+      'Actualizarea este pregătită. Repornește aplicația pentru a o aplica.',
+      notificationDetails,
+      payload: 'shorebird_restart',
     );
   }
 
@@ -252,14 +433,6 @@ class NotificationService {
         message.data['type']
             ?.toString();
 
-    /*
-     * Values sent by backend.
-     *
-     * Example:
-     *
-     * sound: true
-     * vibration: false
-     */
     final sound =
         message.data['sound']
                 ?.toString()
@@ -290,14 +463,6 @@ class NotificationService {
           'message|$conversationId';
     }
 
-    /*
-     * Select Android channel.
-     *
-     * Both sound and vibration must be enabled
-     * for the normal channel.
-     *
-     * Otherwise use silent channel.
-     */
     final channel =
         sound && vibration
             ? _notificationChannel
@@ -318,16 +483,10 @@ class NotificationService {
               Importance.high,
           priority:
               Priority.high,
-
-          /*
-           * Channel controls these values.
-           */
           playSound:
               sound && vibration,
-
           enableVibration:
               sound && vibration,
-
           icon:
               '@mipmap/ic_launcher',
         ),
@@ -385,6 +544,20 @@ class NotificationService {
     debugPrint(
       'LOCAL NOTIFICATION TAP: $payload',
     );
+
+    /*
+     * Shorebird update.
+     *
+     * Nu trebuie să facem nimic special aici.
+     * Patch-ul este deja descărcat și va fi
+     * aplicat la următoarea pornire.
+     */
+    if (
+      payload == 'shorebird_update' ||
+      payload == 'shorebird_restart'
+    ) {
+      return;
+    }
 
     final parts =
         payload.split('|');
