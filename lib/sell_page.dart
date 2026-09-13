@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
-import 'HomePage.dart';
+import 'home_page.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({super.key});
@@ -463,7 +463,7 @@ class _SellPageState extends State<SellPage> {
               width: 30,
               height: 30,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.65),
+                color: Colors.black.withValues(alpha: 0.65),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -485,7 +485,7 @@ class _SellPageState extends State<SellPage> {
                 vertical: 5,
               ),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.65),
+                color: Colors.black.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -511,7 +511,7 @@ class _SellPageState extends State<SellPage> {
         width: 128,
         height: 128,
         decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withOpacity(0.35),
+          color: colorScheme.primaryContainer.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: colorScheme.outlineVariant,
@@ -602,7 +602,7 @@ class _SellPageState extends State<SellPage> {
         fillColor: Theme.of(context)
             .colorScheme
             .surfaceContainerHighest
-            .withOpacity(0.35),
+            .withValues(alpha: 0.35),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
@@ -655,7 +655,7 @@ class _SellPageState extends State<SellPage> {
         fillColor: Theme.of(context)
             .colorScheme
             .surfaceContainerHighest
-            .withOpacity(0.35),
+            .withValues(alpha: 0.35),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
@@ -687,7 +687,7 @@ class _SellPageState extends State<SellPage> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.35),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
           color: colorScheme.outlineVariant,
@@ -758,7 +758,7 @@ class _SellPageState extends State<SellPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.35),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
           color: colorScheme.outlineVariant,
@@ -805,8 +805,6 @@ class _SellPageState extends State<SellPage> {
   }
 
   Widget _buildPublishButton() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return SizedBox(
       height: 56,
       child: FilledButton(

@@ -444,14 +444,14 @@ class _NotificationCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isUnread
                   ? colorScheme.primaryContainer
-                      .withOpacity(0.35)
+                      .withValues(alpha: 0.35)
                   : colorScheme.surface,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isUnread
-                    ? colorScheme.primary.withOpacity(0.18)
+                    ? colorScheme.primary.withValues(alpha: 0.18)
                     : colorScheme.outlineVariant
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
               ),
             ),
             child: Padding(

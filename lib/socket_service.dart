@@ -1,9 +1,9 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_service.dart';
 import 'models/chat_models.dart';
 
 class SocketService {
-  static IO.Socket? _socket;
+  static io.Socket? _socket;
 
   static Future<void> connect() async {
     if (_socket != null && _socket!.connected) return;
@@ -11,9 +11,9 @@ class SocketService {
     final token = await ApiService.getToken();
     if (token == null) return;
 
-    _socket = IO.io(
+    _socket = io.io(
       ApiService.baseUrl,
-      IO.OptionBuilder()
+      io.OptionBuilder()
           .setTransports(['websocket'])
           .setAuth({'token': token})
           .disableAutoConnect()

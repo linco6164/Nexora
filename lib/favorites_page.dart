@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'models/listing.dart';
-import 'ListingDetailPage.dart';
+import 'listing_detail_page.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});

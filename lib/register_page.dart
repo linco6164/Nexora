@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'main.dart'; // pentru accesul la variabila globală `supabase`
 import 'api_service.dart';
 
 class RegisterPage extends StatefulWidget {

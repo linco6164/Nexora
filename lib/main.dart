@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'LoginPage.dart';
+import 'login_page.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,13 +8,13 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-import 'NotificationService.dart';
+import 'notification_service.dart';
 
-import 'NewPasswordPage.dart';
+import 'new_password_page.dart';
 
-import 'ThemeNotifier.dart';
+import 'theme_notifier.dart';
 
-import 'HomePage.dart';
+import 'home_page.dart';
 
 
 import 'package:app_links/app_links.dart';
@@ -35,14 +35,6 @@ Future<void> main() async {
   );
 
   await NotificationService.initialize();
-
-  await Supabase.initialize(
-    url: 'https://yjuyicsuztawzqffvrdc.supabase.co',
-    publishableKey: 'sb_publishable_vysyWyj2WUUhUsvY3IkPGg_y43s9VIs',
-    authOptions: const FlutterAuthClientOptions(
-      authFlowType: AuthFlowType.pkce,
-    ),
-  );
 
   runApp(const MainApp());
 }

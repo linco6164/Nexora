@@ -94,14 +94,14 @@ class _HeroBannerState extends State<HeroBanner> {
                             Text(
                               banner.subtitle,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(banner.icon, color: Colors.white.withOpacity(0.85), size: 48),
+                      Icon(banner.icon, color: Colors.white.withValues(alpha: 0.85), size: 48),
                     ],
                   ),
                 ),

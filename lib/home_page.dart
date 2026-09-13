@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'HomeTab.dart';
-import 'MessagesTab.dart';
-import 'ProfilePage.dart';
-import 'FavoritesPage.dart';
-import 'NotificationsPage.dart';
-import 'FloatingNavBar.dart';
-import 'NexoraLogo.dart';
-import 'SellPage.dart'; // îl construim imediat
+import 'home_tab.dart';
+import 'message_tab.dart';
+import 'profile_page.dart';
+import 'favorites_page.dart';
+import 'notifications_page.dart';
+import 'floating_nav_bar.dart';
+import 'nexora_logo.dart';
+import 'sell_page.dart'; // îl construim imediat
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

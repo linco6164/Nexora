@@ -8,7 +8,7 @@ import 'package:shorebird_code_push/shorebird_code_push.dart';
 
 import 'api_service.dart';
 import 'main.dart';
-import 'ChatPage.dart';
+import 'chat_page.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(

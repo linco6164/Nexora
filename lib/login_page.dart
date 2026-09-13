@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'api_service.dart';
 
-import 'RegisterPage.dart';
-import 'ForgottenPassword.dart';
-import 'HomePage.dart';
-import 'TwoFactorPage.dart';
-import 'NotificationService.dart';
+import 'register_page.dart';
+import 'forgotten_password.dart';
+import 'home_page.dart';
+import 'two_factor_page.dart';
+import 'notification_service.dart';
 
 import 'socket_service.dart';
 
-import 'main.dart'; // pentru accesul la variabila globală `supabase`
-
 import 'package:google_sign_in/google_sign_in.dart';
+
+import 'package:flutter_login_facebook/flutter_login_facebook.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -178,6 +178,100 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleFacebookSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final facebookLogin = FacebookLogin();
+
+      final result = await facebookLogin.logIn(
+        permissions: [
+          FacebookPermission.publicProfile,
+          FacebookPermission.email,
+        ],
+      );
+
+      if (result.status != FacebookLoginStatus.success) {
+        if (result.status == FacebookLoginStatus.cancel) {
+          debugPrint('FACEBOOK: user a anulat autentificarea');
+        } else {
+          debugPrint('FACEBOOK: autentificarea a eșuat: ${result.status}');
+        }
+
+        return;
+      }
+
+      final accessToken = await facebookLogin.accessToken;
+
+      if (accessToken == null) {
+        throw Exception('Lipsește token-ul de acces Facebook');
+      }
+
+      final tokenString = accessToken.token;
+
+      debugPrint('FACEBOOK: accessToken = $tokenString');
+
+      // Datele utilizatorului Facebook
+      final profile = await facebookLogin.getUserProfile();
+
+      debugPrint('FACEBOOK USER ID: ${profile?.userId}');
+
+      debugPrint('FACEBOOK USER NAME: ${profile?.name}');
+
+      // Login pe backend-ul Nexora
+      final backendResult = await ApiService.facebookLogin(tokenString);
+
+      debugPrint('FACEBOOK BACKEND: login OK');
+
+      debugPrint(
+        'FACEBOOK BACKEND: '
+        '${backendResult['user'] ?? backendResult}',
+      );
+
+      // VERIFICĂM CE RETURNĂ /me
+      final currentUser = await ApiService.getCurrentUser();
+
+      debugPrint(
+        'CURRENT USER AFTER FACEBOOK LOGIN: '
+        '$currentUser',
+      );
+
+      // JWT-ul este acum salvat.
+      // Înregistrăm token-ul FCM pentru utilizator.
+      final fcmToken = await NotificationService.instance.getToken();
+
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await NotificationService.instance.registerTokenWithBackend(fcmToken);
+      }
+
+      // Conectăm Socket.IO după autentificare.
+      await SocketService.connect();
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } catch (e) {
+      debugPrint('FACEBOOK LOGIN ERROR: $e');
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Eroare la autentificarea cu Facebook: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -307,6 +401,22 @@ class _LoginPageState extends State<LoginPage> {
                       width: 20,
                     ),
                     label: const Text('Continuă cu Google'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: Colors.grey[300]!),
+                    ),
+                  ),
+
+                  // Buton Facebook
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _handleFacebookSignIn,
+                    icon: Image.network(
+                      'https://www.facebook.com/favicon.ico',
+                      height: 20,
+                      width: 20,
+                    ),
+                    label: const Text('Continuă cu Facebook'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: Colors.grey[300]!),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'api_service.dart';
 import 'models/listing.dart';
-import 'HeroBanner.dart';
-import 'ListingDetailPage.dart';
+import 'hero_banner.dart';
+import 'listing_detail_page.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});

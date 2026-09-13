@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
-import 'HomePage.dart';
+import 'home_page.dart';
 import 'socket_service.dart';
-import 'NotificationService.dart';
+import 'notification_service.dart';
 
 class TwoFactorPage extends StatefulWidget {
   final String userId;

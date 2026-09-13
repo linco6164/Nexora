@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'models/chat_models.dart';
-import 'ChatPage.dart';
+import 'chat_page.dart';
 
 class MessagesTab extends StatefulWidget {
   const MessagesTab({super.key});
@@ -79,7 +79,7 @@ class _MessagesTabState extends State<MessagesTab> {
           return ListView.separated(
             padding: const EdgeInsets.only(bottom: 100),
             itemCount: conversations.length,
-            separatorBuilder: (_, __) => const Divider(height: 1, indent: 76),
+            separatorBuilder: (_, _) => const Divider(height: 1, indent: 76),
             itemBuilder: (context, index) {
               final conversation = conversations[index];
               final other = conversation.otherParticipant(_myUserId!);

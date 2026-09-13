@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'api_service.dart';
 import 'models/listing.dart';
-import 'ChatPage.dart';
+import 'chat_page.dart';
 
 class ListingDetailPage extends StatefulWidget {
   final String listingId;
@@ -69,23 +69,23 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   Future<void> _handleContactSeller() async {
     final listing = _currentListing;
     if (listing == null) {
-      print('🔴 _currentListing e null, ies din funcție');
+      debugPrint('🔴 _currentListing e null, ies din funcție');
       return;
     }
 
-    print('🟢 Încep contactarea vânzătorului pentru listing: ${listing.id}');
+    debugPrint('🟢 Încep contactarea vânzătorului pentru listing: ${listing.id}');
 
     try {
       final conversation = await ApiService.startConversation(listing.id);
-      print('🔵 Conversație creată: ${conversation.id}');
+      debugPrint('🔵 Conversație creată: ${conversation.id}');
 
       if (!mounted) {
-        print('🟠 Widget nu mai e mounted, ies');
+        debugPrint('🟠 Widget nu mai e mounted, ies');
         return;
       }
 
       final me = await ApiService.getCurrentUser();
-      print('🟡 User curent obținut: ${me['_id']}');
+      debugPrint('🟡 User curent obținut: ${me['_id']}');
 
       if (!mounted) return;
 
@@ -99,10 +99,10 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
           ),
         ),
       );
-      print('✅ Navigare efectuată');
+      debugPrint('✅ Navigare efectuată');
     } catch (e, stackTrace) {
-      print('🔴🔴 EROARE: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('🔴🔴 EROARE: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Eroare: $e')));
@@ -170,8 +170,8 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                                         width: index == _currentImage ? 18 : 6,
                                         height: 6,
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(
-                                            index == _currentImage ? 1 : 0.5,
+                                          color: Colors.white.withValues(
+                                            alpha: index == _currentImage ? 1 : 0.5,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             3,

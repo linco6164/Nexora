@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'api_service.dart'; // pentru funcția Api
-
-import 'main.dart'; // pentru accesul la variabila globală `supabase`
 
 class ForgottenPassword extends StatefulWidget {
   const ForgottenPassword({super.key});

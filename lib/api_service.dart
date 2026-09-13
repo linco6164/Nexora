@@ -127,6 +127,29 @@ class ApiService {
     return data;
   }
 
+  static Future<Map<String, dynamic>> facebookLogin(String accessToken) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/facebook'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'accessToken': accessToken}),
+    );
+
+    debugPrint('FACEBOOK API STATUS: ${response.statusCode}');
+    debugPrint('FACEBOOK API BODY: ${response.body}');
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw ApiException(
+        data['message'] ?? 'Autentificarea cu Facebook a eșuat',
+      );
+    }
+
+    await saveToken(data['token']);
+
+    return data;
+  }
+
   static Future<void> forgotPassword(String email) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/forgot-password'),
@@ -601,9 +624,9 @@ class ApiService {
         'images': images,
         'negotiable': negotiable,
         'shipping': shipping,
-        if (brand != null) 'brand': brand,
-        if (color != null) 'color': color,
-        if (size != null) 'size': size,
+        ...?brand != null ? {'brand': brand} : null,
+        ...?color != null ? {'color': color} : null,
+        ...?size != null ? {'size': size} : null,
       }),
     );
 

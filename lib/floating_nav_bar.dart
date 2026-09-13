@@ -42,7 +42,7 @@ class FloatingNavBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(32),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -94,7 +94,7 @@ class FloatingNavBar extends StatelessWidget {
                   border: Border.all(color: colorScheme.surface, width: 4),
                   boxShadow: [
                     BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.4),
+                      color: colorScheme.primary.withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nexora</string>
+    <string name="facebook_client_token">515735f6af59ad6844484547bc80a92a</string>
+    <string name="facebook_app_id">2067017487543159</string>
+    <string name="fb_login_protocol_scheme">fb2067017487543159</string>
+</resources>
