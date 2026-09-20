@@ -49,6 +49,7 @@ class Conversation {
   final String lastMessage;
   final DateTime? lastMessageAt;
   final Map<String, dynamic> unread;
+  final String? lastMessageStatus;
 
   Conversation({
     required this.id,
@@ -57,6 +58,7 @@ class Conversation {
     required this.lastMessage,
     this.lastMessageAt,
     required this.unread,
+    required this.lastMessageStatus,
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
@@ -73,6 +75,7 @@ class Conversation {
           ? DateTime.tryParse(json['lastMessageAt'])
           : null,
       unread: Map<String, dynamic>.from(json['unread'] ?? {}),
+      lastMessageStatus: json['lastMessageStatus']?.toString(),
     );
   }
 
@@ -91,6 +94,87 @@ class Conversation {
   }
 }
 
+class OfferListing {
+  final String id;
+  final String title;
+  final double price;
+  final String currency;
+  final List<String> images;
+
+  OfferListing({
+    required this.id,
+    required this.title,
+    required this.price,
+    required this.currency,
+    required this.images,
+  });
+
+  factory OfferListing.fromJson(Map<String, dynamic> json) {
+    return OfferListing(
+      id: json['_id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      price: (json['price'] ?? 0).toDouble(),
+      currency: json['currency']?.toString() ?? 'RON',
+      images: List<String>.from(json['images'] ?? const []),
+    );
+  }
+}
+
+class Offer {
+  final String id;
+  final String conversationId;
+  final String listingId;
+  final String buyerId;
+  final String sellerId;
+  final double amount;
+  final String currency;
+  final String status;
+  final OfferListing? listing;
+
+  Offer({
+    required this.id,
+    required this.conversationId,
+    required this.listingId,
+    required this.buyerId,
+    required this.sellerId,
+    required this.amount,
+    required this.currency,
+    required this.status,
+    this.listing,
+  });
+
+  factory Offer.fromJson(Map<String, dynamic> json) {
+    final listingJson = json['listing'];
+
+    return Offer(
+      id: json['_id']?.toString() ?? '',
+      conversationId: json['conversation'] is String
+          ? json['conversation']
+          : json['conversation']?['_id']?.toString() ?? '',
+      listingId: json['listing'] is String
+          ? json['listing']
+          : json['listing']?['_id']?.toString() ?? '',
+      buyerId: json['buyer'] is String
+          ? json['buyer']
+          : json['buyer']?['_id']?.toString() ?? '',
+      sellerId: json['seller'] is String
+          ? json['seller']
+          : json['seller']?['_id']?.toString() ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      currency: json['currency']?.toString() ?? 'RON',
+      status: json['status']?.toString() ?? 'pending',
+      listing: listingJson is Map<String, dynamic>
+          ? OfferListing.fromJson(listingJson)
+          : null,
+    );
+  }
+
+  bool get isPending => status == 'pending';
+  bool get isAccepted => status == 'accepted';
+  bool get isRejected => status == 'rejected';
+  bool get isCancelled => status == 'cancelled';
+}
+
 class ChatMessage {
   final String id;
   final String conversationId;
@@ -98,7 +182,11 @@ class ChatMessage {
   final String text;
   final List<String> images;
   final DateTime createdAt;
+  final List<String> deliveredTo;
   final List<String> seenBy;
+  final String type;
+  final Offer? offer;
+  final bool isDeleted;
 
   ChatMessage({
     required this.id,
@@ -107,7 +195,11 @@ class ChatMessage {
     required this.text,
     required this.images,
     required this.createdAt,
+    required this.deliveredTo,
     required this.seenBy,
+    required this.type,
+    this.offer,
+    required this.isDeleted,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -122,7 +214,13 @@ class ChatMessage {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt']) ?? DateTime.now()
           : DateTime.now(),
+      deliveredTo: List<String>.from(json['deliveredTo'] ?? []),
       seenBy: List<String>.from(json['seenBy'] ?? []),
+      type: json['type']?.toString() ?? 'text',
+      offer: json['offer'] is Map<String, dynamic>
+          ? Offer.fromJson(json['offer'])
+          : null,
+      isDeleted: json['isDeleted'] == true,
     );
   }
 }

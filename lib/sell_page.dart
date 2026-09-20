@@ -25,21 +25,23 @@ class _SellPageState extends State<SellPage> {
   final List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
-  String _category = 'Îmbrăcăminte';
+  String _category = 'fashion';
   String _condition = 'good';
 
   bool _negotiable = false;
   bool _shipping = true;
   bool _isSubmitting = false;
 
-  final List<String> _categories = [
-    'Îmbrăcăminte',
-    'Încălțăminte',
-    'Accesorii',
-    'Electronice',
-    'Casă și grădină',
-    'Altele',
-  ];
+  final Map<String, String> _categories = {
+    'fashion': 'Fashion',
+    'shoes': 'Încălțăminte',
+    'electronics': 'Electronice',
+    'gaming': 'Gaming',
+    'home': 'Casă',
+    'beauty': 'Beauty',
+    'kids': 'Copii',
+    'sports': 'Sport',
+  };
 
   final Map<String, String> _conditions = {
     'new': 'Nou',
@@ -59,22 +61,15 @@ class _SellPageState extends State<SellPage> {
   }
 
   Future<void> _pickImages() async {
-    final picked = await _picker.pickMultiImage(
-      imageQuality: 80,
-    );
+    final picked = await _picker.pickMultiImage(imageQuality: 80);
 
     if (picked.isEmpty) return;
 
     setState(() {
-      _selectedImages.addAll(
-        picked.map((x) => File(x.path)),
-      );
+      _selectedImages.addAll(picked.map((x) => File(x.path)));
 
       if (_selectedImages.length > 10) {
-        _selectedImages.removeRange(
-          10,
-          _selectedImages.length,
-        );
+        _selectedImages.removeRange(10, _selectedImages.length);
       }
     });
   }
@@ -90,9 +85,7 @@ class _SellPageState extends State<SellPage> {
 
     if (_selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Adaugă cel puțin o imagine'),
-        ),
+        const SnackBar(content: Text('Adaugă cel puțin o imagine')),
       );
       return;
     }
@@ -112,9 +105,7 @@ class _SellPageState extends State<SellPage> {
         description: _descriptionController.text.trim(),
         category: _category,
         condition: _condition,
-        price: double.parse(
-          _priceController.text.trim(),
-        ),
+        price: double.parse(_priceController.text.trim()),
         city: _cityController.text.trim(),
         images: imageUrls,
         negotiable: _negotiable,
@@ -127,33 +118,23 @@ class _SellPageState extends State<SellPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anunț publicat cu succes!'),
-        ),
+        const SnackBar(content: Text('Anunț publicat cu succes!')),
       );
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => const HomePage(),
-        ),
+        MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false,
       );
     } on ApiException catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Eroare: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Eroare: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -173,9 +154,7 @@ class _SellPageState extends State<SellPage> {
       appBar: AppBar(
         title: const Text(
           'Postează un anunț',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: false,
         elevation: 0,
@@ -184,21 +163,13 @@ class _SellPageState extends State<SellPage> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            12,
-            16,
-            32,
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
             _buildPhotosSection(),
 
             const SizedBox(height: 24),
 
-            _buildSectionTitle(
-              'Informații despre produs',
-              Icons.sell_outlined,
-            ),
+            _buildSectionTitle('Informații despre produs', Icons.sell_outlined),
 
             const SizedBox(height: 12),
 
@@ -244,7 +215,8 @@ class _SellPageState extends State<SellPage> {
               label: 'Categorie',
               icon: Icons.category_outlined,
               value: _category,
-              items: _categories,
+              items: _categories.keys.toList(),
+              labels: _categories,
               onChanged: (value) {
                 if (value == null) return;
 
@@ -260,10 +232,7 @@ class _SellPageState extends State<SellPage> {
 
             const SizedBox(height: 24),
 
-            _buildSectionTitle(
-              'Preț și livrare',
-              Icons.payments_outlined,
-            ),
+            _buildSectionTitle('Preț și livrare', Icons.payments_outlined),
 
             const SizedBox(height: 12),
 
@@ -379,19 +348,13 @@ class _SellPageState extends State<SellPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle(
-          'Fotografii',
-          Icons.photo_library_outlined,
-        ),
+        _buildSectionTitle('Fotografii', Icons.photo_library_outlined),
 
         const SizedBox(height: 4),
 
         Text(
           'Adaugă până la 10 fotografii',
-          style: TextStyle(
-            fontSize: 13,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
         ),
 
         const SizedBox(height: 12),
@@ -401,25 +364,17 @@ class _SellPageState extends State<SellPage> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              ..._selectedImages.asMap().entries.map(
-                (entry) {
-                  final index = entry.key;
-                  final file = entry.value;
+              ..._selectedImages.asMap().entries.map((entry) {
+                final index = entry.key;
+                final file = entry.value;
 
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      right: 10,
-                    ),
-                    child: _buildImagePreview(
-                      file,
-                      index,
-                    ),
-                  );
-                },
-              ),
+                return Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: _buildImagePreview(file, index),
+                );
+              }),
 
-              if (_selectedImages.length < 10)
-                _buildAddPhotoButton(),
+              if (_selectedImages.length < 10) _buildAddPhotoButton(),
             ],
           ),
         ),
@@ -428,30 +383,19 @@ class _SellPageState extends State<SellPage> {
           const SizedBox(height: 8),
           Text(
             '${_selectedImages.length}/10 fotografii',
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
           ),
         ],
       ],
     );
   }
 
-  Widget _buildImagePreview(
-    File file,
-    int index,
-  ) {
+  Widget _buildImagePreview(File file, int index) {
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.file(
-            file,
-            width: 128,
-            height: 128,
-            fit: BoxFit.cover,
-          ),
+          child: Image.file(file, width: 128, height: 128, fit: BoxFit.cover),
         ),
 
         Positioned(
@@ -466,11 +410,7 @@ class _SellPageState extends State<SellPage> {
                 color: Colors.black.withValues(alpha: 0.65),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 18,
-              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 18),
             ),
           ),
         ),
@@ -480,10 +420,7 @@ class _SellPageState extends State<SellPage> {
             left: 7,
             bottom: 7,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 9,
-                vertical: 5,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(8),
@@ -513,10 +450,7 @@ class _SellPageState extends State<SellPage> {
         decoration: BoxDecoration(
           color: colorScheme.primaryContainer.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outlineVariant,
-            width: 1.5,
-          ),
+          border: Border.all(color: colorScheme.outlineVariant, width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -541,10 +475,7 @@ class _SellPageState extends State<SellPage> {
     );
   }
 
-  Widget _buildSectionTitle(
-    String title,
-    IconData icon,
-  ) {
+  Widget _buildSectionTitle(String title, IconData icon) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
@@ -556,19 +487,12 @@ class _SellPageState extends State<SellPage> {
             color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            size: 19,
-            color: colorScheme.primary,
-          ),
+          child: Icon(icon, size: 19, color: colorScheme.primary),
         ),
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -599,9 +523,7 @@ class _SellPageState extends State<SellPage> {
         suffixText: suffixText,
         alignLabelWithHint: maxLines > 1,
         filled: true,
-        fillColor: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest
             .withValues(alpha: 0.35),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
@@ -610,9 +532,7 @@ class _SellPageState extends State<SellPage> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide(
-            color: Theme.of(context)
-                .colorScheme
-                .outlineVariant,
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -624,16 +544,11 @@ class _SellPageState extends State<SellPage> {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(
-            color: Colors.red,
-          ),
+          borderSide: const BorderSide(color: Colors.red),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(
-            color: Colors.red,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
       ),
     );
@@ -645,6 +560,7 @@ class _SellPageState extends State<SellPage> {
     required String value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    Map<String, String>? labels,
   }) {
     return DropdownButtonFormField<String>(
       initialValue: value,
@@ -652,9 +568,7 @@ class _SellPageState extends State<SellPage> {
         labelText: label,
         prefixIcon: Icon(icon),
         filled: true,
-        fillColor: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
+        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest
             .withValues(alpha: 0.35),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
@@ -663,20 +577,16 @@ class _SellPageState extends State<SellPage> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide(
-            color: Theme.of(context)
-                .colorScheme
-                .outlineVariant,
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
       ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem(
-              value: item,
-              child: Text(item),
-            ),
-          )
-          .toList(),
+      items: items.map((item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(labels?[item] ?? item),
+        );
+      }).toList(),
       onChanged: onChanged,
     );
   }
@@ -689,9 +599,7 @@ class _SellPageState extends State<SellPage> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -706,10 +614,7 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(width: 10),
               const Text(
                 'Starea produsului',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
             ],
           ),
@@ -719,28 +624,21 @@ class _SellPageState extends State<SellPage> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _conditions.entries.map(
-              (entry) {
-                final selected = _condition == entry.key;
+            children: _conditions.entries.map((entry) {
+              final selected = _condition == entry.key;
 
-                return ChoiceChip(
-                  label: Text(entry.value),
-                  selected: selected,
-                  onSelected: (_) {
-                    setState(() {
-                      _condition = entry.key;
-                    });
-                  },
-                  showCheckmark: false,
-                  avatar: selected
-                      ? const Icon(
-                          Icons.check,
-                          size: 17,
-                        )
-                      : null,
-                );
-              },
-            ).toList(),
+              return ChoiceChip(
+                label: Text(entry.value),
+                selected: selected,
+                onSelected: (_) {
+                  setState(() {
+                    _condition = entry.key;
+                  });
+                },
+                showCheckmark: false,
+                avatar: selected ? const Icon(Icons.check, size: 17) : null,
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -760,17 +658,12 @@ class _SellPageState extends State<SellPage> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: SwitchListTile(
         value: value,
         onChanged: onChanged,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 4,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         secondary: Container(
           width: 42,
           height: 42,
@@ -782,23 +675,13 @@ class _SellPageState extends State<SellPage> {
           ),
           child: Icon(
             icon,
-            color: value
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
+            color: value ? colorScheme.primary : colorScheme.onSurfaceVariant,
           ),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
         ),
       ),
     );
@@ -826,16 +709,11 @@ class _SellPageState extends State<SellPage> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.publish_outlined,
-                  ),
+                  const Icon(Icons.publish_outlined),
                   const SizedBox(width: 10),
                   const Text(
                     'Publică anunțul',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'login_page.dart';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'listing_detail_page.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
@@ -16,30 +16,32 @@ import 'theme_notifier.dart';
 
 import 'home_page.dart';
 
+import 'welcome_page.dart';
 
 import 'package:app_links/app_links.dart';
 
 import 'dart:async';
 
-final GlobalKey<NavigatorState> navigatorKey =
-    GlobalKey<NavigatorState>();
+import 'location_service.dart';
+
+import 'app_navigator.dart';
+
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Firebase
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  FirebaseMessaging.onBackgroundMessage(
-    firebaseMessagingBackgroundHandler,
-  );
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   await NotificationService.initialize();
 
   runApp(const MainApp());
 }
 
-final supabase = Supabase.instance.client;
+final position = LocationService.getCurrentLocation();
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -80,6 +82,36 @@ class _MainAppState extends State<MainApp> {
   }
 
   @override
+  Widget _buildInitialPage() {
+    final path = Uri.base.path;
+
+    debugPrint('🌐 Initial Web Path: $path');
+
+    // ============================================================
+    // DIRECT PRODUCT URL
+    // ============================================================
+
+    if (path.startsWith('/product/')) {
+      final listingId = path
+          .substring('/product/'.length)
+          .split('?')
+          .first
+          .trim();
+
+      if (listingId.isNotEmpty) {
+        debugPrint('🛍️ Opening product directly: $listingId');
+
+        return ListingDetailPage(listingId: listingId);
+      }
+    }
+
+    // ============================================================
+    // NORMAL APPLICATION START
+    // ============================================================
+
+    return const WelcomePage();
+  }
+
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
@@ -102,11 +134,37 @@ class _MainAppState extends State<MainApp> {
             ),
             useMaterial3: true,
           ),
-          home: const HomePage(),
+          home: _buildInitialPage(),
           onGenerateRoute: (settings) {
-            if (settings.name != null && settings.name!.startsWith('/?code=')) {
-              return MaterialPageRoute(builder: (context) => const LoginPage());
+            final path = settings.name ?? '/';
+
+            // ============================================================
+            // PRODUCT
+            // ============================================================
+
+            if (path.startsWith('/product/')) {
+              final listingId = path
+                  .substring('/product/'.length)
+                  .split('?')
+                  .first
+                  .trim();
+
+              if (listingId.isNotEmpty) {
+                return MaterialPageRoute(
+                  settings: settings,
+                  builder: (_) => ListingDetailPage(listingId: listingId),
+                );
+              }
             }
+
+            // ============================================================
+            // RESET PASSWORD
+            // ============================================================
+
+            if (path.startsWith('/?code=')) {
+              return MaterialPageRoute(builder: (_) => const LoginPage());
+            }
+
             return null;
           },
         );

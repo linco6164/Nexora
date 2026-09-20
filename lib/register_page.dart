@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'api_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -58,41 +59,53 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleRegister() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    await ApiService.register(
-      username: _emailController.text.split('@')[0], // Folosim partea dinainte de @ ca username
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    try {
+      await ApiService.register(
+        username: _emailController.text.split(
+          '@',
+        )[0], // Folosim partea dinainte de @ ca username
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cont creat! Te poți autentifica acum.')),
-    );
-    Navigator.pop(context);
-  } on ApiException catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.message)),
-    );
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Eroare de conexiune: $e')),
-    );
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cont creat! Te poți autentifica acum.')),
+      );
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Eroare de conexiune: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Creează cont')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        title: const Text(
+          'Creează contul',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: false,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

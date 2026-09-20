@@ -68,6 +68,8 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
 
+      await NotificationService.instance.registerCurrentTokenWithBackend();
+
       if (!mounted) return;
 
       if (data['requiresTwoFactor'] == true) {
@@ -120,37 +122,24 @@ class _LoginPageState extends State<LoginPage> {
       final googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
-        debugPrint('GOOGLE: user a anulat autentificarea');
         return;
       }
 
-      debugPrint('GOOGLE: user = ${googleUser.email}');
-
       final googleAuth = await googleUser.authentication;
-
-      debugPrint('GOOGLE: accessToken = ${googleAuth.accessToken != null}');
-      debugPrint('GOOGLE: idToken = ${googleAuth.idToken != null}');
 
       final idToken = googleAuth.idToken;
 
       if (idToken == null || idToken.isEmpty) {
-        throw Exception('Lipsește token-ul Google ID');
+        throw Exception('Google nu a returnat ID token.');
       }
 
-      debugPrint('GOOGLE: ID TOKEN primit');
+      debugPrint('GOOGLE ID TOKEN primit');
 
-      final result = await ApiService.googleLogin(idToken);
+      final data = await ApiService.googleLogin(idToken);
 
-      debugPrint('GOOGLE BACKEND: login OK');
-      debugPrint('GOOGLE BACKEND: ${result['user'] ?? result}');
+      debugPrint('GOOGLE NEXORA LOGIN: $data');
 
-      // JWT-ul este acum salvat.
-      // Asociem token-ul FCM cu utilizatorul.
-      final fcmToken = await NotificationService.instance.getToken();
-
-      if (fcmToken != null && fcmToken.isNotEmpty) {
-        await NotificationService.instance.registerTokenWithBackend(fcmToken);
-      }
+      await NotificationService.instance.registerCurrentTokenWithBackend();
 
       await SocketService.connect();
 
@@ -166,6 +155,8 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
+      debugPrint('GOOGLE LOGIN ERROR: $e');
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -190,6 +181,8 @@ class _LoginPageState extends State<LoginPage> {
           FacebookPermission.email,
         ],
       );
+
+      await NotificationService.instance.registerCurrentTokenWithBackend();
 
       if (result.status != FacebookLoginStatus.success) {
         if (result.status == FacebookLoginStatus.cancel) {
@@ -275,6 +268,19 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        title: const Text(
+          'Login',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: false,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
