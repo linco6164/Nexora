@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'api_service.dart';
 import 'models/listing.dart';
 import 'chat_page.dart';
 import 'public_profile_page.dart';
+import 'checkout_page.dart';
 
 class ListingDetailPage extends StatefulWidget {
   final String listingId;
@@ -147,84 +147,20 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   // PAYMENT
   // ============================================================
 
-  Future<void> _handleCardPayment() async {
-    final listing = _currentListing;
+  Future<void> _handleCheckout() async {
+  final listing = _currentListing;
 
-    if (listing == null || _isPaying) return;
+  if (listing == null || _isPaying) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Plată cu cardul'),
-          content: Text(
-            'Vrei să continui plata pentru '
-            '${listing.price.toStringAsFixed(2)} '
-            '${listing.currency}?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
-              child: const Text('Anulează'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
-              child: const Text('Continuă'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    setState(() {
-      _isPaying = true;
-    });
-
-    try {
-      final payment = await ApiService.createNetopiaPayment(listing.id);
-
-      final paymentId = payment['paymentId']?.toString();
-
-      if (paymentId == null || paymentId.isEmpty) {
-        throw ApiException('Serverul nu a returnat ID-ul plății.');
-      }
-
-      final checkoutUrl =
-          'https://api.nx-store.com/payments/'
-          'netopia/checkout/$paymentId';
-
-      final uri = Uri.parse(checkoutUrl);
-
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!launched) {
-        throw ApiException('Nu am putut deschide pagina de plată.');
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('ApiException: ', '')),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPaying = false;
-        });
-      }
-    }
-  }
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CheckoutPage(
+        listingId: listing.id,
+      ),
+    ),
+  );
+}
 
   // ============================================================
   // SELLER PROFILE
@@ -722,7 +658,7 @@ $url
                         Expanded(
                           flex: 2,
                           child: FilledButton.icon(
-                            onPressed: _isPaying ? null : _handleCardPayment,
+                            onPressed: _isPaying ? null : _handleCheckout,
                             icon: _isPaying
                                 ? const SizedBox(
                                     width: 19,
@@ -735,7 +671,9 @@ $url
                                 : const Icon(Icons.shopping_bag_outlined),
                             label: Text(
                               _isPaying ? 'Se deschide...' : 'Cumpără acum',
+                              
                             ),
+                            
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(

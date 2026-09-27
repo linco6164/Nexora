@@ -160,39 +160,6 @@ class _MessagesTabState extends State<MessagesTab> {
     super.dispose();
   }
 
-  String _formatTime(DateTime? date) {
-    if (date == null) {
-      return '';
-    }
-
-    final now = DateTime.now();
-    final localDate = date.toLocal();
-
-    final difference = now.difference(localDate);
-
-    if (difference.inMinutes < 1) {
-      return 'acum';
-    }
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m';
-    }
-
-    if (difference.inHours < 24) {
-      return '${difference.inHours}h';
-    }
-
-    if (difference.inDays == 1) {
-      return 'ieri';
-    }
-
-    if (difference.inDays < 7) {
-      return '${difference.inDays}z';
-    }
-
-    return '${localDate.day.toString().padLeft(2, '0')}.'
-        '${localDate.month.toString().padLeft(2, '0')}';
-  }
 
   List<Conversation> _filterConversations(List<Conversation> conversations) {
     final query = _searchQuery.trim().toLowerCase();

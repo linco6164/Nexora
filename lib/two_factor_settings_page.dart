@@ -562,7 +562,7 @@ class _TwoFactorSettingsPageState extends State<TwoFactorSettingsPage> {
                       onPressed: () async {
                         await Clipboard.setData(ClipboardData(text: _secret!));
 
-                        if (!mounted) return;
+                        if (!context.mounted) return;
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

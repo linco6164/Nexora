@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -374,6 +373,33 @@ class ApiService {
     final List<dynamic> listingsJson = data['data'];
 
     return listingsJson.map((json) => Listing.fromJson(json)).toList();
+  }
+
+  static Future<List<Listing>> getMyListings() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/listings/mine'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message'] ?? 'Eroare la încărcarea anunțurilor.',
+      );
+    }
+
+    final List<dynamic> listingsJson = data['data'] ?? [];
+
+    return listingsJson
+        .map((json) => Listing.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
   }
 
   static Future<List<Listing>> searchListings(String search) async {
@@ -1073,12 +1099,16 @@ class ApiService {
   }
 
   // ============================================================
-  // NETOPIA
+  // NETOPIA PAYMENT
   // ============================================================
 
-  static Future<Map<String, dynamic>> createNetopiaPayment(
-    String listingId,
-  ) async {
+  static Future<Map<String, dynamic>> createNetopiaPayment({
+    required String listingId,
+    required String addressId,
+    required String? deliveryMethod,
+    required String paymentMethod,
+    String? savedCardId,
+  }) async {
     final token = await getToken();
 
     if (token == null || token.isEmpty) {
@@ -1091,7 +1121,15 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'listingId': listingId}),
+      body: jsonEncode({
+        'listingId': listingId,
+        'addressId': addressId,
+        'deliveryMethod': deliveryMethod,
+        'paymentMethod': paymentMethod,
+
+        if (savedCardId != null && savedCardId.isNotEmpty)
+          'savedCardId': savedCardId,
+      }),
     );
 
     dynamic decoded;
@@ -1386,11 +1424,11 @@ class ApiService {
       'city': city,
       'street': street,
       'number': number,
-      if (building != null) 'building': building,
-      if (staircase != null) 'staircase': staircase,
-      if (floor != null) 'floor': floor,
-      if (apartment != null) 'apartment': apartment,
-      if (postalCode != null) 'postalCode': postalCode,
+      'building': ?building,
+      'staircase': ?staircase,
+      'floor': ?floor,
+      'apartment': ?apartment,
+      'postalCode': ?postalCode,
     };
 
     if (isDefault != null) {
@@ -1962,6 +2000,570 @@ class ApiService {
             : 'Nu s-a putut confirma schimbarea numărului.',
       );
     }
+  }
+
+  static Future<Map<String, dynamic>> getReviewSummary(String sellerId) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/reviews/seller/$sellerId/summary'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return Map<String, dynamic>.from(data['data'] ?? data);
+    }
+
+    throw Exception(
+      data['message'] ?? 'Nu s-a putut încărca sumarul evaluărilor.',
+    );
+  }
+
+  static Future<List<dynamic>> getSellerReviews(String sellerId) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/reviews/seller/$sellerId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return List<dynamic>.from(data['data'] ?? []);
+    }
+
+    throw Exception(data['message'] ?? 'Nu s-au putut încărca evaluările.');
+  }
+
+  static Future<Map<String, dynamic>> createReview({
+    required String orderId,
+    required int rating,
+    String? comment,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/reviews'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'orderId': orderId,
+        'rating': rating,
+        if (comment != null && comment.trim().isNotEmpty)
+          'comment': comment.trim(),
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return Map<String, dynamic>.from(data['data'] ?? data);
+    }
+
+    throw Exception(data['message'] ?? 'Nu s-a putut trimite evaluarea.');
+  }
+
+  static Future<List<dynamic>> getOrders() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/orders'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return List<dynamic>.from(data['data'] ?? []);
+    }
+
+    throw Exception(data['message'] ?? 'Nu s-au putut încărca comenzile.');
+  }
+
+  static Future<List<dynamic>> getSellingOrders() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/orders/selling'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return List<dynamic>.from(data['data'] ?? []);
+    }
+
+    throw Exception(data['message'] ?? 'Nu s-au putut încărca vânzările.');
+  }
+
+  static Future<List<dynamic>> getCompletedOrders() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/orders/completed'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return List<dynamic>.from(data['data'] ?? []);
+    }
+
+    throw Exception(
+      data['message'] ?? 'Nu s-au putut încărca comenzile finalizate.',
+    );
+  }
+
+  static Future<Map<String, dynamic>> getOrderById(String orderId) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw Exception('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/orders/$orderId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return Map<String, dynamic>.from(data['data'] ?? {});
+    }
+
+    throw Exception(data['message'] ?? 'Nu s-a putut încărca comanda.');
+  }
+
+  static Future<List<dynamic>> getPromotionPackages() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl/promotions/packages'),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message'] ?? 'Eroare la încărcarea pachetelor de promovare.',
+      );
+    }
+
+    return List<dynamic>.from(data['data'] ?? []);
+  }
+
+  static Future<Map<String, dynamic>> createPromotion({
+    required String listingId,
+    required int duration,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/promotions'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'listingId': listingId, 'duration': duration}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        data['success'] != true) {
+      throw ApiException(data['message'] ?? 'Eroare la crearea promovării.');
+    }
+
+    return Map<String, dynamic>.from(data['data'] ?? {});
+  }
+
+  static Future<List<Map<String, dynamic>>> getMyPromotions() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/promotions/mine'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message'] ?? 'Nu s-au putut încărca promovările.',
+      );
+    }
+
+    final promotions = data['data'];
+
+    if (promotions is! List) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    return promotions.map((item) => Map<String, dynamic>.from(item)).toList();
+  }
+
+  static Future<Map<String, dynamic>> createPromotionPayment({
+    required String promotionId,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/promotions/payment/create'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'promotionId': promotionId}),
+    );
+
+    Map<String, dynamic> data;
+
+    try {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        throw ApiException('Răspuns invalid de la server.');
+      }
+
+      data = Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message']?.toString() ?? 'Nu s-a putut crea plata promovării.',
+      );
+    }
+
+    final result = data['data'];
+
+    if (result is! Map) {
+      throw ApiException('Datele plății promovării sunt invalide.');
+    }
+
+    return Map<String, dynamic>.from(result);
+  }
+
+  static Future<Map<String, dynamic>> getPromotionPayment(
+    String paymentId,
+  ) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/promotions/payment/$paymentId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message'] ?? 'Nu s-a putut verifica plata promovării.',
+      );
+    }
+
+    return Map<String, dynamic>.from(data['data']);
+  }
+
+  static Future<Map<String, dynamic>> getCheckout({
+    required String listingId,
+    required String addressId,
+    required String deliveryMethod,
+  }) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException("Nu ești autentificat.");
+    }
+
+    final uri = Uri.parse(
+      '$baseUrl/checkout'
+      '?listingId=${Uri.encodeComponent(listingId)}'
+      '&addressId=${Uri.encodeComponent(addressId)}'
+      '&deliveryMethod=${Uri.encodeComponent(deliveryMethod)}',
+    );
+
+    final response = await _client.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    Map<String, dynamic> data;
+
+    try {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        throw ApiException('Răspuns invalid de la server.');
+      }
+
+      data = Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message']?.toString() ?? 'Nu s-a putut încărca checkout-ul.',
+      );
+    }
+
+    final result = data['data'];
+
+    if (result is! Map) {
+      throw ApiException('Datele checkout-ului sunt invalide.');
+    }
+
+    return Map<String, dynamic>.from(result);
+  }
+
+  static Future<List<Map<String, dynamic>>> getSavedCards() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/payments/cards'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    Map<String, dynamic> data;
+
+    try {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        throw ApiException('Răspuns invalid de la server.');
+      }
+
+      data = Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message']?.toString() ?? 'Nu s-au putut încărca cardurile.',
+      );
+    }
+
+    final cards = data['data'];
+
+    if (cards is! List) {
+      throw ApiException('Lista cardurilor este invalidă.');
+    }
+
+    return cards.map((card) => Map<String, dynamic>.from(card as Map)).toList();
+  }
+
+  static Future<void> setDefaultSavedCard(String cardId) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.patch(
+      Uri.parse('$baseUrl/payments/cards/$cardId/default'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final decoded = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || decoded['success'] != true) {
+      throw ApiException(
+        decoded['message']?.toString() ?? 'Nu s-a putut selecta cardul.',
+      );
+    }
+  }
+
+  static Future<void> deleteSavedCard(String cardId) async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.delete(
+      Uri.parse('$baseUrl/payments/cards/$cardId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final decoded = jsonDecode(response.body);
+
+    if (response.statusCode != 200 || decoded['success'] != true) {
+      throw ApiException(
+        decoded['message']?.toString() ?? 'Nu s-a putut șterge cardul.',
+      );
+    }
+  }
+
+  static Future<Map<String, dynamic>> createSavedCard({
+    required String provider,
+    required String providerReference,
+    required String brand,
+    required String last4,
+    int? expMonth,
+    int? expYear,
+    bool isDefault = false,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final body = <String, dynamic>{
+      'provider': provider,
+      'providerReference': providerReference,
+      'brand': brand,
+      'last4': last4,
+      'isDefault': isDefault,
+    };
+
+    if (expMonth != null) {
+      body['expMonth'] = expMonth;
+    }
+
+    if (expYear != null) {
+      body['expYear'] = expYear;
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/payments/cards'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    dynamic decoded;
+
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode != 201 ||
+        decoded is! Map<String, dynamic> ||
+        decoded['success'] != true) {
+      throw ApiException(
+        decoded is Map<String, dynamic>
+            ? (decoded['message']?.toString() ?? 'Nu am putut salva cardul.')
+            : 'Nu am putut salva cardul.',
+      );
+    }
+
+    final data = decoded['data'];
+
+    if (data is! Map) {
+      throw ApiException('Datele cardului sunt invalide.');
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
+
+  static Future<Map<String, dynamic>> createWebNetopiaPayment({
+    required String listingId,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/payments/netopia/create'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'listingId': listingId}),
+    );
+
+    dynamic decoded;
+
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode != 201 ||
+        decoded is! Map<String, dynamic> ||
+        decoded['success'] != true) {
+      throw ApiException(
+        decoded is Map<String, dynamic>
+            ? (decoded['message'] ?? 'Nu am putut iniția plata.')
+            : 'Nu am putut iniția plata.',
+      );
+    }
+
+    return Map<String, dynamic>.from(decoded['data'] ?? {});
   }
 }
 

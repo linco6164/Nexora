@@ -7,7 +7,10 @@ import 'listing_detail_page.dart';
 class PublicProfilePage extends StatefulWidget {
   final String userId;
 
-  const PublicProfilePage({super.key, required this.userId});
+  const PublicProfilePage({
+    super.key,
+    required this.userId,
+  });
 
   @override
   State<PublicProfilePage> createState() => _PublicProfilePageState();
@@ -16,22 +19,59 @@ class PublicProfilePage extends StatefulWidget {
 class _PublicProfilePageState extends State<PublicProfilePage> {
   late Future<Map<String, dynamic>> _profileFuture;
 
+  Map<String, dynamic>? _reviewSummary;
+  List<dynamic> _reviews = [];
+  bool _loadingReviews = true;
+
   @override
   void initState() {
     super.initState();
+
     _profileFuture = _loadProfile();
+    _loadReviews();
   }
 
   Future<Map<String, dynamic>> _loadProfile() async {
     return await ApiService.getPublicProfile(widget.userId);
   }
 
+  Future<void> _loadReviews() async {
+    try {
+      final summary =
+          await ApiService.getReviewSummary(widget.userId);
+
+      final reviews =
+          await ApiService.getSellerReviews(widget.userId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _reviewSummary = summary;
+        _reviews = reviews;
+        _loadingReviews = false;
+      });
+    } catch (e, stackTrace) {
+      debugPrint('REVIEWS ERROR: $e');
+      debugPrint('$stackTrace');
+
+      if (!mounted) return;
+
+      setState(() {
+        _loadingReviews = false;
+      });
+    }
+  }
+
   Future<void> _refresh() async {
     setState(() {
       _profileFuture = _loadProfile();
+      _loadingReviews = true;
     });
 
-    await _profileFuture;
+    await Future.wait([
+      _profileFuture,
+      _loadReviews(),
+    ]);
   }
 
   @override
@@ -58,9 +98,13 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
 
           final profile = snapshot.data!;
 
-          final user = Map<String, dynamic>.from(profile['user'] ?? {});
+          final user = Map<String, dynamic>.from(
+            profile['user'] ?? {},
+          );
 
-          final stats = Map<String, dynamic>.from(profile['stats'] ?? {});
+          final stats = Map<String, dynamic>.from(
+            profile['stats'] ?? {},
+          );
 
           final rawListings = profile['listings'];
 
@@ -71,9 +115,15 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
               if (item is Map) {
                 try {
                   listings.add(
-                    Listing.fromJson(Map<String, dynamic>.from(item)),
+                    Listing.fromJson(
+                      Map<String, dynamic>.from(item),
+                    ),
                   );
-                } catch (_) {}
+                } catch (e) {
+                  debugPrint(
+                    'LISTING PARSE ERROR: $e',
+                  );
+                }
               }
             }
           }
@@ -85,42 +135,81 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 _buildAppBar(context, user),
+
                 SliverToBoxAdapter(
-                  child: _buildProfileHeader(context, user, stats),
+                  child: _buildProfileHeader(
+                    context,
+                    user,
+                    stats,
+                  ),
                 ),
-                SliverToBoxAdapter(child: _buildAbout(context, user)),
-                SliverToBoxAdapter(child: _buildStats(context, stats)),
+
                 SliverToBoxAdapter(
-                  child: _buildListingsHeader(context, listings.length),
+                  child: _buildAbout(
+                    context,
+                    user,
+                  ),
                 ),
+
+                SliverToBoxAdapter(
+                  child: _buildStats(
+                    context,
+                    stats,
+                  ),
+                ),
+
+                // REVIEWS
+                SliverToBoxAdapter(
+                  child: _buildReviewsSection(context),
+                ),
+
+                SliverToBoxAdapter(
+                  child: _buildListingsHeader(
+                    context,
+                    listings.length,
+                  ),
+                ),
+
                 if (listings.isEmpty)
-                  SliverToBoxAdapter(child: _buildEmptyListings(context))
+                  SliverToBoxAdapter(
+                    child: _buildEmptyListings(context),
+                  )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      40,
+                    ),
                     sliver: SliverGrid(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        return _ListingCard(
-                          listing: listings[index],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ListingDetailPage(
-                                  listingId: listings[index].id,
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          return _ListingCard(
+                            listing: listings[index],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ListingDetailPage(
+                                    listingId:
+                                        listings[index].id,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      }, childCount: listings.length),
+                              );
+                            },
+                          );
+                        },
+                        childCount: listings.length,
+                      ),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.70,
-                          ),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.70,
+                      ),
                     ),
                   ),
               ],
@@ -131,11 +220,19 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, Map<String, dynamic> user) {
+  // ============================================================
+  // APP BAR
+  // ============================================================
+
+  Widget _buildAppBar(
+    BuildContext context,
+    Map<String, dynamic> user,
+  ) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final username = user['username']?.toString().trim() ?? '';
+    final username =
+        user['username']?.toString().trim() ?? '';
 
     return SliverAppBar(
       pinned: true,
@@ -159,11 +256,18 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       actions: [
         IconButton(
           onPressed: _refresh,
-          icon: Icon(Icons.refresh_rounded, color: colors.onSurface),
+          icon: Icon(
+            Icons.refresh_rounded,
+            color: colors.onSurface,
+          ),
         ),
       ],
     );
   }
+
+  // ============================================================
+  // PROFILE HEADER
+  // ============================================================
 
   Widget _buildProfileHeader(
     BuildContext context,
@@ -173,30 +277,46 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final username = user['username']?.toString().trim() ?? '';
+    final username =
+        user['username']?.toString().trim() ?? '';
 
-    final fullName = user['fullName']?.toString().trim() ?? '';
+    final fullName =
+        user['fullName']?.toString().trim() ?? '';
 
-    final avatar = user['avatar']?.toString().trim() ?? '';
+    final avatar =
+        user['avatar']?.toString().trim() ?? '';
 
-    final city = user['city']?.toString().trim() ?? '';
+    final city =
+        user['city']?.toString().trim() ?? '';
 
-    final country = user['country']?.toString().trim() ?? '';
+    final country =
+        user['country']?.toString().trim() ?? '';
 
-    final bio = user['bio']?.toString().trim() ?? '';
+    final bio =
+        user['bio']?.toString().trim() ?? '';
 
-    final listingsCount = _toInt(stats['listings']);
+    final listingsCount =
+        _toInt(stats['listings']);
 
-    final soldCount = _toInt(stats['sold']);
+    final soldCount =
+        _toInt(stats['sold']);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        18,
+        20,
+        0,
+      ),
       child: Column(
         children: [
           CircleAvatar(
             radius: 48,
-            backgroundColor: colors.surfaceContainerHighest,
-            backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+            backgroundColor:
+                colors.surfaceContainerHighest,
+            backgroundImage: avatar.isNotEmpty
+                ? NetworkImage(avatar)
+                : null,
             child: avatar.isEmpty
                 ? Icon(
                     Icons.person_rounded,
@@ -209,13 +329,17 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
           const SizedBox(height: 14),
 
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
               Flexible(
                 child: Text(
-                  username.isEmpty ? 'Utilizator' : username,
+                  username.isEmpty
+                      ? 'Utilizator'
+                      : username,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -223,21 +347,25 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
             ],
           ),
 
-          if (fullName.isNotEmpty && fullName != username) ...[
+          if (fullName.isNotEmpty &&
+              fullName != username) ...[
             const SizedBox(height: 4),
             Text(
               fullName,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style:
+                  theme.textTheme.bodyMedium?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
             ),
           ],
 
-          if (city.isNotEmpty || country.isNotEmpty) ...[
+          if (city.isNotEmpty ||
+              country.isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment:
+                  MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.location_on_outlined,
@@ -252,7 +380,8 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
                       if (country.isNotEmpty) country,
                     ].join(', '),
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
@@ -268,13 +397,17 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
               textAlign: TextAlign.center,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style:
+                  theme.textTheme.bodyMedium?.copyWith(
                 height: 1.45,
                 color: colors.onSurfaceVariant,
               ),
             ),
           ],
 
+          const SizedBox(height: 20),
+
+          // RATING
           const SizedBox(height: 20),
 
           Row(
@@ -290,7 +423,16 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
                 child: _ProfileMetric(
                   value: soldCount.toString(),
                   label: 'Vândute',
-                  icon: Icons.check_circle_outline_rounded,
+                  icon:
+                      Icons.check_circle_outline_rounded,
+                ),
+              ),
+              Expanded(
+                child: _ProfileMetric(
+                  value:
+                      _reviewCount.toString(),
+                  label: 'Evaluări',
+                  icon: Icons.star_outline_rounded,
                 ),
               ),
             ],
@@ -300,13 +442,54 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
-  Widget _buildAbout(BuildContext context, Map<String, dynamic> user) {
+  // ============================================================
+  // RATING SUMMARY
+  // ============================================================
+
+  double get _averageRating {
+    final value =
+        _reviewSummary?['averageRating'];
+
+    if (value is num) {
+      return value.toDouble();
+    }
+
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0.0;
+  }
+
+  int get _reviewCount {
+    final value =
+        _reviewSummary?['count'];
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        _reviews.length;
+  }
+
+  // ============================================================
+  // ABOUT
+  // ============================================================
+
+  Widget _buildAbout(
+    BuildContext context,
+    Map<String, dynamic> user,
+  ) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final createdAt = user['createdAt']?.toString();
+    final createdAt =
+        user['createdAt']?.toString();
 
-    if (createdAt == null || createdAt.isEmpty) {
+    if (createdAt == null ||
+        createdAt.isEmpty) {
       return const SizedBox(height: 20);
     }
 
@@ -320,16 +503,25 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       return const SizedBox(height: 20);
     }
 
-    final month = _monthName(date.month);
+    final month =
+        _monthName(date.month);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+      padding:
+          const EdgeInsets.fromLTRB(
+        20,
+        22,
+        20,
+        0,
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colors.surfaceContainerHighest.withOpacity(0.45),
-          borderRadius: BorderRadius.circular(18),
+          color: colors.surfaceContainerHighest
+              .withValues(alpha: 0.45),
+          borderRadius:
+              BorderRadius.circular(18),
         ),
         child: Row(
           children: [
@@ -342,7 +534,9 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
             Expanded(
               child: Text(
                 'Membru Nexora din $month ${date.year}',
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style:
+                    theme.textTheme.bodyMedium
+                        ?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -353,14 +547,28 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
-  Widget _buildStats(BuildContext context, Map<String, dynamic> stats) {
+  // ============================================================
+  // EXTRA STATS
+  // ============================================================
+
+  Widget _buildStats(
+    BuildContext context,
+    Map<String, dynamic> stats,
+  ) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final favorites = _toInt(stats['favorites']);
+    final favorites =
+        _toInt(stats['favorites']);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      padding:
+          const EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        0,
+      ),
       child: Row(
         children: [
           Icon(
@@ -371,7 +579,9 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
           const SizedBox(width: 7),
           Text(
             '$favorites favorite',
-            style: theme.textTheme.bodySmall?.copyWith(
+            style:
+                theme.textTheme.bodySmall
+                    ?.copyWith(
               color: colors.onSurfaceVariant,
             ),
           ),
@@ -380,26 +590,415 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
-  Widget _buildListingsHeader(BuildContext context, int count) {
+  // ============================================================
+  // REVIEWS
+  // ============================================================
+
+  Widget _buildReviewsSection(
+    BuildContext context,
+  ) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    if (_loadingReviews) {
+      return const Padding(
+        padding: EdgeInsets.all(28),
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final rating = _averageRating;
+    final count = _reviewCount;
+
+    return Padding(
+      padding:
+          const EdgeInsets.fromLTRB(
+        20,
+        28,
+        20,
+        8,
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Evaluări',
+                  style:
+                      theme.textTheme.titleLarge
+                          ?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                '$count',
+                style:
+                    theme.textTheme.titleMedium
+                        ?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colors.primary,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: colors
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.45),
+              borderRadius:
+                  BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  rating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    _buildStars(
+                      rating,
+                      size: 21,
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      count == 1
+                          ? '1 evaluare'
+                          : '$count evaluări',
+                      style: theme
+                          .textTheme.bodySmall
+                          ?.copyWith(
+                        color:
+                            colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          if (_reviews.isEmpty)
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colors
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.30),
+                borderRadius:
+                    BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.star_border_rounded,
+                    size: 38,
+                    color:
+                        colors.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Nu există încă evaluări',
+                    style: theme
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ..._reviews.map(
+              (review) {
+                if (review is Map) {
+                  return _buildReviewCard(
+                    context,
+                    Map<String, dynamic>.from(
+                      review,
+                    ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStars(
+    double rating, {
+    double size = 18,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        5,
+        (index) {
+          final position = index + 1;
+
+          IconData icon;
+
+          if (rating >= position) {
+            icon = Icons.star_rounded;
+          } else if (rating >= position - 0.5) {
+            icon = Icons.star_half_rounded;
+          } else {
+            icon = Icons.star_outline_rounded;
+          }
+
+          return Icon(
+            icon,
+            color: Colors.amber,
+            size: size,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(
+    BuildContext context,
+    Map<String, dynamic> review,
+  ) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final reviewer = review['reviewer'];
+
+    String username = 'Utilizator';
+    String avatar = '';
+
+    if (reviewer is Map) {
+      username =
+          reviewer['username']?.toString() ??
+              'Utilizator';
+
+      avatar =
+          reviewer['avatar']?.toString() ?? '';
+    }
+
+    final rating =
+        _toInt(review['rating']);
+
+    final comment =
+        review['comment']?.toString().trim() ?? '';
+
+    final createdAt =
+        review['createdAt']?.toString();
+
+    return Container(
+      width: double.infinity,
+      margin:
+          const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color: colors.outlineVariant
+              .withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 21,
+                backgroundColor:
+                    colors.surfaceContainerHighest,
+                backgroundImage:
+                    avatar.isNotEmpty
+                        ? NetworkImage(avatar)
+                        : null,
+                child: avatar.isEmpty
+                    ? Icon(
+                        Icons.person_rounded,
+                        color:
+                            colors.onSurfaceVariant,
+                      )
+                    : null,
+              ),
+
+              const SizedBox(width: 10),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      username,
+                      maxLines: 1,
+                      overflow:
+                          TextOverflow.ellipsis,
+                      style: theme
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
+                        fontWeight:
+                            FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Row(
+                      children: [
+                        _buildStars(
+                          rating.toDouble(),
+                          size: 16,
+                        ),
+
+                        if (createdAt != null &&
+                            createdAt.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatReviewDate(
+                              createdAt,
+                            ),
+                            style: theme
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                              color: colors
+                                  .onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 13),
+            Text(
+              comment,
+              style: theme
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatReviewDate(
+    String value,
+  ) {
+    final date = DateTime.tryParse(value);
+
+    if (date == null) {
+      return '';
+    }
+
+    final localDate = date.toLocal();
+
+    final difference =
+        DateTime.now().difference(localDate);
+
+    if (difference.inMinutes < 1) {
+      return 'acum';
+    }
+
+    if (difference.inHours < 1) {
+      return '${difference.inMinutes} min';
+    }
+
+    if (difference.inDays < 1) {
+      return '${difference.inHours} h';
+    }
+
+    if (difference.inDays < 7) {
+      return '${difference.inDays} zile';
+    }
+
+    return '${localDate.day.toString().padLeft(2, '0')}.'
+        '${localDate.month.toString().padLeft(2, '0')}.'
+        '${localDate.year}';
+  }
+
+  // ============================================================
+  // LISTINGS
+  // ============================================================
+
+  Widget _buildListingsHeader(
+    BuildContext context,
+    int count,
+  ) {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+      padding:
+          const EdgeInsets.fromLTRB(
+        20,
+        28,
+        20,
+        14,
+      ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               'Anunțurile lui',
-              style: theme.textTheme.titleLarge?.copyWith(
+              style:
+                  theme.textTheme.titleLarge
+                      ?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
           Text(
             '$count',
-            style: theme.textTheme.titleMedium?.copyWith(
+            style:
+                theme.textTheme.titleMedium
+                    ?.copyWith(
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
+              color:
+                  theme.colorScheme.primary,
             ),
           ),
         ],
@@ -407,40 +1006,59 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
-  Widget _buildEmptyListings(BuildContext context) {
+  Widget _buildEmptyListings(
+    BuildContext context,
+  ) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 30, 20, 80),
+      padding:
+          const EdgeInsets.fromLTRB(
+        20,
+        30,
+        20,
+        80,
+      ),
       child: Column(
         children: [
           Container(
             width: 70,
             height: 70,
             decoration: BoxDecoration(
-              color: colors.surfaceContainerHighest,
+              color:
+                  colors.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.inventory_2_outlined,
               size: 32,
-              color: colors.onSurfaceVariant,
+              color:
+                  colors.onSurfaceVariant,
             ),
           ),
+
           const SizedBox(height: 16),
+
           Text(
             'Nu are anunțuri active',
-            style: theme.textTheme.titleMedium?.copyWith(
+            style:
+                theme.textTheme.titleMedium
+                    ?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
+
           const SizedBox(height: 6),
+
           Text(
             'Acest utilizator nu are momentan produse disponibile.',
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onSurfaceVariant,
+            style:
+                theme.textTheme.bodyMedium
+                    ?.copyWith(
+              color:
+                  colors.onSurfaceVariant,
             ),
           ),
         ],
@@ -448,23 +1066,41 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
-  Widget _buildLoading(BuildContext context) {
+  // ============================================================
+  // LOADING / ERROR
+  // ============================================================
+
+  Widget _buildLoading(
+    BuildContext context,
+  ) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(elevation: 0, title: const Text('Profil')),
-      body: const Center(child: CircularProgressIndicator()),
+      backgroundColor:
+          theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        title: const Text('Profil'),
+      ),
+      body: const Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 
-  Widget _buildError(BuildContext context) {
+  Widget _buildError(
+    BuildContext context,
+  ) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(elevation: 0, title: const Text('Profil')),
+      backgroundColor:
+          theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        title: const Text('Profil'),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -474,21 +1110,33 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
               Icon(
                 Icons.person_off_outlined,
                 size: 56,
-                color: colors.onSurfaceVariant,
+                color:
+                    colors.onSurfaceVariant,
               ),
+
               const SizedBox(height: 16),
+
               Text(
                 'Profilul nu a putut fi încărcat.',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
               const SizedBox(height: 16),
+
               FilledButton.icon(
                 onPressed: _refresh,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Încearcă din nou'),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                ),
+                label: const Text(
+                  'Încearcă din nou',
+                ),
               ),
             ],
           ),
@@ -497,11 +1145,21 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     );
   }
 
+  // ============================================================
+  // HELPERS
+  // ============================================================
+
   int _toInt(dynamic value) {
     if (value is int) return value;
-    if (value is num) return value.toInt();
 
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
   }
 
   String _monthName(int month) {
@@ -528,6 +1186,10 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
   }
 }
 
+// ============================================================
+// PROFILE METRIC
+// ============================================================
+
 class _ProfileMetric extends StatelessWidget {
   final String value;
   final String label;
@@ -546,18 +1208,28 @@ class _ProfileMetric extends StatelessWidget {
 
     return Column(
       children: [
-        Icon(icon, size: 20, color: colors.primary),
+        Icon(
+          icon,
+          size: 20,
+          color: colors.primary,
+        ),
+
         const SizedBox(height: 6),
+
         Text(
           value,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium
+              ?.copyWith(
             fontWeight: FontWeight.w800,
           ),
         ),
+
         const SizedBox(height: 2),
+
         Text(
           label,
-          style: theme.textTheme.bodySmall?.copyWith(
+          style: theme.textTheme.bodySmall
+              ?.copyWith(
             color: colors.onSurfaceVariant,
           ),
         ),
@@ -566,27 +1238,38 @@ class _ProfileMetric extends StatelessWidget {
   }
 }
 
+// ============================================================
+// LISTING CARD
+// ============================================================
+
 class _ListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
 
-  const _ListingCard({required this.listing, required this.onTap});
+  const _ListingCard({
+    required this.listing,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final image = listing.images.isNotEmpty ? listing.images.first : null;
+    final image = listing.images.isNotEmpty
+        ? listing.images.first
+        : null;
 
     return Material(
       color: colors.surface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius:
+          BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Expanded(
               flex: 7,
@@ -597,23 +1280,29 @@ class _ListingCard extends StatelessWidget {
                     Image.network(
                       image,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
+                      errorBuilder:
+                          (context, error, stackTrace) {
                         return Container(
-                          color: colors.surfaceContainerHighest,
+                          color: colors
+                              .surfaceContainerHighest,
                           child: Icon(
-                            Icons.image_not_supported_outlined,
-                            color: colors.onSurfaceVariant,
+                            Icons
+                                .image_not_supported_outlined,
+                            color: colors
+                                .onSurfaceVariant,
                           ),
                         );
                       },
                     )
                   else
                     Container(
-                      color: colors.surfaceContainerHighest,
+                      color: colors
+                          .surfaceContainerHighest,
                       child: Icon(
                         Icons.image_outlined,
                         size: 34,
-                        color: colors.onSurfaceVariant,
+                        color: colors
+                            .onSurfaceVariant,
                       ),
                     ),
 
@@ -622,18 +1311,29 @@ class _ListingCard extends StatelessWidget {
                       left: 8,
                       bottom: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding:
+                            const EdgeInsets
+                                .symmetric(
                           horizontal: 8,
                           vertical: 5,
                         ),
-                        decoration: BoxDecoration(
-                          color: colors.surface.withOpacity(0.92),
-                          borderRadius: BorderRadius.circular(8),
+                        decoration:
+                            BoxDecoration(
+                          color: colors.surface
+                              .withValues(alpha: 0.92),
+                          borderRadius:
+                              BorderRadius.circular(
+                            8,
+                          ),
                         ),
                         child: Text(
                           'Negociabil',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                          style: theme
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                            fontWeight:
+                                FontWeight.w700,
                           ),
                         ),
                       ),
@@ -645,16 +1345,28 @@ class _ListingCard extends StatelessWidget {
             Expanded(
               flex: 3,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 10, 8),
+                padding:
+                    const EdgeInsets.fromLTRB(
+                  10,
+                  9,
+                  10,
+                  8,
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       listing.title,
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                      overflow:
+                          TextOverflow.ellipsis,
+                      style: theme
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
+                        fontWeight:
+                            FontWeight.w700,
                       ),
                     ),
 
@@ -663,9 +1375,14 @@ class _ListingCard extends StatelessWidget {
                     Text(
                       '${listing.price.toStringAsFixed(2)} ${listing.currency}',
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                      overflow:
+                          TextOverflow.ellipsis,
+                      style: theme
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(
+                        fontWeight:
+                            FontWeight.w800,
                         color: colors.primary,
                       ),
                     ),

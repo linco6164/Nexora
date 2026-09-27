@@ -1,8 +1,8 @@
 // ignore_for_file: implementation_imports
 
-const String kWidgetPreviewDtdUri = 'ws://127.0.0.1:59096/DwrNcww8IRY=';
+const String kWidgetPreviewDtdUri = 'ws://127.0.0.1:50390/4sR31fVQT7Q=';
 const String kWidgetPreviewService =
-    'widget-preview-2120ae11-6bc5-4336-adba-9c7b16f1835d';
+    'widget-preview-e4c7c38d-8909-497b-97f5-0c4809e21215';
 const String kWidgetPreviewScaffoldStream =
-    'WidgetPreviewScaffold-2120ae11-6bc5-4336-adba-9c7b16f1835d';
+    'WidgetPreviewScaffold-e4c7c38d-8909-497b-97f5-0c4809e21215';
 const String kProjectRootPath = r'C:\VSCode\flutter-start\startapp';

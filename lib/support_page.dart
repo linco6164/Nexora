@@ -587,7 +587,7 @@ class _SupportPageState extends State<SupportPage> {
     ColorScheme colorScheme,
   ) {
     return DropdownButtonFormField<String>(
-      value: _selectedCategory,
+      initialValue: _selectedCategory,
       decoration: InputDecoration(
         labelText: 'Categorie',
         prefixIcon:

@@ -28,6 +28,7 @@ dependencies:
   url_launcher: ^6.3.2
   device_info_plus: 
   share_plus: ^13.3.0
+  provider: ^6.1.5+1
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +37,7 @@ dev_dependencies:
 
 flutter:
   assets:
+    - assets/payments/netopia_payments_logo.png
     - shorebird.yaml
   uses-material-design: true
 

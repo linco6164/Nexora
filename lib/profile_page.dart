@@ -10,6 +10,10 @@ import 'support_page.dart';
 import 'edit_profile_page.dart';
 import 'addresses_page.dart';
 import 'security_page.dart';
+import 'my_listings_page.dart';
+import 'my_reviews_page.dart';
+import 'order_page.dart';
+import 'promotion_page.dart';
 import 'api_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -26,6 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoadingUser = true;
 
   Map<String, dynamic>? _user;
+  Map<String, dynamic>? _stats;
 
   final ScrollController _scrollController = ScrollController();
 
@@ -42,21 +47,26 @@ class _ProfilePageState extends State<ProfilePage> {
     debugPrint('PROFILE: începe încărcarea userului');
 
     try {
-      final user = await ApiService.getCurrentUser();
+      final result = await ApiService.getProfile();
 
-      debugPrint('PROFILE: USER PRIMIT = $user');
+      debugPrint('PROFILE: RĂSPUNS API = $result');
 
       if (!mounted) return;
 
       setState(() {
-        _user = Map<String, dynamic>.from(user);
+        _user = result['user'] is Map
+            ? Map<String, dynamic>.from(result['user'])
+            : Map<String, dynamic>.from(result);
+
+        _stats = result['stats'] is Map
+            ? Map<String, dynamic>.from(result['stats'])
+            : <String, dynamic>{};
+
         _isLoadingUser = false;
       });
 
-      debugPrint('PROFILE: setState făcut');
-      debugPrint('PROFILE: username = ${_user?['username']}');
-      debugPrint('PROFILE: avatar = ${_user?['avatar']}');
-      debugPrint('PROFILE: email = ${_user?['email']}');
+      debugPrint('PROFILE: user = $_user');
+      debugPrint('PROFILE: stats = $_stats');
     } catch (e, stackTrace) {
       debugPrint('PROFILE ERROR: $e');
       debugPrint('$stackTrace');
@@ -166,8 +176,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final primary = Theme.of(context).colorScheme.primary;
 
+    final double rating = (_stats?['rating'] ?? 0).toDouble();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil'), centerTitle: false),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Profil'),
+        centerTitle: false,
+      ),
 
       body: SafeArea(
         bottom: false,
@@ -180,7 +196,6 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: const EdgeInsets.only(top: 24, bottom: 100),
 
             children: [
-
               // ─────────────────────────────
               // PROFIL
               // ─────────────────────────────
@@ -249,7 +264,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                     const SizedBox(height: 14),
 
-                    // Rating
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -258,22 +272,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           size: 20,
                           color: Colors.amber,
                         ),
-
                         const SizedBox(width: 4),
-
-                        const Text(
-                          '0.0',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-
-                        const SizedBox(width: 6),
-
                         Text(
-                          '(0 evaluări)',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 13,
-                          ),
+                          (((_stats?['rating'] ?? 0) as num?) ?? 0)
+                              .toDouble()
+                              .toStringAsFixed(1),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -329,28 +333,47 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   child: Row(
                     children: [
-                      const Expanded(
-                        child: _ProfileStat(value: '0', label: 'Anunțuri'),
+                      Expanded(
+                        child: _ProfileStat(
+                          value: '${_stats?['listings'] ?? 0}',
+                          label: 'Anunțuri',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MyListingsPage(),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-
-                      Container(
-                        width: 1,
-                        height: 36,
-                        color: Colors.grey.withValues(alpha: 0.25),
+                      Expanded(
+                        child: _ProfileStat(
+                          value: '${_stats?['sold'] ?? 0}',
+                          label: 'Vânzări',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const OrderPage(initialTab: 1),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-
-                      const Expanded(
-                        child: _ProfileStat(value: '0', label: 'Vânzări'),
-                      ),
-
-                      Container(
-                        width: 1,
-                        height: 36,
-                        color: Colors.grey.withValues(alpha: 0.25),
-                      ),
-
-                      const Expanded(
-                        child: _ProfileStat(value: '0', label: 'Evaluări'),
+                      Expanded(
+                        child: _ProfileStat(
+                          value: '${_stats?['reviews'] ?? 0}',
+                          label: 'Evaluări',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MyReviewsPage(),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -385,6 +408,30 @@ class _ProfilePageState extends State<ProfilePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const SoldPage()),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.receipt_long),
+                title: const Text('Comenzile mele'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OrderPage()),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.rocket_launch_outlined),
+                title: const Text('Instrumente promotionale'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PromotionPage()),
                   );
                 },
               ),
@@ -516,20 +563,63 @@ class _ProfilePageState extends State<ProfilePage> {
 class _ProfileStat extends StatelessWidget {
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
-  const _ProfileStat({required this.value, required this.label});
+  const _ProfileStat({required this.value, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 13,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 3),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-      ],
+      ),
     );
   }
 }
