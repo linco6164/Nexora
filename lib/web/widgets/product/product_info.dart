@@ -34,6 +34,16 @@ class ProductInfo extends StatelessWidget {
           ),
         ),
 
+        const SizedBox(height: 6),
+
+        Text(
+          'Prețul produsului. Costul livrării este afișat separat înainte de plată.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: .62),
+            height: 1.4,
+          ),
+        ),
+
         const SizedBox(height: 24),
 
         Row(
@@ -68,7 +78,7 @@ class ProductInfo extends StatelessWidget {
               );
             },
             icon: const Icon(Icons.shopping_cart_checkout),
-            label: const Text("Buy now"),
+            label: const Text('Cumpără acum'),
           ),
         ),
 
@@ -79,7 +89,7 @@ class ProductInfo extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.chat_bubble_outline),
-            label: const Text("Chat with seller"),
+            label: const Text('Discută cu vânzătorul'),
           ),
         ),
 
@@ -90,7 +100,7 @@ class ProductInfo extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () {},
             icon: const Icon(Icons.favorite_border),
-            label: const Text("Add to favorites"),
+            label: const Text('Adaugă la favorite'),
           ),
         ),
       ],

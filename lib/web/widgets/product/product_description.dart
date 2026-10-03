@@ -23,7 +23,7 @@ class ProductDescription extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Description",
+              'Descrierea produsului',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -33,7 +33,7 @@ class ProductDescription extends StatelessWidget {
 
             Text(
               description.isEmpty
-                  ? "No description available."
+                  ? 'Vânzătorul nu a completat încă descrierea produsului.'
                   : description,
               style: theme.textTheme.bodyLarge?.copyWith(
                 height: 1.7,

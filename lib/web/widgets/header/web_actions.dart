@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import '../../../providers/auth_provider.dart';
-import '../../dialogs/login_dialog.dart';
 
 class WebActions extends StatelessWidget {
   const WebActions({super.key});

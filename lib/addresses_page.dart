@@ -40,17 +40,12 @@ class _AddressesPageState extends State<AddressesPage> {
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
-  Future<void> _deleteAddress(
-    Map<String, dynamic> address,
-  ) async {
+  Future<void> _deleteAddress(Map<String, dynamic> address) async {
     final id = address['_id']?.toString();
 
     if (id == null || id.isEmpty) return;
@@ -60,9 +55,7 @@ class _AddressesPageState extends State<AddressesPage> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Șterge adresa'),
-          content: const Text(
-            'Sigur vrei să ștergi această adresă?',
-          ),
+          content: const Text('Sigur vrei să ștergi această adresă?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -74,12 +67,7 @@ class _AddressesPageState extends State<AddressesPage> {
               onPressed: () {
                 Navigator.pop(context, true);
               },
-              child: const Text(
-                'Șterge',
-                style: TextStyle(
-                  color: Colors.red,
-                ),
-              ),
+              child: const Text('Șterge', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -95,25 +83,20 @@ class _AddressesPageState extends State<AddressesPage> {
 
       await _loadAddresses();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Adresa a fost ștearsă.'),
-        ),
-      );
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Adresa a fost ștearsă.')));
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
-  Future<void> _setDefaultAddress(
-    Map<String, dynamic> address,
-  ) async {
+  Future<void> _setDefaultAddress(Map<String, dynamic> address) async {
     final id = address['_id']?.toString();
 
     if (id == null || id.isEmpty) return;
@@ -125,36 +108,27 @@ class _AddressesPageState extends State<AddressesPage> {
 
       await _loadAddresses();
 
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Adresa implicită a fost actualizată.',
-          ),
-        ),
+        const SnackBar(content: Text('Adresa implicită a fost actualizată.')),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
-  Future<void> _openAddressForm({
-    Map<String, dynamic>? address,
-  }) async {
+  Future<void> _openAddressForm({Map<String, dynamic>? address}) async {
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return _AddressFormSheet(
-          address: address,
-        );
+        return _AddressFormSheet(address: address);
       },
     );
 
@@ -163,9 +137,7 @@ class _AddressesPageState extends State<AddressesPage> {
     }
   }
 
-  String _buildAddressLine(
-    Map<String, dynamic> address,
-  ) {
+  String _buildAddressLine(Map<String, dynamic> address) {
     final street = address['street']?.toString() ?? '';
     final number = address['number']?.toString() ?? '';
     final building = address['building']?.toString() ?? '';
@@ -202,13 +174,10 @@ class _AddressesPageState extends State<AddressesPage> {
     return parts.join(', ');
   }
 
-  String _buildCityLine(
-    Map<String, dynamic> address,
-  ) {
+  String _buildCityLine(Map<String, dynamic> address) {
     final city = address['city']?.toString() ?? '';
     final county = address['county']?.toString() ?? '';
-    final postalCode =
-        address['postalCode']?.toString() ?? '';
+    final postalCode = address['postalCode']?.toString() ?? '';
 
     final parts = <String>[];
 
@@ -230,31 +199,21 @@ class _AddressesPageState extends State<AddressesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Adrese salvate'),
-      ),
+      appBar: AppBar(title: const Text('Adrese salvate')),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadAddresses,
               child: _addresses.isEmpty
                   ? ListView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(),
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 24,
-                      ),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       children: [
                         const SizedBox(height: 100),
                         Icon(
                           Icons.location_on_outlined,
                           size: 72,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(height: 20),
                         const Text(
@@ -269,95 +228,54 @@ class _AddressesPageState extends State<AddressesPage> {
                         Text(
                           'Adaugă o adresă pentru a face cumpărăturile și livrările mai rapide.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                         const SizedBox(height: 28),
                         FilledButton.icon(
                           onPressed: _openAddressForm,
                           icon: const Icon(Icons.add),
-                          label: const Text(
-                            'Adaugă adresă',
-                          ),
+                          label: const Text('Adaugă adresă'),
                           style: FilledButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(12),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                         ),
                       ],
                     )
                   : ListView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(),
-                      padding:
-                          const EdgeInsets.fromLTRB(
-                        16,
-                        16,
-                        16,
-                        32,
-                      ),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                       children: [
-                        ..._addresses.map(
-                          (address) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.only(
-                                bottom: 12,
-                              ),
-                              child: _AddressCard(
-                                address: address,
-                                addressLine:
-                                    _buildAddressLine(
-                                  address,
-                                ),
-                                cityLine:
-                                    _buildCityLine(
-                                  address,
-                                ),
-                                onEdit: () {
-                                  _openAddressForm(
-                                    address: address,
-                                  );
-                                },
-                                onDelete: () {
-                                  _deleteAddress(
-                                    address,
-                                  );
-                                },
-                                onSetDefault: () {
-                                  _setDefaultAddress(
-                                    address,
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
+                        ..._addresses.map((address) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _AddressCard(
+                              address: address,
+                              addressLine: _buildAddressLine(address),
+                              cityLine: _buildCityLine(address),
+                              onEdit: () {
+                                _openAddressForm(address: address);
+                              },
+                              onDelete: () {
+                                _deleteAddress(address);
+                              },
+                              onSetDefault: () {
+                                _setDefaultAddress(address);
+                              },
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
                           onPressed: _openAddressForm,
                           icon: const Icon(Icons.add),
-                          label: const Text(
-                            'Adaugă adresă',
-                          ),
-                          style:
-                              OutlinedButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(12),
+                          label: const Text('Adaugă adresă'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                         ),
@@ -392,73 +310,53 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDefault =
-        address['isDefault'] == true;
+    final isDefault = address['isDefault'] == true;
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surface,
-        borderRadius:
-            BorderRadius.circular(16),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDefault
-              ? Theme.of(context)
-                  .colorScheme
-                  .primary
-                  .withValues(alpha: 0.5)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
               : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(
                   Icons.location_on_outlined,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
                     'Adresă de livrare',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                 ),
                 if (isDefault)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
+                      color: Theme.of(context).colorScheme.primary
                           .withValues(alpha: 0.1),
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       'Implicită',
                       style: TextStyle(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary,
+                        color: Theme.of(context).colorScheme.primary,
                         fontSize: 11,
-                        fontWeight:
-                            FontWeight.w700,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -470,19 +368,12 @@ class _AddressCard extends StatelessWidget {
             if (addressLine.isNotEmpty)
               Text(
                 addressLine,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
 
             if (cityLine.isNotEmpty) ...[
               const SizedBox(height: 5),
-              Text(
-                cityLine,
-                style: TextStyle(
-                  color: Colors.grey[700],
-                ),
-              ),
+              Text(cityLine, style: TextStyle(color: Colors.grey[700])),
             ],
 
             const SizedBox(height: 14),
@@ -492,13 +383,8 @@ class _AddressCard extends StatelessWidget {
                 if (!isDefault)
                   TextButton.icon(
                     onPressed: onSetDefault,
-                    icon: const Icon(
-                      Icons.check_circle_outline,
-                      size: 18,
-                    ),
-                    label: const Text(
-                      'Implicită',
-                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 18),
+                    label: const Text('Implicită'),
                   ),
 
                 const Spacer(),
@@ -506,18 +392,13 @@ class _AddressCard extends StatelessWidget {
                 IconButton(
                   onPressed: onEdit,
                   tooltip: 'Editează',
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                  ),
+                  icon: const Icon(Icons.edit_outlined),
                 ),
 
                 IconButton(
                   onPressed: onDelete,
                   tooltip: 'Șterge',
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                  ),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                 ),
               ],
             ),
@@ -535,52 +416,37 @@ class _AddressCard extends StatelessWidget {
 class _AddressFormSheet extends StatefulWidget {
   final Map<String, dynamic>? address;
 
-  const _AddressFormSheet({
-    this.address,
-  });
+  const _AddressFormSheet({this.address});
 
   @override
-  State<_AddressFormSheet> createState() =>
-      _AddressFormSheetState();
+  State<_AddressFormSheet> createState() => _AddressFormSheetState();
 }
 
-class _AddressFormSheetState
-    extends State<_AddressFormSheet> {
-  final _formKey =
-      GlobalKey<FormState>();
+class _AddressFormSheetState extends State<_AddressFormSheet> {
+  final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController
-      _countyController;
+  late final TextEditingController _countyController;
 
-  late final TextEditingController
-      _cityController;
+  late final TextEditingController _cityController;
 
-  late final TextEditingController
-      _streetController;
+  late final TextEditingController _streetController;
 
-  late final TextEditingController
-      _numberController;
+  late final TextEditingController _numberController;
 
-  late final TextEditingController
-      _buildingController;
+  late final TextEditingController _buildingController;
 
-  late final TextEditingController
-      _staircaseController;
+  late final TextEditingController _staircaseController;
 
-  late final TextEditingController
-      _floorController;
+  late final TextEditingController _floorController;
 
-  late final TextEditingController
-      _apartmentController;
+  late final TextEditingController _apartmentController;
 
-  late final TextEditingController
-      _postalCodeController;
+  late final TextEditingController _postalCodeController;
 
   bool _isDefault = false;
   bool _isSaving = false;
 
-  bool get _isEditing =>
-      widget.address != null;
+  bool get _isEditing => widget.address != null;
 
   @override
   void initState() {
@@ -588,62 +454,43 @@ class _AddressFormSheetState
 
     final address = widget.address;
 
-    _countyController =
-        TextEditingController(
-      text:
-          address?['county']?.toString() ?? '',
+    _countyController = TextEditingController(
+      text: address?['county']?.toString() ?? '',
     );
 
-    _cityController =
-        TextEditingController(
-      text:
-          address?['city']?.toString() ?? '',
+    _cityController = TextEditingController(
+      text: address?['city']?.toString() ?? '',
     );
 
-    _streetController =
-        TextEditingController(
-      text:
-          address?['street']?.toString() ?? '',
+    _streetController = TextEditingController(
+      text: address?['street']?.toString() ?? '',
     );
 
-    _numberController =
-        TextEditingController(
-      text:
-          address?['number']?.toString() ?? '',
+    _numberController = TextEditingController(
+      text: address?['number']?.toString() ?? '',
     );
 
-    _buildingController =
-        TextEditingController(
-      text:
-          address?['building']?.toString() ?? '',
+    _buildingController = TextEditingController(
+      text: address?['building']?.toString() ?? '',
     );
 
-    _staircaseController =
-        TextEditingController(
-      text:
-          address?['staircase']?.toString() ?? '',
+    _staircaseController = TextEditingController(
+      text: address?['staircase']?.toString() ?? '',
     );
 
-    _floorController =
-        TextEditingController(
-      text:
-          address?['floor']?.toString() ?? '',
+    _floorController = TextEditingController(
+      text: address?['floor']?.toString() ?? '',
     );
 
-    _apartmentController =
-        TextEditingController(
-      text:
-          address?['apartment']?.toString() ?? '',
+    _apartmentController = TextEditingController(
+      text: address?['apartment']?.toString() ?? '',
     );
 
-    _postalCodeController =
-        TextEditingController(
-      text:
-          address?['postalCode']?.toString() ?? '',
+    _postalCodeController = TextEditingController(
+      text: address?['postalCode']?.toString() ?? '',
     );
 
-    _isDefault =
-        address?['isDefault'] == true;
+    _isDefault = address?['isDefault'] == true;
   }
 
   @override
@@ -674,57 +521,36 @@ class _AddressFormSheetState
 
     try {
       if (_isEditing) {
-        final id =
-            widget.address!['_id']?.toString();
+        final id = widget.address!['_id']?.toString();
 
         if (id == null || id.isEmpty) {
-          throw ApiException(
-            'ID-ul adresei lipsește.',
-          );
+          throw ApiException('ID-ul adresei lipsește.');
         }
 
         await ApiService.updateAddress(
           addressId: id,
-          county:
-              _countyController.text.trim(),
-          city:
-              _cityController.text.trim(),
-          street:
-              _streetController.text.trim(),
-          number:
-              _numberController.text.trim(),
-          building:
-              _buildingController.text.trim(),
-          staircase:
-              _staircaseController.text.trim(),
-          floor:
-              _floorController.text.trim(),
-          apartment:
-              _apartmentController.text.trim(),
-          postalCode:
-              _postalCodeController.text.trim(),
+          county: _countyController.text.trim(),
+          city: _cityController.text.trim(),
+          street: _streetController.text.trim(),
+          number: _numberController.text.trim(),
+          building: _buildingController.text.trim(),
+          staircase: _staircaseController.text.trim(),
+          floor: _floorController.text.trim(),
+          apartment: _apartmentController.text.trim(),
+          postalCode: _postalCodeController.text.trim(),
           isDefault: _isDefault,
         );
       } else {
         await ApiService.createAddress(
-          county:
-              _countyController.text.trim(),
-          city:
-              _cityController.text.trim(),
-          street:
-              _streetController.text.trim(),
-          number:
-              _numberController.text.trim(),
-          building:
-              _buildingController.text.trim(),
-          staircase:
-              _staircaseController.text.trim(),
-          floor:
-              _floorController.text.trim(),
-          apartment:
-              _apartmentController.text.trim(),
-          postalCode:
-              _postalCodeController.text.trim(),
+          county: _countyController.text.trim(),
+          city: _cityController.text.trim(),
+          street: _streetController.text.trim(),
+          number: _numberController.text.trim(),
+          building: _buildingController.text.trim(),
+          staircase: _staircaseController.text.trim(),
+          floor: _floorController.text.trim(),
+          apartment: _apartmentController.text.trim(),
+          postalCode: _postalCodeController.text.trim(),
           isDefault: _isDefault,
         );
       }
@@ -736,11 +562,7 @@ class _AddressFormSheetState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) {
         setState(() {
@@ -750,31 +572,18 @@ class _AddressFormSheetState
     }
   }
 
-  InputDecoration _decoration(
-    String label, {
-    IconData? icon,
-  }) {
+  InputDecoration _decoration(String label, {IconData? icon}) {
     return InputDecoration(
       labelText: label,
-      prefixIcon:
-          icon != null ? Icon(icon) : null,
-      border: OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(12),
+      prefixIcon: icon != null ? Icon(icon) : null,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(12),
-      ),
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(12),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: Theme.of(context)
-              .colorScheme
-              .primary,
+          color: Theme.of(context).colorScheme.primary,
           width: 2,
         ),
       ),
@@ -782,8 +591,7 @@ class _AddressFormSheetState
   }
 
   String? _required(String? value) {
-    if (value == null ||
-        value.trim().isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Câmp obligatoriu';
     }
 
@@ -792,44 +600,28 @@ class _AddressFormSheetState
 
   @override
   Widget build(BuildContext context) {
-    final bottom =
-        MediaQuery.of(context)
-            .viewInsets
-            .bottom;
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .scaffoldBackgroundColor,
-        borderRadius:
-            const BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          bottom + 16,
-        ),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, bottom + 16),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Container(
                     width: 42,
                     height: 4,
-                    decoration:
-                        BoxDecoration(
-                      color: Colors.grey
-                          .withValues(alpha: 0.3),
-                      borderRadius:
-                          BorderRadius.circular(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
@@ -837,13 +629,10 @@ class _AddressFormSheetState
                 const SizedBox(height: 20),
 
                 Text(
-                  _isEditing
-                      ? 'Editează adresa'
-                      : 'Adaugă adresă',
+                  _isEditing ? 'Editează adresa' : 'Adaugă adresă',
                   style: const TextStyle(
                     fontSize: 21,
-                    fontWeight:
-                        FontWeight.w800,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
 
@@ -853,31 +642,23 @@ class _AddressFormSheetState
                   children: [
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _countyController,
-                        decoration:
-                            _decoration(
+                        controller: _countyController,
+                        decoration: _decoration(
                           'Județ',
-                          icon: Icons
-                              .map_outlined,
+                          icon: Icons.map_outlined,
                         ),
-                        validator:
-                            _required,
+                        validator: _required,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _cityController,
-                        decoration:
-                            _decoration(
+                        controller: _cityController,
+                        decoration: _decoration(
                           'Oraș',
-                          icon: Icons
-                              .location_city_outlined,
+                          icon: Icons.location_city_outlined,
                         ),
-                        validator:
-                            _required,
+                        validator: _required,
                       ),
                     ),
                   ],
@@ -890,27 +671,20 @@ class _AddressFormSheetState
                     Expanded(
                       flex: 3,
                       child: TextFormField(
-                        controller:
-                            _streetController,
-                        decoration:
-                            _decoration(
+                        controller: _streetController,
+                        decoration: _decoration(
                           'Stradă',
-                          icon: Icons
-                              .signpost_outlined,
+                          icon: Icons.signpost_outlined,
                         ),
-                        validator:
-                            _required,
+                        validator: _required,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _numberController,
-                        decoration:
-                            _decoration('Nr.'),
-                        validator:
-                            _required,
+                        controller: _numberController,
+                        decoration: _decoration('Nr.'),
+                        validator: _required,
                       ),
                     ),
                   ],
@@ -922,19 +696,15 @@ class _AddressFormSheetState
                   children: [
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _buildingController,
-                        decoration:
-                            _decoration('Bloc'),
+                        controller: _buildingController,
+                        decoration: _decoration('Bloc'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _staircaseController,
-                        decoration:
-                            _decoration('Scară'),
+                        controller: _staircaseController,
+                        decoration: _decoration('Scară'),
                       ),
                     ),
                   ],
@@ -946,25 +716,17 @@ class _AddressFormSheetState
                   children: [
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _floorController,
-                        keyboardType:
-                            TextInputType.number,
-                        decoration:
-                            _decoration('Etaj'),
+                        controller: _floorController,
+                        keyboardType: TextInputType.number,
+                        decoration: _decoration('Etaj'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
-                        controller:
-                            _apartmentController,
-                        keyboardType:
-                            TextInputType.number,
-                        decoration:
-                            _decoration(
-                          'Apartament',
-                        ),
+                        controller: _apartmentController,
+                        keyboardType: TextInputType.number,
+                        decoration: _decoration('Apartament'),
                       ),
                     ),
                   ],
@@ -973,26 +735,19 @@ class _AddressFormSheetState
                 const SizedBox(height: 14),
 
                 TextFormField(
-                  controller:
-                      _postalCodeController,
-                  keyboardType:
-                      TextInputType.number,
-                  decoration:
-                      _decoration(
+                  controller: _postalCodeController,
+                  keyboardType: TextInputType.number,
+                  decoration: _decoration(
                     'Cod poștal',
-                    icon: Icons
-                        .markunread_mailbox_outlined,
+                    icon: Icons.markunread_mailbox_outlined,
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
                 SwitchListTile(
-                  contentPadding:
-                      EdgeInsets.zero,
-                  title: const Text(
-                    'Adresă implicită',
-                  ),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Adresă implicită'),
                   subtitle: const Text(
                     'Va fi folosită implicit pentru livrări.',
                   ),
@@ -1010,24 +765,17 @@ class _AddressFormSheetState
                   width: double.infinity,
                   height: 52,
                   child: FilledButton(
-                    onPressed:
-                        _isSaving ? null : _save,
-                    style:
-                        FilledButton.styleFrom(
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                          12,
-                        ),
+                    onPressed: _isSaving ? null : _save,
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: _isSaving
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child:
-                                CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               strokeWidth: 2,
                               color: Colors.white,
                             ),

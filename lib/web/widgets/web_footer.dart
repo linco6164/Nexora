@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../shared/widgets/responsive_container.dart';
 
@@ -14,26 +15,34 @@ import '../legal/cookies_page.dart';
 class WebFooter extends StatelessWidget {
   const WebFooter({super.key});
 
-  Widget _link(BuildContext context, String title, {Widget? page}) {
+  Widget _link(
+    BuildContext context,
+    String title, {
+    Widget? page,
+    VoidCallback? onTap,
+  }) {
     final theme = Theme.of(context);
+    final action = onTap ??
+        (page == null
+            ? null
+            : () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => page));
+              });
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
-        onTap: page == null
-            ? null
-            : () {
-                Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => page));
-              },
+        onTap: action,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
           child: Text(
             title,
             style: TextStyle(
               fontSize: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.65),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
             ),
           ),
         ),
@@ -65,7 +74,7 @@ class WebFooter extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
-          top: BorderSide(color: theme.dividerColor.withOpacity(0.20)),
+          top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.20)),
         ),
       ),
       child: ResponsiveContainer(
@@ -119,9 +128,24 @@ class WebFooter extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.6,
-                            color: theme.colorScheme.onSurface.withOpacity(
-                              0.60,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.60,
                             ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Text(
+                        'NEXORA STORE S.R.L.\n'
+                        'CUI 51686427 • J2025029466000\n'
+                        'Str. Argentina nr. 25, parter, Sector 1, București',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.55,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.55,
                           ),
                         ),
                       ),
@@ -149,7 +173,11 @@ class WebFooter extends StatelessWidget {
                       _sectionTitle(context, 'Companie'),
                       const SizedBox(height: 14),
 
-                      _link(context, 'Despre noi', page: const AboutPage()),
+                      _link(
+                        context,
+                        'Date companie și rol',
+                        page: const AboutPage(),
+                      ),
 
                       _link(context, 'Cariere'),
                       _link(context, 'Presă'),
@@ -166,12 +194,23 @@ class WebFooter extends StatelessWidget {
                       _sectionTitle(context, 'Suport'),
                       const SizedBox(height: 14),
 
-                      _link(context, 'Centru de ajutor'),
-                      _link(context, 'Contact'),
+                      _link(
+                        context,
+                        'Contact: contact@nx-store.com',
+                        onTap: () async {
+                          await launchUrl(
+                            Uri.parse('mailto:contact@nx-store.com'),
+                          );
+                        },
+                      ),
 
                       _link(context, 'Livrare', page: const DeliveryPage()),
 
-                      _link(context, 'Retururi', page: const WithdrawalPage()),
+                      _link(
+                        context,
+                        'Retur / retragere online',
+                        page: const WithdrawalPage(),
+                      ),
 
                       _link(
                         context,
@@ -211,7 +250,16 @@ class WebFooter extends StatelessWidget {
                       _link(context, 'GDPR', page: const GdprPage()),
 
                       _link(context, 'Cookies', page: const CookiesPage()),
-                      _link(context, 'ANPC'),
+                      _link(
+                        context,
+                        'ANPC',
+                        onTap: () async {
+                          await launchUrl(
+                            Uri.parse('https://anpc.ro/'),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -226,7 +274,10 @@ class WebFooter extends StatelessWidget {
 
             const SizedBox(height: 42),
 
-            Divider(color: theme.dividerColor.withOpacity(0.20), height: 1),
+            Divider(
+              color: theme.dividerColor.withValues(alpha: 0.20),
+              height: 1,
+            ),
 
             const SizedBox(height: 22),
 
@@ -237,7 +288,7 @@ class WebFooter extends StatelessWidget {
                   '© 2026 Nexora Store. Toate drepturile rezervate.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: theme.colorScheme.onSurface.withOpacity(0.50),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
                   ),
                 ),
                 Text(
@@ -245,7 +296,7 @@ class WebFooter extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface.withOpacity(0.45),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                   ),
                 ),
               ],
@@ -260,7 +311,7 @@ class WebFooter extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: theme.colorScheme.onSurface.withOpacity(0.06),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -271,7 +322,7 @@ class WebFooter extends StatelessWidget {
           child: Icon(
             icon,
             size: 19,
-            color: theme.colorScheme.onSurface.withOpacity(0.70),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
           ),
         ),
       ),
@@ -286,9 +337,9 @@ Widget _buildPaymentMethods(BuildContext context) {
     width: double.infinity,
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: theme.colorScheme.onSurface.withOpacity(0.035),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.035),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: theme.dividerColor.withOpacity(0.18)),
+      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.18)),
     ),
     child: Row(
       children: [
@@ -317,7 +368,7 @@ Widget _buildPaymentMethods(BuildContext context) {
                 'Plățile cu cardul sunt procesate prin NETOPIA Payments.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: theme.colorScheme.onSurface.withOpacity(0.55),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 ),
               ),
             ],

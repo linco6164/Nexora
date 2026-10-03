@@ -10,46 +10,45 @@ class CancellationPage extends StatelessWidget {
       title: 'Politica de anulare a comenzii',
       sections: [
         LegalSection(
-          title: '1. Anularea unei comenzi',
+          title: '1. Când poate fi anulată comanda',
           paragraphs: [
-            'Cumpărătorul poate solicita anularea unei comenzi înainte ca aceasta să fie predată serviciului de livrare, în măsura în care procesarea comenzii permite acest lucru.',
+            'Cumpărătorul poate solicita anularea comenzii înainte ca vânzătorul să predea coletul curierului. Cererea este verificată în funcție de stadiul real al comenzii.',
           ],
         ),
 
         LegalSection(
           title: '2. Cum se solicită anularea',
           paragraphs: [
-            'Solicitarea de anulare poate fi transmisă prin metodele de contact disponibile pe platforma Nexora.',
-            'Solicitarea trebuie să conțină suficiente informații pentru identificarea comenzii.',
+            'Solicitarea se transmite prin Cont > Suport, categoria „Comenzi”, sau prin e-mail la contact@nx-store.com. Mesajul trebuie să conțină numărul comenzii, numele cumpărătorului și produsul comandat.',
+            'Confirmarea primirii solicitării este transmisă prin tichet sau e-mail. Cererile sunt analizate, de regulă, în maximum o zi lucrătoare.',
           ],
         ),
 
         LegalSection(
           title: '3. Comenzi deja expediate',
           paragraphs: [
-            'În cazul în care comanda a fost deja predată transportatorului, anularea poate să nu mai poată fi procesată ca o anulare obișnuită.',
-            'În această situație pot deveni aplicabile procedurile privind refuzul livrării sau dreptul de retragere, după caz.',
+            'După predarea coletului curierului, comanda nu mai poate fi oprită întotdeauna. Consumatorul poate comunica decizia de retragere și poate returna produsul conform politicii „Retur / retragere”.',
           ],
         ),
 
         LegalSection(
           title: '4. Rambursarea sumelor',
           paragraphs: [
-            'În cazul în care anularea este acceptată și plata a fost efectuată, suma aferentă va fi rambursată conform metodei de plată și condițiilor aplicabile.',
+            'Dacă anularea este acceptată înainte de expediere și plata a fost efectuată, suma încasată se rambursează prin aceeași metodă de plată. Inițierea rambursării se face fără întârziere nejustificată; timpul până la afișarea banilor depinde și de banca emitentă.',
           ],
         ),
 
         LegalSection(
           title: '5. Produse deja livrate',
           paragraphs: [
-            'Pentru produsele deja primite de consumator se aplică, după caz, procedura privind dreptul de retragere și returul produsului.',
+            'Pentru produsele deja primite nu se mai folosește procedura de anulare. Consumatorul poate exercita dreptul de retragere în termenul și condițiile descrise în pagina „Retur / retragere”.',
           ],
         ),
 
         LegalSection(
           title: '6. Situații speciale',
           paragraphs: [
-            'În anumite situații, anularea poate fi limitată de stadiul procesării comenzii, de caracteristicile produsului sau de alte condiții aplicabile tranzacției.',
+            'Anularea unei comenzi înainte de expediere și dreptul legal de retragere după primirea produsului sunt proceduri diferite. Excepțiile legale de la dreptul de retragere sunt prezentate în pagina dedicată retragerii.',
           ],
         ),
       ],

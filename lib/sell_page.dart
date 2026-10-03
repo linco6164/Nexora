@@ -196,13 +196,18 @@ class _SellPageState extends State<SellPage> {
             _buildTextField(
               controller: _descriptionController,
               label: 'Descriere',
-              hint: 'Descrie produsul, starea lui și eventualele detalii...',
+              hint:
+                  'Descrie produsul, starea, defectele, dimensiunile și ce include...',
               icon: Icons.notes_outlined,
               maxLines: 5,
               maxLength: 1000,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Adaugă o descriere';
+                }
+
+                if (value.trim().length < 20) {
+                  return 'Descrierea trebuie să aibă cel puțin 20 de caractere';
                 }
 
                 return null;

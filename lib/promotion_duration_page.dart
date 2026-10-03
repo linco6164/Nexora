@@ -281,7 +281,7 @@ class _PromotionDurationPageState extends State<PromotionDurationPage> {
                   ? Image.network(
                       images.first,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) {
+                      errorBuilder: (_, _, _) {
                         return const Center(
                           child: Icon(Icons.image_not_supported_outlined),
                         );

@@ -12,39 +12,22 @@ class ProductBreadcrumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context)
-        .colorScheme
-        .onSurface
-        .withOpacity(.6);
+    final secondary = Theme.of(context).colorScheme.onSurface
+        .withValues(alpha: .6);
 
     Widget separator() => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Icon(
-            Icons.chevron_right,
-            size: 18,
-            color: secondary,
-          ),
-        );
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Icon(Icons.chevron_right, size: 18, color: secondary),
+    );
 
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        InkWell(
-          onTap: () {},
-          child: const Text("Home"),
-        ),
+        InkWell(onTap: () {}, child: const Text("Home")),
         separator(),
-        InkWell(
-          onTap: () {},
-          child: Text(category),
-        ),
+        InkWell(onTap: () {}, child: Text(category)),
         separator(),
-        Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
   }

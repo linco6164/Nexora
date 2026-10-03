@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class WebLegalPage extends StatelessWidget {
   final String title;
   final List<LegalSection> sections;
+  final Widget? bottom;
 
   const WebLegalPage({
     super.key,
     required this.title,
     required this.sections,
+    this.bottom,
   });
 
   @override
@@ -16,6 +18,14 @@ class WebLegalPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        title: const Text(
+          'Nexora',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),
@@ -48,6 +58,18 @@ class WebLegalPage extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(height: 6),
+
+                Text(
+                  'Ultima actualizare: 3 octombrie 2026',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: .48,
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 40),
 
                 ...sections.map(
@@ -56,6 +78,11 @@ class WebLegalPage extends StatelessWidget {
                     child: _LegalSection(section: section),
                   ),
                 ),
+
+                if (bottom != null) ...[
+                  const SizedBox(height: 8),
+                  bottom!,
+                ],
               ],
             ),
           ),

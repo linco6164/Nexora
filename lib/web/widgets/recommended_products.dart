@@ -33,7 +33,7 @@ class _RecommendedProductsState extends State<RecommendedProducts> {
       if (!mounted) return;
 
       if (products.isNotEmpty) {
-        print(products.first.runtimeType);
+        debugPrint(products.first.runtimeType.toString());
       }
 
       setState(() {

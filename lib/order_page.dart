@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'api_service.dart';
 import 'review_page.dart';
 
 class OrderPage extends StatefulWidget {
   final int initialTab;
 
-  const OrderPage({
-    super.key,
-    this.initialTab = 0,
-  });
+  const OrderPage({super.key, this.initialTab = 0});
 
   @override
   State<OrderPage> createState() => _OrderPageState();
@@ -79,8 +77,7 @@ class _OrderPageState extends State<OrderPage>
     });
 
     try {
-      final orders =
-          await ApiService.getSellingOrders();
+      final orders = await ApiService.getSellingOrders();
 
       if (!mounted) return;
 
@@ -99,10 +96,7 @@ class _OrderPageState extends State<OrderPage>
   }
 
   Future<void> _refresh() async {
-    await Future.wait([
-      _loadOrders(),
-      _loadSellingOrders(),
-    ]);
+    await Future.wait([_loadOrders(), _loadSellingOrders()]);
   }
 
   @override
@@ -115,9 +109,7 @@ class _OrderPageState extends State<OrderPage>
       appBar: AppBar(
         title: const Text(
           'Comenzile mele',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: false,
         elevation: 0,
@@ -133,54 +125,36 @@ class _OrderPageState extends State<OrderPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildOrdersTab(),
-          _buildSellingTab(),
-        ],
+        children: [_buildOrdersTab(), _buildSellingTab()],
       ),
     );
   }
 
   Widget _buildOrdersTab() {
     if (_loadingOrders) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_ordersError != null) {
-      return _buildError(
-        _ordersError!,
-        _loadOrders,
-      );
+      return _buildError(_ordersError!, _loadOrders);
     }
 
     if (_orders.isEmpty) {
       return _buildEmpty(
         icon: Icons.shopping_bag_outlined,
         title: 'Nu ai comenzi',
-        subtitle:
-            'Comenzile tale vor apărea aici după ce cumperi un produs.',
+        subtitle: 'Comenzile tale vor apărea aici după ce cumperi un produs.',
       );
     }
 
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          32,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         itemCount: _orders.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          return _buildOrderCard(
-            _orders[index],
-            isSelling: false,
-          );
+          return _buildOrderCard(_orders[index], isSelling: false);
         },
       ),
     );
@@ -188,110 +162,71 @@ class _OrderPageState extends State<OrderPage>
 
   Widget _buildSellingTab() {
     if (_loadingSellingOrders) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_sellingOrdersError != null) {
-      return _buildError(
-        _sellingOrdersError!,
-        _loadSellingOrders,
-      );
+      return _buildError(_sellingOrdersError!, _loadSellingOrders);
     }
 
     if (_sellingOrders.isEmpty) {
       return _buildEmpty(
         icon: Icons.storefront_outlined,
         title: 'Nu ai vânzări',
-        subtitle:
-            'Comenzile pentru produsele tale vor apărea aici.',
+        subtitle: 'Comenzile pentru produsele tale vor apărea aici.',
       );
     }
 
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          32,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         itemCount: _sellingOrders.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          return _buildOrderCard(
-            _sellingOrders[index],
-            isSelling: true,
-          );
+          return _buildOrderCard(_sellingOrders[index], isSelling: true);
         },
       ),
     );
   }
 
-  Widget _buildOrderCard(
-    dynamic rawOrder, {
-    required bool isSelling,
-  }) {
+  Widget _buildOrderCard(dynamic rawOrder, {required bool isSelling}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final order = Map<String, dynamic>.from(
-      rawOrder as Map,
-    );
+    final order = Map<String, dynamic>.from(rawOrder as Map);
 
     final listing = order['listing'] is Map
-        ? Map<String, dynamic>.from(
-            order['listing'],
-          )
+        ? Map<String, dynamic>.from(order['listing'])
         : <String, dynamic>{};
 
     final buyer = order['buyer'] is Map
-        ? Map<String, dynamic>.from(
-            order['buyer'],
-          )
+        ? Map<String, dynamic>.from(order['buyer'])
         : <String, dynamic>{};
 
     final seller = order['seller'] is Map
-        ? Map<String, dynamic>.from(
-            order['seller'],
-          )
+        ? Map<String, dynamic>.from(order['seller'])
         : <String, dynamic>{};
 
-    final title =
-        listing['title']?.toString() ??
-            'Produs';
+    final title = listing['title']?.toString() ?? 'Produs';
 
     final images = listing['images'] is List
         ? List<String>.from(
-            (listing['images'] as List)
-                .map((e) => e.toString()),
+            (listing['images'] as List).map((e) => e.toString()),
           )
         : <String>[];
 
-    final status =
-        order['status']?.toString() ??
-            'unknown';
+    final status = order['status']?.toString() ?? 'unknown';
 
-    final amount =
-        (order['amount'] as num?)?.toDouble() ??
-            0;
+    final amount = (order['amount'] as num?)?.toDouble() ?? 0;
 
-    final currency =
-        order['currency']?.toString() ??
-            'RON';
+    final currency = order['currency']?.toString() ?? 'RON';
 
-    final otherUser =
-        isSelling ? buyer : seller;
+    final otherUser = isSelling ? buyer : seller;
 
-    final username =
-        otherUser['username']?.toString() ??
-            'Utilizator';
+    final username = otherUser['username']?.toString() ?? 'Utilizator';
 
-    final avatar =
-        otherUser['avatar']?.toString();
+    final avatar = otherUser['avatar']?.toString();
 
     return Card(
       margin: EdgeInsets.zero,
@@ -299,9 +234,7 @@ class _OrderPageState extends State<OrderPage>
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: colorScheme.outlineVariant,
-        ),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: InkWell(
         onTap: () {
@@ -310,35 +243,26 @@ class _OrderPageState extends State<OrderPage>
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildProductImage(
-                    images.isNotEmpty
-                        ? images.first
-                        : null,
-                  ),
+                  _buildProductImage(images.isNotEmpty ? images.first : null),
 
                   const SizedBox(width: 14),
 
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
                           maxLines: 2,
-                          overflow:
-                              TextOverflow.ellipsis,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight:
-                                FontWeight.w700,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
 
@@ -349,12 +273,8 @@ class _OrderPageState extends State<OrderPage>
                               ? 'Cumpărător: $username'
                               : 'Vânzător: $username',
                           maxLines: 1,
-                          overflow:
-                              TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color:
-                                colorScheme.onSurfaceVariant,
-                          ),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
 
                         const SizedBox(height: 8),
@@ -363,10 +283,8 @@ class _OrderPageState extends State<OrderPage>
                           '${amount.toStringAsFixed(2)} $currency',
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight:
-                                FontWeight.w800,
-                            color:
-                                colorScheme.primary,
+                            fontWeight: FontWeight.w800,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ],
@@ -379,10 +297,7 @@ class _OrderPageState extends State<OrderPage>
 
               const SizedBox(height: 14),
 
-              Divider(
-                height: 1,
-                color: colorScheme.outlineVariant,
-              ),
+              Divider(height: 1, color: colorScheme.outlineVariant),
 
               const SizedBox(height: 12),
 
@@ -390,19 +305,12 @@ class _OrderPageState extends State<OrderPage>
                 children: [
                   CircleAvatar(
                     radius: 15,
-                    backgroundImage:
-                        avatar != null &&
-                                avatar.isNotEmpty
-                            ? NetworkImage(avatar)
-                            : null,
-                    child:
-                        avatar == null ||
-                                avatar.isEmpty
-                            ? const Icon(
-                                Icons.person_outline,
-                                size: 17,
-                              )
-                            : null,
+                    backgroundImage: avatar != null && avatar.isNotEmpty
+                        ? NetworkImage(avatar)
+                        : null,
+                    child: avatar == null || avatar.isEmpty
+                        ? const Icon(Icons.person_outline, size: 17)
+                        : null,
                   ),
 
                   const SizedBox(width: 8),
@@ -410,20 +318,15 @@ class _OrderPageState extends State<OrderPage>
                   Expanded(
                     child: Text(
                       username,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
 
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                  ),
+                  const Icon(Icons.chevron_right_rounded),
                 ],
               ),
 
-              if (!isSelling &&
-                  status == 'completed') ...[
+              if (!isSelling && status == 'completed') ...[
                 const SizedBox(height: 12),
                 _buildReviewButton(order),
               ],
@@ -441,32 +344,22 @@ class _OrderPageState extends State<OrderPage>
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color:
-            Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      child: imageUrl != null &&
-              imageUrl.isNotEmpty
+      child: imageUrl != null && imageUrl.isNotEmpty
           ? Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder:
-                  (_, __, ___) {
-                return const Icon(
-                  Icons.image_not_supported_outlined,
-                );
+              errorBuilder: (_, _, _) {
+                return const Icon(Icons.image_not_supported_outlined);
               },
             )
-          : const Icon(
-              Icons.image_outlined,
-            ),
+          : const Icon(Icons.image_outlined),
     );
   }
 
   Widget _buildStatusChip(String status) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     String label;
     IconData icon;
@@ -508,95 +401,60 @@ class _OrderPageState extends State<OrderPage>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       decoration: BoxDecoration(
-        color: colorScheme
-            .surfaceContainerHighest,
-        borderRadius:
-            BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 15,
-            color: colorScheme.primary,
-          ),
+          Icon(icon, size: 15, color: colorScheme.primary),
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildReviewButton(
-    Map<String, dynamic> order,
-  ) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
-
+  Widget _buildReviewButton(Map<String, dynamic> order) {
     return SizedBox(
       width: double.infinity,
       child: FilledButton.icon(
         onPressed: () {
           _openReview(order);
         },
-        icon: const Icon(
-          Icons.star_outline_rounded,
-        ),
-        label: const Text(
-          'Evaluează vânzătorul',
-        ),
+        icon: const Icon(Icons.star_outline_rounded),
+        label: const Text('Evaluează vânzătorul'),
       ),
     );
   }
 
-  void _openOrder(
-    Map<String, dynamic> order,
-  ) {
-    final orderId =
-        order['_id']?.toString();
+  void _openOrder(Map<String, dynamic> order) {
+    final orderId = order['_id']?.toString();
 
-    if (orderId == null ||
-        orderId.isEmpty) {
+    if (orderId == null || orderId.isEmpty) {
       return;
     }
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => OrderDetailsPage(
-          orderId: orderId,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => OrderDetailsPage(orderId: orderId)),
     );
   }
 
-  void _openReview(
-    Map<String, dynamic> order,
-  ) {
-    final orderId =
-        order['_id']?.toString();
+  void _openReview(Map<String, dynamic> order) {
+    final orderId = order['_id']?.toString();
 
-    if (orderId == null ||
-        orderId.isEmpty) {
+    if (orderId == null || orderId.isEmpty) {
       return;
     }
 
     final seller = order['seller'] is Map
-        ? Map<String, dynamic>.from(
-            order['seller'],
-          )
+        ? Map<String, dynamic>.from(order['seller'])
         : <String, dynamic>{};
 
     Navigator.push(
@@ -604,10 +462,7 @@ class _OrderPageState extends State<OrderPage>
       MaterialPageRoute(
         builder: (_) => ReviewPage(
           orderId: orderId,
-          sellerName:
-              seller['username']
-                  ?.toString() ??
-              'Vânzător',
+          sellerName: seller['username']?.toString() ?? 'Vânzător',
         ),
       ),
     );
@@ -618,38 +473,25 @@ class _OrderPageState extends State<OrderPage>
     required String title,
     required String subtitle,
   }) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 64,
-              color:
-                  colorScheme.onSurfaceVariant,
-            ),
+            Icon(icon, size: 64, color: colorScheme.onSurfaceVariant),
             const SizedBox(height: 18),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color:
-                    colorScheme.onSurfaceVariant,
-              ),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -657,32 +499,20 @@ class _OrderPageState extends State<OrderPage>
     );
   }
 
-  Widget _buildError(
-    String error,
-    Future<void> Function() retry,
-  ) {
+  Widget _buildError(String error, Future<void> Function() retry) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 52,
-            ),
+            const Icon(Icons.error_outline_rounded, size: 52),
             const SizedBox(height: 16),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-            ),
+            Text(error, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: retry,
-              child: const Text(
-                'Încearcă din nou',
-              ),
+              child: const Text('Încearcă din nou'),
             ),
           ],
         ),
@@ -694,18 +524,13 @@ class _OrderPageState extends State<OrderPage>
 class OrderDetailsPage extends StatefulWidget {
   final String orderId;
 
-  const OrderDetailsPage({
-    super.key,
-    required this.orderId,
-  });
+  const OrderDetailsPage({super.key, required this.orderId});
 
   @override
-  State<OrderDetailsPage> createState() =>
-      _OrderDetailsPageState();
+  State<OrderDetailsPage> createState() => _OrderDetailsPageState();
 }
 
-class _OrderDetailsPageState
-    extends State<OrderDetailsPage> {
+class _OrderDetailsPageState extends State<OrderDetailsPage> {
   Map<String, dynamic>? _order;
   bool _loading = true;
   String? _error;
@@ -723,10 +548,7 @@ class _OrderDetailsPageState
     });
 
     try {
-      final order =
-          await ApiService.getOrderById(
-        widget.orderId,
-      );
+      final order = await ApiService.getOrderById(widget.orderId);
 
       if (!mounted) return;
 
@@ -747,25 +569,16 @@ class _OrderDetailsPageState
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Comandă'),
-        ),
+        appBar: AppBar(title: const Text('Comandă')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(
-              _error!,
-              textAlign: TextAlign.center,
-            ),
+            child: Text(_error!, textAlign: TextAlign.center),
           ),
         ),
       );
@@ -774,36 +587,24 @@ class _OrderDetailsPageState
     final order = _order!;
 
     final listing = order['listing'] is Map
-        ? Map<String, dynamic>.from(
-            order['listing'],
-          )
+        ? Map<String, dynamic>.from(order['listing'])
         : <String, dynamic>{};
 
     final seller = order['seller'] is Map
-        ? Map<String, dynamic>.from(
-            order['seller'],
-          )
+        ? Map<String, dynamic>.from(order['seller'])
         : <String, dynamic>{};
 
-    final status =
-        order['status']?.toString() ??
-            'unknown';
+    final status = order['status']?.toString() ?? 'unknown';
 
-    final amount =
-        (order['amount'] as num?)?.toDouble() ??
-            0;
+    final amount = (order['amount'] as num?)?.toDouble() ?? 0;
 
-    final currency =
-        order['currency']?.toString() ??
-            'RON';
+    final currency = order['currency']?.toString() ?? 'RON';
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Detalii comandă',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: RefreshIndicator(
@@ -812,12 +613,8 @@ class _OrderDetailsPageState
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              listing['title']?.toString() ??
-                  'Produs',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-              ),
+              listing['title']?.toString() ?? 'Produs',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
 
             const SizedBox(height: 8),
@@ -827,18 +624,13 @@ class _OrderDetailsPageState
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color:
-                    Theme.of(context)
-                        .colorScheme
-                        .primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
 
             const SizedBox(height: 24),
 
-            _OrderStatusTimeline(
-              status: status,
-            ),
+            _OrderStatusTimeline(status: status),
 
             const SizedBox(height: 28),
 
@@ -848,32 +640,18 @@ class _OrderDetailsPageState
                 leading: CircleAvatar(
                   backgroundImage:
                       seller['avatar'] != null &&
-                              seller['avatar']
-                                  .toString()
-                                  .isNotEmpty
-                          ? NetworkImage(
-                              seller['avatar']
-                                  .toString(),
-                            )
-                          : null,
-                  child:
-                      seller['avatar'] == null
-                          ? const Icon(
-                              Icons.person_outline,
-                            )
-                          : null,
+                          seller['avatar'].toString().isNotEmpty
+                      ? NetworkImage(seller['avatar'].toString())
+                      : null,
+                  child: seller['avatar'] == null
+                      ? const Icon(Icons.person_outline)
+                      : null,
                 ),
                 title: Text(
-                  seller['username']
-                          ?.toString() ??
-                      'Vânzător',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  seller['username']?.toString() ?? 'Vânzător',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: const Text(
-                  'Vânzător',
-                ),
+                subtitle: const Text('Vânzător'),
               ),
             ),
 
@@ -886,24 +664,16 @@ class _OrderDetailsPageState
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            ReviewPage(
-                          orderId:
-                              widget.orderId,
+                        builder: (_) => ReviewPage(
+                          orderId: widget.orderId,
                           sellerName:
-                              seller['username']
-                                      ?.toString() ??
-                                  'Vânzător',
+                              seller['username']?.toString() ?? 'Vânzător',
                         ),
                       ),
                     );
                   },
-                  icon: const Icon(
-                    Icons.star_outline_rounded,
-                  ),
-                  label: const Text(
-                    'Evaluează vânzătorul',
-                  ),
+                  icon: const Icon(Icons.star_outline_rounded),
+                  label: const Text('Evaluează vânzătorul'),
                 ),
               ),
             ],
@@ -914,37 +684,21 @@ class _OrderDetailsPageState
   }
 }
 
-class _OrderStatusTimeline
-    extends StatelessWidget {
+class _OrderStatusTimeline extends StatelessWidget {
   final String status;
 
-  const _OrderStatusTimeline({
-    required this.status,
-  });
+  const _OrderStatusTimeline({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    const statuses = [
-      'paid',
-      'processing',
-      'shipped',
-      'completed',
-    ];
+    const statuses = ['paid', 'processing', 'shipped', 'completed'];
 
-    final currentIndex =
-        statuses.indexOf(status);
+    final currentIndex = statuses.indexOf(status);
 
     return Column(
       children: [
-        for (int i = 0;
-            i < statuses.length;
-            i++)
-          _buildStep(
-            context,
-            statuses[i],
-            i,
-            currentIndex,
-          ),
+        for (int i = 0; i < statuses.length; i++)
+          _buildStep(context, statuses[i], i, currentIndex),
       ],
     );
   }
@@ -955,11 +709,9 @@ class _OrderStatusTimeline
     int index,
     int currentIndex,
   ) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final completed =
-        currentIndex >= index;
+    final completed = currentIndex >= index;
 
     String label;
 
@@ -981,20 +733,17 @@ class _OrderStatusTimeline
     }
 
     return Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Column(
           children: [
             Icon(
               completed
                   ? Icons.check_circle_rounded
-                  : Icons
-                      .radio_button_unchecked,
+                  : Icons.radio_button_unchecked,
               color: completed
                   ? colorScheme.primary
-                  : colorScheme
-                      .onSurfaceVariant,
+                  : colorScheme.onSurfaceVariant,
             ),
             if (index < 3)
               Container(
@@ -1002,25 +751,20 @@ class _OrderStatusTimeline
                 height: 36,
                 color: completed
                     ? colorScheme.primary
-                    : colorScheme
-                        .outlineVariant,
+                    : colorScheme.outlineVariant,
               ),
           ],
         ),
         const SizedBox(width: 12),
         Padding(
-          padding:
-              const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.only(top: 2),
           child: Text(
             label,
             style: TextStyle(
-              fontWeight: completed
-                  ? FontWeight.w700
-                  : FontWeight.w500,
+              fontWeight: completed ? FontWeight.w700 : FontWeight.w500,
               color: completed
                   ? colorScheme.onSurface
-                  : colorScheme
-                      .onSurfaceVariant,
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
         ),

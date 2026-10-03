@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class ProductGallery extends StatefulWidget {
   final List<String> images;
 
-  const ProductGallery({
-    super.key,
-    required this.images,
-  });
+  const ProductGallery({super.key, required this.images});
 
   @override
   State<ProductGallery> createState() => _ProductGalleryState();
@@ -27,10 +24,7 @@ class _ProductGalleryState extends State<ProductGallery> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
-            Icons.image_not_supported_outlined,
-            size: 70,
-          ),
+          child: const Icon(Icons.image_not_supported_outlined, size: 70),
         ),
       );
     }
@@ -41,10 +35,7 @@ class _ProductGalleryState extends State<ProductGallery> {
           borderRadius: BorderRadius.circular(20),
           child: AspectRatio(
             aspectRatio: 1,
-            child: Image.network(
-              images[selected],
-              fit: BoxFit.cover,
-            ),
+            child: Image.network(images[selected], fit: BoxFit.cover),
           ),
         ),
 
@@ -55,7 +46,7 @@ class _ProductGalleryState extends State<ProductGallery> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: images.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (_, index) {
               final selectedImage = index == selected;
 
@@ -79,10 +70,7 @@ class _ProductGalleryState extends State<ProductGallery> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      images[index],
-                      fit: BoxFit.cover,
-                    ),
+                    child: Image.network(images[index], fit: BoxFit.cover),
                   ),
                 ),
               );

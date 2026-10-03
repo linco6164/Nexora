@@ -846,10 +846,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   String _paymentSubtitle() {
-    if (_selectedPaymentMethod == 'google_pay')
+    if (_selectedPaymentMethod == 'google_pay') {
       return 'Plată rapidă cu Google Pay';
-    if (_selectedPaymentMethod == 'apple_pay')
+    }
+    if (_selectedPaymentMethod == 'apple_pay') {
       return 'Plată rapidă cu Apple Pay';
+    }
     final card = _selectedSavedCard;
     if (card == null) return 'Alege un card salvat sau adaugă unul nou';
     return card['isDefault'] == true ? 'Card implicit' : 'Card salvat';
@@ -959,8 +961,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final month = card['expMonth']?.toString();
     final year = card['expYear']?.toString();
     var label = last4.isEmpty ? brand : '$brand •••• $last4';
-    if (month != null && year != null && month.isNotEmpty && year.isNotEmpty)
+    if (month != null && year != null && month.isNotEmpty && year.isNotEmpty) {
       label += '  •  Exp. $month/$year';
+    }
 
     return Material(
       color: selected ? colors.primaryContainer : colors.surfaceContainerLow,
@@ -1115,7 +1118,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _addCard() async {
-     await Navigator.push(
+    await Navigator.push(
       context,
 
       MaterialPageRoute(builder: (_) => const SavedCardsPage()),
@@ -1641,7 +1644,7 @@ class _ProductImage extends StatelessWidget {
 
               fit: BoxFit.cover,
 
-              errorBuilder: (_, __, ___) => Icon(
+              errorBuilder: (_, _, _) => Icon(
                 Icons.image_outlined,
 
                 size: 28,
@@ -1824,17 +1827,13 @@ class _DeliveryOption extends StatelessWidget {
 class _NetopiaPaymentPage extends StatefulWidget {
   final String checkoutUrl;
 
-  const _NetopiaPaymentPage({
-    required this.checkoutUrl,
-  });
+  const _NetopiaPaymentPage({required this.checkoutUrl});
 
   @override
-  State<_NetopiaPaymentPage> createState() =>
-      _NetopiaPaymentPageState();
+  State<_NetopiaPaymentPage> createState() => _NetopiaPaymentPageState();
 }
 
-class _NetopiaPaymentPageState
-    extends State<_NetopiaPaymentPage> {
+class _NetopiaPaymentPageState extends State<_NetopiaPaymentPage> {
   bool _opening = true;
   String? _error;
 
@@ -1846,9 +1845,7 @@ class _NetopiaPaymentPageState
 
   Future<void> _openPayment() async {
     try {
-      final uri = Uri.parse(
-        widget.checkoutUrl,
-      );
+      final uri = Uri.parse(widget.checkoutUrl);
 
       final launched = await launchUrl(
         uri,
@@ -1856,9 +1853,7 @@ class _NetopiaPaymentPageState
       );
 
       if (!launched) {
-        throw Exception(
-          'Nu am putut deschide pagina NETOPIA.',
-        );
+        throw Exception('Nu am putut deschide pagina NETOPIA.');
       }
 
       if (mounted) {
@@ -1879,17 +1874,12 @@ class _NetopiaPaymentPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Plată NETOPIA',
-        ),
-      ),
+      appBar: AppBar(title: const Text('Plată NETOPIA')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_opening) ...[
                 const CircularProgressIndicator(),
@@ -1901,32 +1891,20 @@ class _NetopiaPaymentPageState
                   textAlign: TextAlign.center,
                 ),
               ] else if (_error != null) ...[
-                const Icon(
-                  Icons.error_outline,
-                  size: 56,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.error_outline, size: 56, color: Colors.red),
 
                 const SizedBox(height: 16),
 
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                ),
+                Text(_error!, textAlign: TextAlign.center),
 
                 const SizedBox(height: 24),
 
                 FilledButton(
                   onPressed: _openPayment,
-                  child: const Text(
-                    'Încearcă din nou',
-                  ),
+                  child: const Text('Încearcă din nou'),
                 ),
               ] else ...[
-                const Icon(
-                  Icons.credit_card,
-                  size: 56,
-                ),
+                const Icon(Icons.credit_card, size: 56),
 
                 const SizedBox(height: 16),
 
@@ -1948,9 +1926,7 @@ class _NetopiaPaymentPageState
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text(
-                    'Am terminat plata',
-                  ),
+                  child: const Text('Am terminat plata'),
                 ),
               ],
             ],

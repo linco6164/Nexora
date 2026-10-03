@@ -9,11 +9,8 @@ import 'package:shorebird_code_push/shorebird_code_push.dart';
 import 'app_navigator.dart';
 
 import 'api_service.dart';
-import 'main.dart';
 import 'chat_page.dart';
 import 'account_banned_page.dart';
-
-import 'package:flutter/foundation.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {

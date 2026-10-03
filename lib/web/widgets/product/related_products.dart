@@ -7,10 +7,7 @@ import '../../../shared/widgets/product_card.dart';
 class RelatedProducts extends StatefulWidget {
   final String currentListingId;
 
-  const RelatedProducts({
-    super.key,
-    required this.currentListingId,
-  });
+  const RelatedProducts({super.key, required this.currentListingId});
 
   @override
   State<RelatedProducts> createState() => _RelatedProductsState();
@@ -53,9 +50,7 @@ class _RelatedProductsState extends State<RelatedProducts> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (products.isEmpty) {
@@ -77,7 +72,7 @@ class _RelatedProductsState extends State<RelatedProducts> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: products.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 20),
+            separatorBuilder: (_, _) => const SizedBox(width: 20),
             itemBuilder: (_, index) {
               final product = products[index];
 
@@ -86,9 +81,7 @@ class _RelatedProductsState extends State<RelatedProducts> {
                 child: ProductCard(
                   id: product.id,
                   title: product.title,
-                  image: product.images.isNotEmpty
-                      ? product.images.first
-                      : "",
+                  image: product.images.isNotEmpty ? product.images.first : "",
                   price: product.price,
                   location: product.city,
                   onTap: () {},

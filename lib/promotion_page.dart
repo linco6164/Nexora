@@ -32,8 +32,6 @@ class _PromotionPageState extends State<PromotionPage> {
   Color get _borderColor =>
       Theme.of(context).dividerColor.withValues(alpha: 0.25);
 
-  Color get _surfaceColor => Theme.of(context).colorScheme.surface;
-
   @override
   void initState() {
     super.initState();
@@ -223,11 +221,11 @@ class _PromotionPageState extends State<PromotionPage> {
         SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _retryingPromotionId = null;
-      });
+      if (mounted) {
+        setState(() {
+          _retryingPromotionId = null;
+        });
+      }
     }
   }
 
@@ -641,7 +639,7 @@ class _PromotionPageState extends State<PromotionPage> {
                   foregroundColor: Colors.white,
 
                   disabledBackgroundColor: Theme.of(context).colorScheme.primary
-                      .withOpacity(0.55),
+                      .withValues(alpha: 0.55),
 
                   disabledForegroundColor: Colors.white,
 
@@ -669,7 +667,7 @@ class _PromotionPageState extends State<PromotionPage> {
             ? Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                errorBuilder: (_, _, _) => _imagePlaceholder(),
               )
             : _imagePlaceholder(),
       ),

@@ -22,7 +22,6 @@ class _HomeTabState extends State<HomeTab> {
 
   final ImagePicker _imagePicker = ImagePicker();
 
-  File? _visualSearchImage;
   bool _isVisualSearching = false;
 
   String _searchQuery = '';
@@ -201,7 +200,6 @@ class _HomeTabState extends State<HomeTab> {
       final selectedImage = File(image.path);
 
       setState(() {
-        _visualSearchImage = selectedImage;
         _isVisualSearching = true;
       });
 
@@ -237,85 +235,6 @@ class _HomeTabState extends State<HomeTab> {
         SnackBar(content: Text('Nu am putut selecta imaginea: $e')),
       );
     }
-  }
-
-  void _showVisualSearchPreview() {
-    if (_visualSearchImage == null) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface
-                          .withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text(
-                    'Caută produse similare',
-                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.file(
-                        _visualSearchImage!,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-
-                        // Aici vom porni căutarea AI reală.
-                      },
-                      icon: const Icon(Icons.auto_awesome_rounded),
-                      label: const Text(
-                        'Caută produse similare',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   void _clearSearch() {

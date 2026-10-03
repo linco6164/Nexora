@@ -54,7 +54,7 @@ class ShippingCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Shipping & Protection",
+              'Livrare, protecție și retur',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -64,24 +64,24 @@ class ShippingCard extends StatelessWidget {
 
             item(
               Icons.local_shipping_outlined,
-              "Fast delivery",
-              "Delivery through integrated courier partners.",
+              'Livrare prin curier',
+              'Sameday, FAN Courier sau GLS. Termen estimat: 2-5 zile lucrătoare.',
             ),
 
             const SizedBox(height: 24),
 
             item(
               Icons.security_outlined,
-              "Buyer protection",
-              "Orders are protected through the Nexora platform.",
+              'Plată protejată',
+              'Plata online este procesată securizat prin NETOPIA Payments.',
             ),
 
             const SizedBox(height: 24),
 
             item(
               Icons.assignment_return_outlined,
-              "Returns",
-              "Return policy depends on the seller and product type.",
+              'Retur în 14 zile',
+              'Consumatorii pot solicita retragerea online, cu excepțiile prevăzute de lege.',
             ),
           ],
         ),

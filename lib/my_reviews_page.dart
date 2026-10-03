@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'api_service.dart';
 
 class MyReviewsPage extends StatefulWidget {
@@ -25,18 +26,13 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
 
       final user = profile['user'];
 
-      final userId = user is Map
-          ? user['_id']?.toString()
-          : null;
+      final userId = user is Map ? user['_id']?.toString() : null;
 
       if (userId == null || userId.isEmpty) {
-        throw Exception(
-          'Nu s-a putut identifica utilizatorul.',
-        );
+        throw Exception('Nu s-a putut identifica utilizatorul.');
       }
 
-      final reviews =
-          await ApiService.getSellerReviews(userId);
+      final reviews = await ApiService.getSellerReviews(userId);
 
       if (!mounted) return;
 
@@ -57,28 +53,21 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Evaluările mele'),
-      ),
+      appBar: AppBar(title: const Text('Evaluările mele')),
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            _error!,
-            textAlign: TextAlign.center,
-          ),
+          child: Text(_error!, textAlign: TextAlign.center),
         ),
       );
     }
@@ -88,17 +77,11 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.rate_review_outlined,
-              size: 64,
-            ),
+            Icon(Icons.rate_review_outlined, size: 64),
             SizedBox(height: 16),
             Text(
               'Nu ai primit încă evaluări.',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -111,63 +94,42 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
         padding: const EdgeInsets.all(16),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _reviews.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final review =
-              Map<String, dynamic>.from(
-            _reviews[index],
-          );
+          final review = Map<String, dynamic>.from(_reviews[index]);
 
           final reviewer = review['reviewer'] is Map
-              ? Map<String, dynamic>.from(
-                  review['reviewer'],
-                )
+              ? Map<String, dynamic>.from(review['reviewer'])
               : <String, dynamic>{};
 
-          final rating =
-              (review['rating'] ?? 0).toInt();
+          final rating = (review['rating'] ?? 0).toInt();
 
-          final comment =
-              review['comment']?.toString() ?? '';
+          final comment = review['comment']?.toString() ?? '';
 
-          final username =
-              reviewer['username']?.toString() ??
-                  'Utilizator';
+          final username = reviewer['username']?.toString() ?? 'Utilizator';
 
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundImage:
-                            reviewer['avatar'] != null
-                                ? NetworkImage(
-                                    reviewer['avatar']
-                                        .toString(),
-                                  )
-                                : null,
-                        child:
-                            reviewer['avatar'] == null
-                                ? const Icon(
-                                    Icons.person,
-                                  )
-                                : null,
+                        backgroundImage: reviewer['avatar'] != null
+                            ? NetworkImage(reviewer['avatar'].toString())
+                            : null,
+                        child: reviewer['avatar'] == null
+                            ? const Icon(Icons.person)
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           username,
-                          style: const TextStyle(
-                            fontWeight:
-                                FontWeight.w700,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                       _buildStars(rating),
@@ -192,9 +154,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
       children: List.generate(
         5,
         (index) => Icon(
-          index < rating
-              ? Icons.star_rounded
-              : Icons.star_outline_rounded,
+          index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
           size: 19,
           color: Colors.amber,
         ),

@@ -32,9 +32,7 @@ class ProductCard extends StatelessWidget {
       child: Card(
         elevation: 1,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -53,7 +51,7 @@ class ProductCard extends StatelessWidget {
                         : Image.network(
                             image,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) {
+                            errorBuilder: (_, _, _) {
                               return Container(
                                 color: Colors.grey.shade200,
                                 child: const Icon(
@@ -72,9 +70,7 @@ class ProductCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(50),
                       child: IconButton(
                         icon: Icon(
-                          isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: Colors.red,
                         ),
                         onPressed: onFavorite,

@@ -28,8 +28,6 @@ class _CookieBannerState extends State<CookieBanner> {
     showDialog(
       context: context,
       builder: (context) {
-        final theme = Theme.of(context);
-
         return AlertDialog(
           title: const Text(
             'Preferințe cookie-uri',
@@ -123,8 +121,9 @@ class _CookieBannerState extends State<CookieBanner> {
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.45,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: .62),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: .62,
+                        ),
                       ),
                     ),
 

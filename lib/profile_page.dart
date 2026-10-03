@@ -15,6 +15,7 @@ import 'my_reviews_page.dart';
 import 'order_page.dart';
 import 'promotion_page.dart';
 import 'api_service.dart';
+import 'saved_cards_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final ValueChanged<bool>? onNavBarCollapse;
@@ -175,8 +176,6 @@ class _ProfilePageState extends State<ProfilePage> {
         : null;
 
     final primary = Theme.of(context).colorScheme.primary;
-
-    final double rating = (_stats?['rating'] ?? 0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -444,6 +443,19 @@ class _ProfilePageState extends State<ProfilePage> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AddressesPage()),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.credit_card_outlined),
+                title: const Text('Cardurile mele'),
+                subtitle: const Text('Metode de plată salvate'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SavedCardsPage()),
                   );
                 },
               ),

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../dialogs/login_dialog.dart';
-import '../../dialogs/register_dialog.dart';
 
 class WebUserMenu extends StatelessWidget {
   const WebUserMenu({super.key});
@@ -79,53 +78,29 @@ class WebUserMenu extends StatelessWidget {
             }
           },
           itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: "profile",
-              child: Text("Profile"),
-            ),
-            PopupMenuItem(
-              value: "listings",
-              child: Text("My Listings"),
-            ),
-            PopupMenuItem(
-              value: "favorites",
-              child: Text("Favorites"),
-            ),
-            PopupMenuItem(
-              value: "messages",
-              child: Text("Messages"),
-            ),
-            PopupMenuItem(
-              value: "orders",
-              child: Text("Orders"),
-            ),
-            PopupMenuItem(
-              value: "settings",
-              child: Text("Settings"),
-            ),
+            PopupMenuItem(value: "profile", child: Text("Profile")),
+            PopupMenuItem(value: "listings", child: Text("My Listings")),
+            PopupMenuItem(value: "favorites", child: Text("Favorites")),
+            PopupMenuItem(value: "messages", child: Text("Messages")),
+            PopupMenuItem(value: "orders", child: Text("Orders")),
+            PopupMenuItem(value: "settings", child: Text("Settings")),
             PopupMenuDivider(),
-            PopupMenuItem(
-              value: "logout",
-              child: Text("Logout"),
-            ),
+            PopupMenuItem(value: "logout", child: Text("Logout")),
           ],
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundImage:
-                    avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                child: avatar.isEmpty
-                    ? const Icon(Icons.person)
+                backgroundImage: avatar.isNotEmpty
+                    ? NetworkImage(avatar)
                     : null,
+                child: avatar.isEmpty ? const Icon(Icons.person) : null,
               ),
               const SizedBox(width: 10),
               Text(
                 username,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const Icon(Icons.keyboard_arrow_down),
             ],

@@ -24,7 +24,7 @@ class SellerCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withOpacity(.2)),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: .2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -32,7 +32,7 @@ class SellerCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Seller",
+              'Vânzătorul produsului',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -84,7 +84,7 @@ class SellerCard extends StatelessWidget {
 
                       if (listingsCount != null)
                         Text(
-                          "$listingsCount listings",
+                          '$listingsCount anunțuri',
                           style: theme.textTheme.bodyMedium,
                         ),
 
@@ -92,7 +92,7 @@ class SellerCard extends StatelessWidget {
 
                       if (memberSince != null)
                         Text(
-                          "Member since $memberSince",
+                          'Membru din $memberSince',
                           style: theme.textTheme.bodySmall,
                         ),
                     ],
@@ -103,13 +103,20 @@ class SellerCard extends StatelessWidget {
 
             const SizedBox(height: 24),
 
+            Text(
+              'Acesta este vânzătorul identificat în anunț și partea contractuală pentru produs. Documentul fiscal este emis de vânzător atunci când există această obligație legală.',
+              style: theme.textTheme.bodySmall?.copyWith(height: 1.5),
+            ),
+
+            const SizedBox(height: 18),
+
             Row(
               children: [
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text("Message"),
+                    label: const Text('Mesaj'),
                   ),
                 ),
 
@@ -119,7 +126,7 @@ class SellerCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.person_outline),
-                    label: const Text("Profile"),
+                    label: const Text('Profil'),
                   ),
                 ),
               ],

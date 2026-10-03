@@ -26,7 +26,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   Listing? _currentListing;
 
   bool _isFavorite = false;
-  bool _isPaying = false;
+  final bool _isPaying = false;
 
   @override
   void initState() {
@@ -148,19 +148,15 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   // ============================================================
 
   Future<void> _handleCheckout() async {
-  final listing = _currentListing;
+    final listing = _currentListing;
 
-  if (listing == null || _isPaying) return;
+    if (listing == null || _isPaying) return;
 
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => CheckoutPage(
-        listingId: listing.id,
-      ),
-    ),
-  );
-}
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CheckoutPage(listingId: listing.id)),
+    );
+  }
 
   // ============================================================
   // SELLER PROFILE
@@ -208,7 +204,7 @@ $url
 ''';
 
     await SharePlus.instance.share(
-      ShareParams(uri:url, subject: listing.title),
+      ShareParams(text: text, uri: url, subject: listing.title),
     );
   }
 
@@ -671,9 +667,8 @@ $url
                                 : const Icon(Icons.shopping_bag_outlined),
                             label: Text(
                               _isPaying ? 'Se deschide...' : 'Cumpără acum',
-                              
                             ),
-                            
+
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
@@ -814,8 +809,6 @@ class _CircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Material(
       color: Colors.black.withValues(alpha: 0.38),
       shape: const CircleBorder(),

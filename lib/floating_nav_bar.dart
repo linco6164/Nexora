@@ -58,26 +58,23 @@ class FloatingNavBar extends StatelessWidget {
           // ANIMAȚIA ÎNTREGULUI NAVBAR
           // ============================================================
           TweenAnimationBuilder<double>(
-            tween: Tween<double>(
-              begin: 0,
-              end: isCollapsed ? 1 : 0,
-            ),
+            tween: Tween<double>(begin: 0, end: isCollapsed ? 1 : 0),
             duration: const Duration(milliseconds: 320),
             curve: Curves.easeInOutCubic,
             builder: (context, progress, child) {
               // Bara începe să dispară după ce taburile
               // au început să se deplaseze.
-              final backgroundProgress =
-                  Curves.easeInCubic.transform(
+              final backgroundProgress = Curves.easeInCubic.transform(
                 (progress * 1.35).clamp(0.0, 1.0),
               );
 
-              final backgroundOpacity =
-                  (1.0 - backgroundProgress).clamp(0.0, 1.0);
+              final backgroundOpacity = (1.0 - backgroundProgress).clamp(
+                0.0,
+                1.0,
+              );
 
               // Micșorăm bara din ambele părți către centru.
-              final backgroundScale =
-                  1.0 - (backgroundProgress * 0.92);
+              final backgroundScale = 1.0 - (backgroundProgress * 0.92);
 
               return Positioned(
                 left: 20,
@@ -94,13 +91,11 @@ class FloatingNavBar extends StatelessWidget {
                         height: 64,
                         decoration: BoxDecoration(
                           color: colorScheme.surface,
-                          borderRadius:
-                              BorderRadius.circular(32),
+                          borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(
-                                alpha:
-                                    0.08 * backgroundOpacity,
+                                alpha: 0.08 * backgroundOpacity,
                               ),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
@@ -119,28 +114,14 @@ class FloatingNavBar extends StatelessWidget {
           // TABURILE
           // ============================================================
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              0,
-              20,
-              20,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: SizedBox(
               height: 64,
               child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(
-                  begin: 0,
-                  end: isCollapsed ? 1 : 0,
-                ),
-                duration: const Duration(
-                  milliseconds: 320,
-                ),
+                tween: Tween<double>(begin: 0, end: isCollapsed ? 1 : 0),
+                duration: const Duration(milliseconds: 320),
                 curve: Curves.easeInOutCubic,
-                builder: (
-                  context,
-                  progress,
-                  child,
-                ) {
+                builder: (context, progress, child) {
                   return Row(
                     children: [
                       // ==================================================
@@ -148,19 +129,14 @@ class FloatingNavBar extends StatelessWidget {
                       // ==================================================
                       Expanded(
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _AnimatedNavItem(
                               icon: _leftItems[0].icon,
-                              activeIcon:
-                                  _leftItems[0].activeIcon,
-                              label:
-                                  _leftItems[0].label,
-                              index:
-                                  _leftItems[0].index,
-                              selectedIndex:
-                                  selectedIndex,
+                              activeIcon: _leftItems[0].activeIcon,
+                              label: _leftItems[0].label,
+                              index: _leftItems[0].index,
+                              selectedIndex: selectedIndex,
                               onTap: onItemTapped,
                               progress: progress,
                               direction: 1,
@@ -169,14 +145,10 @@ class FloatingNavBar extends StatelessWidget {
 
                             _AnimatedNavItem(
                               icon: _leftItems[1].icon,
-                              activeIcon:
-                                  _leftItems[1].activeIcon,
-                              label:
-                                  _leftItems[1].label,
-                              index:
-                                  _leftItems[1].index,
-                              selectedIndex:
-                                  selectedIndex,
+                              activeIcon: _leftItems[1].activeIcon,
+                              label: _leftItems[1].label,
+                              index: _leftItems[1].index,
+                              selectedIndex: selectedIndex,
                               onTap: onItemTapped,
                               progress: progress,
                               direction: 1,
@@ -193,19 +165,14 @@ class FloatingNavBar extends StatelessWidget {
                       // ==================================================
                       Expanded(
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _AnimatedNavItem(
                               icon: _rightItems[0].icon,
-                              activeIcon:
-                                  _rightItems[0].activeIcon,
-                              label:
-                                  _rightItems[0].label,
-                              index:
-                                  _rightItems[0].index,
-                              selectedIndex:
-                                  selectedIndex,
+                              activeIcon: _rightItems[0].activeIcon,
+                              label: _rightItems[0].label,
+                              index: _rightItems[0].index,
+                              selectedIndex: selectedIndex,
                               onTap: onItemTapped,
                               progress: progress,
                               direction: -1,
@@ -214,14 +181,10 @@ class FloatingNavBar extends StatelessWidget {
 
                             _AnimatedNavItem(
                               icon: _rightItems[1].icon,
-                              activeIcon:
-                                  _rightItems[1].activeIcon,
-                              label:
-                                  _rightItems[1].label,
-                              index:
-                                  _rightItems[1].index,
-                              selectedIndex:
-                                  selectedIndex,
+                              activeIcon: _rightItems[1].activeIcon,
+                              label: _rightItems[1].label,
+                              index: _rightItems[1].index,
+                              selectedIndex: selectedIndex,
                               onTap: onItemTapped,
                               progress: progress,
                               direction: -1,
@@ -252,25 +215,16 @@ class FloatingNavBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: colorScheme.surface,
-                    width: 4,
-                  ),
+                  border: Border.all(color: colorScheme.surface, width: 4),
                   boxShadow: [
                     BoxShadow(
-                      color: colorScheme.primary.withValues(
-                        alpha: 0.4,
-                      ),
+                      color: colorScheme.primary.withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Icon(
-                  Icons.add,
-                  color: colorScheme.onPrimary,
-                  size: 32,
-                ),
+                child: Icon(Icons.add, color: colorScheme.onPrimary, size: 32),
               ),
             ),
           ),
@@ -310,32 +264,22 @@ class _AnimatedNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
-
-    final isSelected =
-        selectedIndex == index;
+    final isSelected = selectedIndex == index;
 
     // Deplasare către butonul +
-    final translateX =
-        direction * distance * progress;
+    final translateX = direction * distance * progress;
 
     // Dispariție
-    final opacity =
-        (1.0 - progress).clamp(0.0, 1.0);
+    final opacity = (1.0 - progress).clamp(0.0, 1.0);
 
     // Micșorare
-    final scale =
-        1.0 - (progress * 0.45);
+    final scale = 1.0 - (progress * 0.45);
 
     return Expanded(
       child: IgnorePointer(
         ignoring: progress > 0.55,
         child: Transform.translate(
-          offset: Offset(
-            translateX,
-            0,
-          ),
+          offset: Offset(translateX, 0),
           child: Transform.scale(
             scale: scale,
             child: Opacity(
@@ -376,20 +320,16 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            isSelected
-                ? activeIcon
-                : icon,
+            isSelected ? activeIcon : icon,
             color: isSelected
                 ? colorScheme.primary
                 : colorScheme.onSurfaceVariant,
@@ -402,9 +342,7 @@ class _NavItem extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              fontWeight: isSelected
-                  ? FontWeight.w600
-                  : FontWeight.normal,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               color: isSelected
                   ? colorScheme.primary
                   : colorScheme.onSurfaceVariant,

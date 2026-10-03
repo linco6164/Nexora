@@ -11,6 +11,16 @@ import 'models/chat_models.dart';
 import 'models/notification_model.dart';
 import 'app_navigator.dart';
 
+class CardEnrollmentSession {
+  final String setupId;
+  final Uri checkoutUri;
+
+  const CardEnrollmentSession({
+    required this.setupId,
+    required this.checkoutUri,
+  });
+}
+
 class ApiService {
   static final http.Client _client = _ApiHttpClient();
 
@@ -2458,6 +2468,121 @@ class ApiService {
         decoded['message']?.toString() ?? 'Nu s-a putut șterge cardul.',
       );
     }
+  }
+
+  /// Starts the hosted card-enrolment flow.
+  ///
+  /// Card numbers and security codes must only be entered on the payment
+  /// processor's page. The application receives and stores only the tokenized
+  /// reference returned by the backend after the enrolment is completed.
+  static Future<CardEnrollmentSession> createSavedCardEnrollment() async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final returnUrl = kIsWeb
+        ? Uri.base
+              .replace(
+                queryParameters: {
+                  ...Uri.base.queryParameters,
+                  'cardSetup': 'return',
+                },
+              )
+              .toString()
+        : 'nexora://cards/setup-return';
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/payments/cards/setup'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'platform': kIsWeb ? 'web' : 'android',
+        'returnUrl': returnUrl,
+      }),
+    );
+
+    dynamic decoded;
+
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map ||
+        decoded['success'] != true) {
+      throw ApiException(
+        decoded is Map
+            ? (decoded['message']?.toString() ??
+                  'Nu am putut iniția adăugarea cardului.')
+            : 'Nu am putut iniția adăugarea cardului.',
+      );
+    }
+
+    final rawData = decoded['data'];
+    final data = rawData is Map ? Map<String, dynamic>.from(rawData) : decoded;
+    final setupId = data['setupId']?.toString().trim() ?? '';
+    final rawUrl =
+        data['checkoutUrl'] ??
+        data['redirectUrl'] ??
+        data['gatewayUrl'] ??
+        data['url'];
+    final uri = Uri.tryParse(rawUrl?.toString() ?? '');
+
+    if (setupId.isEmpty ||
+        uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty) {
+      throw ApiException('Linkul securizat pentru card este invalid.');
+    }
+
+    return CardEnrollmentSession(setupId: setupId, checkoutUri: uri);
+  }
+
+  static Future<Map<String, dynamic>> getSavedCardEnrollmentStatus(
+    String setupId,
+  ) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/payments/cards/setup/$setupId/status'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    dynamic decoded;
+
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if (response.statusCode != 200 ||
+        decoded is! Map ||
+        decoded['success'] != true ||
+        decoded['data'] is! Map) {
+      throw ApiException(
+        decoded is Map
+            ? (decoded['message']?.toString() ??
+                  'Nu am putut verifica starea cardului.')
+            : 'Nu am putut verifica starea cardului.',
+      );
+    }
+
+    return Map<String, dynamic>.from(decoded['data'] as Map);
   }
 
   static Future<Map<String, dynamic>> createSavedCard({

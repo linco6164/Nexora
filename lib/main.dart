@@ -18,6 +18,7 @@ import 'login_page.dart';
 import 'new_password_page.dart';
 import 'notification_service.dart';
 import 'promotion_payment_return_page.dart';
+import 'saved_cards_page.dart';
 import 'theme_notifier.dart';
 import 'welcome_page.dart';
 
@@ -151,6 +152,18 @@ class _MainAppState extends State<MainApp> {
       return;
     }
 
+    if (uri.scheme == 'nexora' &&
+        uri.host == 'cards' &&
+        uri.path == '/setup-return') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(builder: (_) => const SavedCardsPage()),
+        );
+      });
+
+      return;
+    }
+
     // ============================================================
     // RESET PASSWORD
     // ============================================================
@@ -242,7 +255,9 @@ class _MainAppState extends State<MainApp> {
     }
 
     if (kIsWeb) {
-      return const WebShell();
+      return WebShell(
+        initialIndex: uri.queryParameters.containsKey('cardSetup') ? 15 : 0,
+      );
     }
 
     // ============================================================
@@ -259,7 +274,9 @@ class _MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..loadUser()),
+      ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,
         builder: (context, currentMode, _) {

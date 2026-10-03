@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
-import 'listing_detail_page.dart';
 import 'promotion_duration_page.dart';
 
 class MyListingsPage extends StatefulWidget {
@@ -95,7 +94,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
         itemBuilder: (context, index) {
           final listing = _listings[index];
 
-          final id = listing.id;
           final title = listing.title;
           final price = listing.price;
           final currency = listing.currency;
@@ -121,7 +119,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                             images.first.toString(),
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Center(
+                            errorBuilder: (_, _, _) => const Center(
                               child: Icon(
                                 Icons.image_not_supported_outlined,
                                 size: 40,

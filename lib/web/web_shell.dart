@@ -8,26 +8,27 @@ import 'web_home.dart';
 import '../web/widgets/web_explore.dart';
 import 'auth/login_page.dart';
 import 'auth/register_page.dart';
+import '../saved_cards_page.dart';
 
 import 'legal/cookie_banner.dart';
 
 class WebShell extends StatefulWidget {
-  const WebShell({super.key});
+  final int initialIndex;
+
+  const WebShell({super.key, this.initialIndex = 0});
 
   @override
   State<WebShell> createState() => _WebShellState();
 }
 
 class _WebShellState extends State<WebShell> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
 
-  final List<String> _navigationItems = const [
-    'Acasă',
-    'Explorează',
-    'Mesaje',
-    'Comenzi',
-    'Profil',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +57,7 @@ class _WebShellState extends State<WebShell> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
-          bottom: BorderSide(color: theme.dividerColor.withOpacity(0.25)),
+          bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.25)),
         ),
       ),
       child: Center(
@@ -166,7 +167,7 @@ class _WebShellState extends State<WebShell> {
           hintText: 'Caută produse, branduri, categorii...',
           prefixIcon: const Icon(Icons.search_rounded),
           filled: true,
-          fillColor: theme.colorScheme.onSurface.withOpacity(0.045),
+          fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.045),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
@@ -204,7 +205,7 @@ class _WebShellState extends State<WebShell> {
       child: IconButton(
         onPressed: onTap,
         icon: Icon(icon, size: 23),
-        color: theme.colorScheme.onSurface.withOpacity(0.75),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
       ),
     );
   }
@@ -237,7 +238,8 @@ class _WebShellState extends State<WebShell> {
   }) {
     final theme = Theme.of(context);
 
-    final itemColor = color ?? theme.colorScheme.onSurface.withOpacity(0.75);
+    final itemColor =
+        color ?? theme.colorScheme.onSurface.withValues(alpha: 0.75);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -247,7 +249,7 @@ class _WebShellState extends State<WebShell> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: itemColor.withOpacity(0.08),
+              color: itemColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(icon, size: 20, color: itemColor),
@@ -271,7 +273,7 @@ class _WebShellState extends State<WebShell> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
-                    color: theme.colorScheme.onSurface.withOpacity(0.48),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.48),
                   ),
                 ),
               ],
@@ -280,7 +282,7 @@ class _WebShellState extends State<WebShell> {
           Icon(
             Icons.chevron_right_rounded,
             size: 18,
-            color: theme.colorScheme.onSurface.withOpacity(0.25),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
           ),
         ],
       ),
@@ -303,7 +305,7 @@ class _WebShellState extends State<WebShell> {
       offset: const Offset(0, 12),
       elevation: 16,
       color: theme.colorScheme.surface,
-      shadowColor: Colors.black.withOpacity(0.25),
+      shadowColor: Colors.black.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       onSelected: (value) async {
         switch (value) {
@@ -361,6 +363,12 @@ class _WebShellState extends State<WebShell> {
             });
             break;
 
+          case 'cards':
+            setState(() {
+              _selectedIndex = 15;
+            });
+            break;
+
           case 'reviews':
             setState(() {
               _selectedIndex = 11;
@@ -406,7 +414,9 @@ class _WebShellState extends State<WebShell> {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.10),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.10,
+                          ),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -477,14 +487,16 @@ class _WebShellState extends State<WebShell> {
                   Icon(
                     Icons.lock_outline_rounded,
                     size: 17,
-                    color: theme.colorScheme.onSurface.withOpacity(0.45),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                   ),
                   const SizedBox(width: 9),
                   Text(
                     'Cont securizat Nexora',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.50),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.50,
+                      ),
                     ),
                   ),
                 ],
@@ -538,8 +550,8 @@ class _WebShellState extends State<WebShell> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.55,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.55,
                                 ),
                               ),
                             ),
@@ -628,6 +640,16 @@ class _WebShellState extends State<WebShell> {
           ),
 
           PopupMenuItem<String>(
+            value: 'cards',
+            child: _profileMenuItem(
+              context,
+              icon: Icons.credit_card_outlined,
+              title: 'Cardurile mele',
+              subtitle: 'Metodele tale de plată',
+            ),
+          ),
+
+          PopupMenuItem<String>(
             value: 'reviews',
             child: _profileMenuItem(
               context,
@@ -679,7 +701,7 @@ class _WebShellState extends State<WebShell> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.error.withOpacity(0.09),
+                    color: theme.colorScheme.error.withValues(alpha: 0.09),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -705,10 +727,10 @@ class _WebShellState extends State<WebShell> {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.10),
+          color: theme.colorScheme.primary.withValues(alpha: 0.10),
           shape: BoxShape.circle,
           border: Border.all(
-            color: theme.colorScheme.primary.withOpacity(0.16),
+            color: theme.colorScheme.primary.withValues(alpha: 0.16),
           ),
         ),
         child: isLoggedIn && avatar.isNotEmpty
@@ -716,7 +738,7 @@ class _WebShellState extends State<WebShell> {
                 child: Image.network(
                   avatar,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
+                  errorBuilder: (_, _, _) {
                     return Icon(
                       Icons.person_outline_rounded,
                       color: theme.colorScheme.primary,
@@ -788,6 +810,9 @@ class _WebShellState extends State<WebShell> {
           'Ajutor și suport',
           Icons.help_outline_rounded,
         );
+
+      case 15:
+        return const SavedCardsPage(embedded: true);
 
       default:
         return const WebHome();

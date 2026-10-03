@@ -5,6 +5,8 @@ import '../../api_service.dart';
 
 import '../legal/terms_page.dart';
 import '../legal/privacy_page.dart';
+import '../legal/delivery_page.dart';
+import '../legal/withdrawal_page.dart';
 
 class WebCheckoutPage extends StatefulWidget {
   final String listingId;
@@ -331,38 +333,6 @@ class _WebCheckoutPageState extends State<WebCheckoutPage> {
     );
   }
 
-  Widget _field(
-    String label,
-    TextEditingController controller, {
-    TextInputType? keyboardType,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.onSurface
-            .withValues(alpha: .035),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
-            width: 1.2,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDeliveryAddress(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -408,170 +378,168 @@ class _WebCheckoutPageState extends State<WebCheckoutPage> {
               ),
             )
           else
-            Column(
-              children: _addresses.map((address) {
-                final addressId =
-                    address['_id']?.toString() ?? address['id']?.toString();
+            RadioGroup<String>(
+              groupValue: _selectedAddressId,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _selectedAddressId = value;
+                });
+              },
+              child: Column(
+                children: _addresses.map((address) {
+                  final addressId =
+                      address['_id']?.toString() ?? address['id']?.toString();
 
-                final selected = addressId == _selectedAddressId;
+                  final selected = addressId == _selectedAddressId;
 
-                final county = address['county']?.toString() ?? '';
+                  final county = address['county']?.toString() ?? '';
 
-                final city = address['city']?.toString() ?? '';
+                  final city = address['city']?.toString() ?? '';
 
-                final street = address['street']?.toString() ?? '';
+                  final street = address['street']?.toString() ?? '';
 
-                final number = address['number']?.toString() ?? '';
+                  final number = address['number']?.toString() ?? '';
 
-                final postalCode = address['postalCode']?.toString() ?? '';
+                  final postalCode = address['postalCode']?.toString() ?? '';
 
-                final isDefault = address['isDefault'] == true;
+                  final isDefault = address['isDefault'] == true;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: addressId == null
-                        ? null
-                        : () {
-                            setState(() {
-                              _selectedAddressId = addressId;
-                            });
-                          },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? theme.colorScheme.primary.withValues(alpha: .07)
-                            : theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: addressId == null
+                          ? null
+                          : () {
+                              setState(() {
+                                _selectedAddressId = addressId;
+                              });
+                            },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
                           color: selected
-                              ? theme.colorScheme.primary
-                              : theme.dividerColor.withValues(alpha: .18),
-                          width: selected ? 1.4 : 1,
+                              ? theme.colorScheme.primary.withValues(alpha: .07)
+                              : theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.dividerColor.withValues(alpha: .18),
+                            width: selected ? 1.4 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? theme.colorScheme.primary.withValues(
+                                        alpha: .12,
+                                      )
+                                    : theme.colorScheme.onSurface.withValues(
+                                        alpha: .05,
+                                      ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.location_on_outlined,
+                                color: selected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface.withValues(
+                                        alpha: .55,
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 14),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '$street $number',
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+
+                                      if (isDefault)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.primary
+                                                .withValues(alpha: .10),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Implicită',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 6),
+
+                                  Text(
+                                    '$city, $county',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: .62),
+                                    ),
+                                  ),
+
+                                  if (postalCode.isNotEmpty) ...[
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      'Cod poștal: $postalCode',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: theme.colorScheme.onSurface
+                                            .withValues(alpha: .48),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            Radio<String>(
+                              value: addressId ?? '',
+                              enabled: addressId != null,
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? theme.colorScheme.primary.withValues(
-                                      alpha: .12,
-                                    )
-                                  : theme.colorScheme.onSurface.withValues(
-                                      alpha: .05,
-                                    ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.location_on_outlined,
-                              color: selected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurface.withValues(
-                                      alpha: .55,
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 14),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '$street $number',
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-
-                                    if (isDefault)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary
-                                              .withValues(alpha: .10),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Implicită',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                Text(
-                                  '$city, $county',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: .62),
-                                  ),
-                                ),
-
-                                if (postalCode.isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    'Cod poștal: $postalCode',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: .48),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(width: 12),
-
-                          Radio<String>(
-                            value: addressId ?? '',
-                            groupValue: _selectedAddressId,
-                            onChanged: addressId == null
-                                ? null
-                                : (value) {
-                                    if (value == null) {
-                                      return;
-                                    }
-
-                                    setState(() {
-                                      _selectedAddressId = value;
-                                    });
-                                  },
-                          ),
-                        ],
-                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
 
           const SizedBox(height: 4),
@@ -625,16 +593,7 @@ class _WebCheckoutPageState extends State<WebCheckoutPage> {
         ),
         child: Row(
           children: [
-            Radio<String>(
-              value: value,
-              groupValue: _delivery,
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() {
-                  _delivery = v;
-                });
-              },
-            ),
+            Radio<String>(value: value),
 
             const SizedBox(width: 8),
 
@@ -671,45 +630,54 @@ class _WebCheckoutPageState extends State<WebCheckoutPage> {
   Widget _buildDeliveryMethod(BuildContext context) {
     return _card(
       context,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _title(
-            context,
-            'Metoda de livrare',
-            'Alege curierul pentru această comandă.',
-          ),
+      RadioGroup<String>(
+        groupValue: _delivery,
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() {
+            _delivery = value;
+          });
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _title(
+              context,
+              'Metoda de livrare',
+              'Alege curierul pentru această comandă.',
+            ),
 
-          const SizedBox(height: 18),
+            const SizedBox(height: 18),
 
-          _deliveryOption(
-            context,
-            value: 'sameday',
-            title: 'Sameday',
-            subtitle: 'Livrare rapidă prin Sameday',
-            price: 19,
-          ),
+            _deliveryOption(
+              context,
+              value: 'sameday',
+              title: 'Sameday',
+              subtitle: 'Livrare la adresă • estimat 2-5 zile lucrătoare',
+              price: 19,
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          _deliveryOption(
-            context,
-            value: 'fan',
-            title: 'FAN Courier',
-            subtitle: 'Livrare prin FAN Courier',
-            price: 22,
-          ),
+            _deliveryOption(
+              context,
+              value: 'fan',
+              title: 'FAN Courier',
+              subtitle: 'Livrare la adresă • estimat 2-5 zile lucrătoare',
+              price: 22,
+            ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          _deliveryOption(
-            context,
-            value: 'gls',
-            title: 'GLS',
-            subtitle: 'Livrare prin GLS',
-            price: 20,
-          ),
-        ],
+            _deliveryOption(
+              context,
+              value: 'gls',
+              title: 'GLS',
+              subtitle: 'Livrare la adresă • estimat 2-5 zile lucrătoare',
+              price: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -719,73 +687,74 @@ class _WebCheckoutPageState extends State<WebCheckoutPage> {
 
     return _card(
       context,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _title(context, 'Metoda de plată', 'Plătește online în siguranță.'),
+      RadioGroup<String>(
+        groupValue: _payment,
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() {
+            _payment = value;
+          });
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _title(context, 'Metoda de plată', 'Plătește online în siguranță.'),
 
-          const SizedBox(height: 18),
+            const SizedBox(height: 18),
 
-          InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () {
-              setState(() {
-                _payment = 'card';
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: .06),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: .55),
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                setState(() {
+                  _payment = 'card';
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: .06),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: .55),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Radio<String>(value: 'card'),
+
+                    const Icon(Icons.credit_card_rounded, size: 24),
+
+                    const SizedBox(width: 12),
+
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Card bancar',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'Procesat securizat prin NETOPIA Payments',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Image.asset(
+                      'assets/payments/netopia_payments_logo.png',
+                      width: 115,
+                      height: 55,
+                      fit: BoxFit.contain,
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  Radio<String>(
-                    value: 'card',
-                    groupValue: _payment,
-                    onChanged: (value) {
-                      setState(() {
-                        _payment = value ?? 'netopia';
-                      });
-                    },
-                  ),
-
-                  const Icon(Icons.credit_card_rounded, size: 24),
-
-                  const SizedBox(width: 12),
-
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Card bancar',
-                          style: TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          'Procesat securizat prin NETOPIA Payments',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Image.asset(
-                    'assets/payments/netopia_payments_logo.png',
-                    width: 115,
-                    height: 55,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -863,6 +832,55 @@ class _WebCheckoutPageState extends State<WebCheckoutPage> {
                   },
                   child: Text(
                     'Politica de confidențialitate',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const Text('.', style: TextStyle(fontSize: 12.5)),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text(
+                  'Înainte de comandă poți consulta ',
+                  style: TextStyle(fontSize: 12.5),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const DeliveryPage()),
+                    );
+                  },
+                  child: Text(
+                    'politica de livrare',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const Text(' și ', style: TextStyle(fontSize: 12.5)),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const WithdrawalPage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'procedura de retur / retragere',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
