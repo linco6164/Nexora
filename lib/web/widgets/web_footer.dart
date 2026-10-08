@@ -22,13 +22,13 @@ class WebFooter extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
-    final action = onTap ??
+    final action =
+        onTap ??
         (page == null
             ? null
             : () {
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => page));
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => page));
               });
 
     return Padding(
@@ -149,18 +149,6 @@ class WebFooter extends StatelessWidget {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 22),
-
-                      Row(
-                        children: [
-                          _socialButton(context, Icons.facebook_rounded),
-                          const SizedBox(width: 8),
-                          _socialButton(context, Icons.camera_alt_outlined),
-                          const SizedBox(width: 8),
-                          _socialButton(context, Icons.alternate_email_rounded),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -178,10 +166,6 @@ class WebFooter extends StatelessWidget {
                         'Date companie și rol',
                         page: const AboutPage(),
                       ),
-
-                      _link(context, 'Cariere'),
-                      _link(context, 'Presă'),
-                      _link(context, 'Blog'),
                     ],
                   ),
                 ),
@@ -302,28 +286,6 @@ class WebFooter extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _socialButton(BuildContext context, IconData icon) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () {},
-        child: SizedBox(
-          width: 38,
-          height: 38,
-          child: Icon(
-            icon,
-            size: 19,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
-          ),
         ),
       ),
     );

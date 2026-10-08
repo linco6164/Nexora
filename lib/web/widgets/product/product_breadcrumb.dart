@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class ProductBreadcrumb extends StatelessWidget {
   final String category;
   final String title;
+  final VoidCallback? onHome;
+  final VoidCallback? onCategory;
 
   const ProductBreadcrumb({
     super.key,
     required this.category,
     required this.title,
+    this.onHome,
+    this.onCategory,
   });
 
   @override
@@ -23,9 +27,9 @@ class ProductBreadcrumb extends StatelessWidget {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        InkWell(onTap: () {}, child: const Text("Home")),
+        InkWell(onTap: onHome, child: const Text('Acasă')),
         separator(),
-        InkWell(onTap: () {}, child: Text(category)),
+        InkWell(onTap: onCategory, child: Text(category)),
         separator(),
         Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],

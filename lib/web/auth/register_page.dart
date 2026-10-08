@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../api_service.dart';
 import 'login_page.dart';
+import '../legal/privacy_page.dart';
+import '../legal/terms_page.dart';
 import 'widgets/auth_card.dart';
-import 'widgets/auth_divider.dart';
 import 'widgets/auth_header.dart';
 import 'widgets/auth_text_field.dart';
 import 'widgets/password_strength.dart';
-import 'widgets/social_login_buttons.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -20,6 +20,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -31,6 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -42,7 +44,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_acceptTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("You must accept Terms & Conditions."),
+          content: Text("Trebuie să accepți termenii și condițiile."),
         ),
       );
       return;
@@ -54,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       await ApiService.register(
-        username: _emailController.text.split('@')[0],
+        username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -63,30 +65,19 @@ class _RegisterPageState extends State<RegisterPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Account created successfully.",
-          ),
+          content: Text("Contul a fost creat. Te poți autentifica."),
         ),
       );
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst(
-              "Exception: ",
-              "",
-            ),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
       );
     }
 
@@ -107,16 +98,36 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const AuthHeader(
-                    title: "Create Account",
+                    title: "Creează un cont",
                     subtitle:
-                        "Join Nexora and start buying or selling today.",
+                        "Alătură-te Nexora și începe să cumperi sau să vinzi.",
                   ),
 
                   const SizedBox(height: 32),
+
+                  TextFormField(
+                    controller: _usernameController,
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      final username = value?.trim() ?? '';
+                      if (username.length < 3) {
+                        return 'Introdu minimum 3 caractere';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Nume de utilizator',
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
 
                   AuthTextField(
                     controller: _emailController,
@@ -131,22 +142,19 @@ class _RegisterPageState extends State<RegisterPage> {
                     obscureText: _obscurePassword,
                     onChanged: (_) => setState(() {}),
                     validator: (value) {
-                      if (value == null ||
-                          value.length < 8) {
-                        return "Minimum 8 characters";
+                      if (value == null || value.length < 8) {
+                        return "Parola trebuie să aibă minimum 8 caractere";
                       }
 
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: "Password",
-                      prefixIcon:
-                          const Icon(Icons.lock_outline),
+                      labelText: "Parolă",
+                      prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {
-                            _obscurePassword =
-                                !_obscurePassword;
+                            _obscurePassword = !_obscurePassword;
                           });
                         },
                         icon: Icon(
@@ -156,43 +164,34 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 12),
 
-                  PasswordStrength(
-                    password:
-                        _passwordController.text,
-                  ),
+                  PasswordStrength(password: _passwordController.text),
 
                   const SizedBox(height: 20),
 
                   TextFormField(
-                    controller:
-                        _confirmPasswordController,
+                    controller: _confirmPasswordController,
                     obscureText: _obscureConfirm,
                     validator: (value) {
-                      if (value !=
-                          _passwordController.text) {
-                        return "Passwords do not match";
+                      if (value != _passwordController.text) {
+                        return "Parolele nu coincid";
                       }
 
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText:
-                          "Confirm Password",
-                      prefixIcon:
-                          const Icon(Icons.lock),
+                      labelText: "Confirmă parola",
+                      prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {
-                            _obscureConfirm =
-                                !_obscureConfirm;
+                            _obscureConfirm = !_obscureConfirm;
                           });
                         },
                         icon: Icon(
@@ -202,8 +201,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -215,62 +213,79 @@ class _RegisterPageState extends State<RegisterPage> {
                     contentPadding: EdgeInsets.zero,
                     onChanged: (value) {
                       setState(() {
-                        _acceptTerms =
-                            value ?? false;
+                        _acceptTerms = value ?? false;
                       });
                     },
-                    title: const Text(
-                      "I accept the Terms & Conditions and Privacy Policy.",
+                    title: Wrap(
+                      children: [
+                        const Text('Accept '),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const TermsPage(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Termenii și condițiile',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        const Text(' și '),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PrivacyPage(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Politica de confidențialitate',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        const Text('.'),
+                      ],
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
                   FilledButton(
-                    onPressed:
-                        _loading ? null : _register,
+                    onPressed: _loading ? null : _register,
                     child: _loading
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text(
-                            "Create Account",
-                          ),
+                        : const Text("Creează contul"),
                   ),
 
                   const SizedBox(height: 24),
 
-                  const AuthDivider(),
-
-                  const SizedBox(height: 24),
-
-                  const SocialLoginButtons(),
-
-                  const SizedBox(height: 24),
-
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        "Already have an account?",
-                      ),
+                      const Text("Ai deja un cont?"),
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const LoginPage(),
+                              builder: (_) => const LoginPage(),
                             ),
                           );
                         },
-                        child: const Text("Login"),
+                        child: const Text("Autentificare"),
                       ),
                     ],
                   ),

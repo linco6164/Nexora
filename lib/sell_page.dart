@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,7 +7,10 @@ import 'api_service.dart';
 import 'home_page.dart';
 
 class SellPage extends StatefulWidget {
-  const SellPage({super.key});
+  final bool embedded;
+  final VoidCallback? onPublished;
+
+  const SellPage({super.key, this.embedded = false, this.onPublished});
 
   @override
   State<SellPage> createState() => _SellPageState();
@@ -22,7 +25,7 @@ class _SellPageState extends State<SellPage> {
   final _cityController = TextEditingController();
   final _brandController = TextEditingController();
 
-  final List<File> _selectedImages = [];
+  final List<_SelectedImage> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
   String _category = 'fashion';
@@ -65,8 +68,17 @@ class _SellPageState extends State<SellPage> {
 
     if (picked.isEmpty) return;
 
+    final selected = await Future.wait(
+      picked.map(
+        (file) async =>
+            _SelectedImage(file: file, bytes: await file.readAsBytes()),
+      ),
+    );
+
+    if (!mounted) return;
+
     setState(() {
-      _selectedImages.addAll(picked.map((x) => File(x.path)));
+      _selectedImages.addAll(selected);
 
       if (_selectedImages.length > 10) {
         _selectedImages.removeRange(10, _selectedImages.length);
@@ -95,8 +107,8 @@ class _SellPageState extends State<SellPage> {
     });
 
     try {
-      final imageUrls = await ApiService.uploadImages(
-        _selectedImages,
+      final imageUrls = await ApiService.uploadXFiles(
+        _selectedImages.map((image) => image.file).toList(),
         folder: 'listings',
       );
 
@@ -120,6 +132,11 @@ class _SellPageState extends State<SellPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Anunț publicat cu succes!')),
       );
+
+      if (widget.onPublished != null) {
+        widget.onPublished!();
+        return;
+      }
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const HomePage()),
@@ -151,197 +168,219 @@ class _SellPageState extends State<SellPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text(
-          'Postează un anunț',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: false,
-        elevation: 0,
-        backgroundColor: colorScheme.surface,
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          children: [
-            _buildPhotosSection(),
-
-            const SizedBox(height: 24),
-
-            _buildSectionTitle('Informații despre produs', Icons.sell_outlined),
-
-            const SizedBox(height: 12),
-
-            _buildTextField(
-              controller: _titleController,
-              label: 'Titlu anunț',
-              hint: 'Ex. Geacă Nike neagră',
-              icon: Icons.title_outlined,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Introdu un titlu';
-                }
-
-                if (value.trim().length < 3) {
-                  return 'Titlul trebuie să aibă cel puțin 3 caractere';
-                }
-
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildTextField(
-              controller: _descriptionController,
-              label: 'Descriere',
-              hint:
-                  'Descrie produsul, starea, defectele, dimensiunile și ce include...',
-              icon: Icons.notes_outlined,
-              maxLines: 5,
-              maxLength: 1000,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Adaugă o descriere';
-                }
-
-                if (value.trim().length < 20) {
-                  return 'Descrierea trebuie să aibă cel puțin 20 de caractere';
-                }
-
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildDropdown(
-              label: 'Categorie',
-              icon: Icons.category_outlined,
-              value: _category,
-              items: _categories.keys.toList(),
-              labels: _categories,
-              onChanged: (value) {
-                if (value == null) return;
-
-                setState(() {
-                  _category = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildConditionSelector(),
-
-            const SizedBox(height: 24),
-
-            _buildSectionTitle('Preț și livrare', Icons.payments_outlined),
-
-            const SizedBox(height: 12),
-
-            _buildTextField(
-              controller: _priceController,
-              label: 'Preț',
-              hint: '0,00',
-              icon: Icons.payments_outlined,
-              suffixText: 'RON',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: const Text(
+                'Postează un anunț',
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Introdu prețul';
-                }
-
-                final price = double.tryParse(
-                  value.trim().replaceAll(',', '.'),
-                );
-
-                if (price == null) {
-                  return 'Preț invalid';
-                }
-
-                if (price <= 0) {
-                  return 'Prețul trebuie să fie mai mare decât 0';
-                }
-
-                return null;
-              },
+              centerTitle: false,
+              elevation: 0,
+              backgroundColor: colorScheme.surface,
             ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+              children: [
+                if (widget.embedded) ...[
+                  Text(
+                    'Publică un anunț',
+                    style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Completează toate informațiile relevante despre produs.',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                _buildPhotosSection(),
 
-            const SizedBox(height: 14),
+                const SizedBox(height: 24),
 
-            _buildTextField(
-              controller: _brandController,
-              label: 'Brand',
-              hint: 'Ex. Nike, Adidas, Apple...',
-              icon: Icons.local_offer_outlined,
-              optional: true,
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildTextField(
-              controller: _cityController,
-              label: 'Oraș',
-              hint: 'Ex. Călărași',
-              icon: Icons.location_on_outlined,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Introdu orașul';
-                }
-
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildOptionTile(
-              icon: Icons.handshake_outlined,
-              title: 'Preț negociabil',
-              subtitle: 'Permite cumpărătorilor să îți trimită oferte',
-              value: _negotiable,
-              onChanged: (value) {
-                setState(() {
-                  _negotiable = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildOptionTile(
-              icon: Icons.local_shipping_outlined,
-              title: 'Livrare disponibilă',
-              subtitle: 'Permite livrarea produsului către cumpărător',
-              value: _shipping,
-              onChanged: (value) {
-                setState(() {
-                  _shipping = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 28),
-
-            _buildPublishButton(),
-
-            const SizedBox(height: 12),
-
-            Center(
-              child: Text(
-                'Prin publicare, anunțul tău va deveni vizibil pe Nexora.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.onSurfaceVariant,
+                _buildSectionTitle(
+                  'Informații despre produs',
+                  Icons.sell_outlined,
                 ),
-              ),
+
+                const SizedBox(height: 12),
+
+                _buildTextField(
+                  controller: _titleController,
+                  label: 'Titlu anunț',
+                  hint: 'Ex. Geacă Nike neagră',
+                  icon: Icons.title_outlined,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Introdu un titlu';
+                    }
+
+                    if (value.trim().length < 3) {
+                      return 'Titlul trebuie să aibă cel puțin 3 caractere';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildTextField(
+                  controller: _descriptionController,
+                  label: 'Descriere',
+                  hint: 'Descrie produsul, starea, defectele, dimensiunile și ce include...',
+                  icon: Icons.notes_outlined,
+                  maxLines: 5,
+                  maxLength: 1000,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Adaugă o descriere';
+                    }
+
+                    if (value.trim().length < 20) {
+                      return 'Descrierea trebuie să aibă cel puțin 20 de caractere';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildDropdown(
+                  label: 'Categorie',
+                  icon: Icons.category_outlined,
+                  value: _category,
+                  items: _categories.keys.toList(),
+                  labels: _categories,
+                  onChanged: (value) {
+                    if (value == null) return;
+
+                    setState(() {
+                      _category = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildConditionSelector(),
+
+                const SizedBox(height: 24),
+
+                _buildSectionTitle('Preț și livrare', Icons.payments_outlined),
+
+                const SizedBox(height: 12),
+
+                _buildTextField(
+                  controller: _priceController,
+                  label: 'Preț',
+                  hint: '0,00',
+                  icon: Icons.payments_outlined,
+                  suffixText: 'RON',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Introdu prețul';
+                    }
+
+                    final price = double.tryParse(
+                      value.trim().replaceAll(',', '.'),
+                    );
+
+                    if (price == null) {
+                      return 'Preț invalid';
+                    }
+
+                    if (price <= 0) {
+                      return 'Prețul trebuie să fie mai mare decât 0';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildTextField(
+                  controller: _brandController,
+                  label: 'Brand',
+                  hint: 'Ex. Nike, Adidas, Apple...',
+                  icon: Icons.local_offer_outlined,
+                  optional: true,
+                ),
+
+                const SizedBox(height: 14),
+
+                _buildTextField(
+                  controller: _cityController,
+                  label: 'Oraș',
+                  hint: 'Ex. Călărași',
+                  icon: Icons.location_on_outlined,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Introdu orașul';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                _buildOptionTile(
+                  icon: Icons.handshake_outlined,
+                  title: 'Preț negociabil',
+                  subtitle: 'Permite cumpărătorilor să îți trimită oferte',
+                  value: _negotiable,
+                  onChanged: (value) {
+                    setState(() {
+                      _negotiable = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 10),
+
+                _buildOptionTile(
+                  icon: Icons.local_shipping_outlined,
+                  title: 'Livrare disponibilă',
+                  subtitle: 'Permite livrarea produsului către cumpărător',
+                  value: _shipping,
+                  onChanged: (value) {
+                    setState(() {
+                      _shipping = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 28),
+
+                _buildPublishButton(),
+
+                const SizedBox(height: 12),
+
+                Center(
+                  child: Text(
+                    'Prin publicare, anunțul tău va deveni vizibil pe Nexora.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -395,12 +434,17 @@ class _SellPageState extends State<SellPage> {
     );
   }
 
-  Widget _buildImagePreview(File file, int index) {
+  Widget _buildImagePreview(_SelectedImage file, int index) {
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.file(file, width: 128, height: 128, fit: BoxFit.cover),
+          child: Image.memory(
+            file.bytes,
+            width: 128,
+            height: 128,
+            fit: BoxFit.cover,
+          ),
         ),
 
         Positioned(
@@ -725,4 +769,11 @@ class _SellPageState extends State<SellPage> {
       ),
     );
   }
+}
+
+class _SelectedImage {
+  final XFile file;
+  final Uint8List bytes;
+
+  const _SelectedImage({required this.file, required this.bytes});
 }

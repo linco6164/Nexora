@@ -15,6 +15,7 @@ class RecommendedProducts extends StatefulWidget {
 
 class _RecommendedProductsState extends State<RecommendedProducts> {
   bool _loading = true;
+  String? _error;
 
   List<Listing> _products = [];
 
@@ -28,23 +29,18 @@ class _RecommendedProductsState extends State<RecommendedProducts> {
     try {
       final products = await ApiService.getListings();
 
-      debugPrint(products.runtimeType.toString());
-
       if (!mounted) return;
-
-      if (products.isNotEmpty) {
-        debugPrint(products.first.runtimeType.toString());
-      }
 
       setState(() {
         _products = products;
         _loading = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
 
       setState(() {
         _loading = false;
+        _error = error.toString();
       });
     }
   }
@@ -55,12 +51,16 @@ class _RecommendedProductsState extends State<RecommendedProducts> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+
     return ResponsiveContainer(
       child: Column(
         children: [
           const SectionTitle(
-            title: "Recommended",
-            subtitle: "Products selected for you",
+            title: "Recomandate",
+            subtitle: "Produse selectate pentru tine",
           ),
           ProductGrid(products: _products),
         ],

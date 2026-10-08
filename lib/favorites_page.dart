@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'api_service.dart';
 import 'models/listing.dart';
 import 'listing_detail_page.dart';
+import 'web/web_product_page.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -68,13 +71,17 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 final listing = favorites[index];
                 return Card(
                   clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ListingDetailPage(listingId: listing.id),
+                          builder: (context) => kIsWeb
+                              ? WebProductPage(productId: listing.id)
+                              : ListingDetailPage(listingId: listing.id),
                         ),
                       ).then((_) => _refresh());
                     },
@@ -83,19 +90,38 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       children: [
                         Expanded(
                           child: listing.images.isNotEmpty
-                              ? Image.network(listing.images.first, width: double.infinity, fit: BoxFit.cover)
-                              : Container(color: Colors.grey[200], child: const Icon(Icons.image_outlined)),
+                              ? Image.network(
+                                  listing.images.first,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.image_outlined),
+                                ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(listing.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              Text(
+                                listing.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('${listing.price.toStringAsFixed(0)} ${listing.currency}',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                              Text(
+                                '${listing.price.toStringAsFixed(0)} ${listing.currency}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
                             ],
                           ),
                         ),

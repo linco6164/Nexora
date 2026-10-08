@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 
 class WebActions extends StatelessWidget {
-  const WebActions({super.key});
+  final VoidCallback? onFavorites;
+  final VoidCallback? onMessages;
+  final VoidCallback? onNotifications;
+  final VoidCallback? onSell;
+
+  const WebActions({
+    super.key,
+    this.onFavorites,
+    this.onMessages,
+    this.onNotifications,
+    this.onSell,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -9,19 +20,19 @@ class WebActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          onPressed: () {},
+          onPressed: onFavorites,
           icon: const Icon(Icons.favorite_border_rounded),
           tooltip: 'Favorite',
         ),
 
         IconButton(
-          onPressed: () {},
+          onPressed: onMessages,
           icon: const Icon(Icons.chat_bubble_outline_rounded),
           tooltip: 'Mesaje',
         ),
 
         IconButton(
-          onPressed: () {},
+          onPressed: onNotifications,
           icon: const Icon(Icons.notifications_none_rounded),
           tooltip: 'Notificări',
         ),
@@ -29,13 +40,7 @@ class WebActions extends StatelessWidget {
         const SizedBox(width: 12),
 
         FilledButton.icon(
-          onPressed: () {
-            debugPrint('=== VINDE APASAT ===');
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('BUTONUL VINDE FUNCTIONEAZA')),
-            );
-          },
+          onPressed: onSell,
           icon: const Icon(Icons.add_rounded, size: 20),
           label: const Text(
             'Vinde',

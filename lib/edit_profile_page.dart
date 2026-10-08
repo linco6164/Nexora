@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 
@@ -40,7 +40,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   final ImagePicker _imagePicker = ImagePicker();
 
-  File? _selectedAvatar;
+  XFile? _selectedAvatar;
+  Uint8List? _selectedAvatarBytes;
   String? _avatarUrl;
   bool _isUploadingAvatar = false;
 
@@ -114,8 +115,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (image == null) return;
 
+      final bytes = await image.readAsBytes();
+
+      if (!mounted) return;
+
       setState(() {
-        _selectedAvatar = File(image.path);
+        _selectedAvatar = image;
+        _selectedAvatarBytes = bytes;
       });
     } catch (e) {
       if (!mounted) return;
@@ -162,7 +168,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
 
         try {
-          final urls = await ApiService.uploadImages([
+          final urls = await ApiService.uploadXFiles([
             _selectedAvatar!,
           ], folder: 'avatars');
 
@@ -295,7 +301,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         .colorScheme
                         .primaryContainer,
                     backgroundImage: _selectedAvatar != null
-                        ? FileImage(_selectedAvatar!)
+                        ? MemoryImage(_selectedAvatarBytes!)
                         : (_avatarUrl != null && _avatarUrl!.isNotEmpty
                               ? NetworkImage(_avatarUrl!)
                               : null),

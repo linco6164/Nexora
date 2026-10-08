@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../api_service.dart';
+import '../chat_page.dart';
 import '../models/listing.dart';
+import '../public_profile_page.dart';
 import 'widgets/product/product_gallery.dart';
 import 'widgets/product/product_info.dart';
 import 'widgets/product/product_description.dart';
@@ -10,8 +12,7 @@ import 'widgets/product/seller_card.dart';
 import 'widgets/product/shipping_card.dart';
 import 'widgets/product/related_products.dart';
 import 'widgets/product/product_breadcrumb.dart';
-
-
+import 'widgets/web_explore.dart';
 
 class WebProductPage extends StatefulWidget {
   final String productId;
@@ -27,6 +28,7 @@ class _WebProductPageState extends State<WebProductPage> {
 
   bool loading = true;
   String? error;
+  bool _openingChat = false;
 
   @override
   void initState() {
@@ -54,6 +56,52 @@ class _WebProductPageState extends State<WebProductPage> {
     }
   }
 
+  Future<void> _openChat() async {
+    final product = listing;
+    if (product == null || _openingChat) return;
+
+    setState(() => _openingChat = true);
+    try {
+      final me = await ApiService.getCurrentUser();
+      final myUserId = me['_id']?.toString() ?? '';
+      final conversation = await ApiService.startConversation(product.id);
+      final other = conversation.otherParticipant(myUserId);
+
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatPage(
+            conversationId: conversation.id,
+            otherUsername:
+                other?.username ?? product.seller?.username ?? 'Vânzător',
+            myUserId: myUserId,
+          ),
+        ),
+      );
+    } catch (exception) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            exception is ApiException
+                ? exception.message
+                : 'Conversația nu a putut fi deschisă.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
+  }
+
+  void _openSellerProfile() {
+    final seller = listing?.seller;
+    if (seller == null || seller.id.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => PublicProfilePage(userId: seller.id)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -61,7 +109,34 @@ class _WebProductPageState extends State<WebProductPage> {
     }
 
     if (error != null) {
-      return Scaffold(body: Center(child: Text(error!)));
+      return Scaffold(
+        appBar: AppBar(title: const Text('Produs')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded, size: 52),
+                const SizedBox(height: 12),
+                Text(error!, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      loading = true;
+                      error = null;
+                    });
+                    _loadListing();
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Reîncearcă'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final product = listing!;
@@ -79,22 +154,42 @@ class _WebProductPageState extends State<WebProductPage> {
                 ProductBreadcrumb(
                   category: product.category,
                   title: product.title,
+                  onHome: () {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  onCategory: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            WebExplore(initialCategory: product.category),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),
 
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: ProductGallery(images: product.images),
-                    ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final gallery = ProductGallery(images: product.images);
+                    final info = ProductInfo(listing: product);
 
-                    const SizedBox(width: 40),
+                    if (constraints.maxWidth < 900) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [gallery, const SizedBox(height: 24), info],
+                      );
+                    }
 
-                    Expanded(flex: 5, child: ProductInfo(listing: product)),
-                  ],
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 6, child: gallery),
+                        const SizedBox(width: 40),
+                        Expanded(flex: 5, child: info),
+                      ],
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 40),
@@ -117,6 +212,8 @@ class _WebProductPageState extends State<WebProductPage> {
                   verified: product.seller?.verified ?? false,
                   listingsCount: null,
                   memberSince: null,
+                  onMessage: _openingChat ? null : _openChat,
+                  onProfile: product.seller == null ? null : _openSellerProfile,
                 ),
 
                 const SizedBox(height: 40),

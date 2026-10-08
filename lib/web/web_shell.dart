@@ -9,6 +9,21 @@ import '../web/widgets/web_explore.dart';
 import 'auth/login_page.dart';
 import 'auth/register_page.dart';
 import '../saved_cards_page.dart';
+import '../addresses_page.dart';
+import '../favorites_page.dart';
+import '../message_tab.dart';
+import '../my_listings_page.dart';
+import '../my_reviews_page.dart';
+import '../notification_settings_page.dart';
+import '../notifications_page.dart';
+import '../order_page.dart';
+import '../profile_page.dart';
+import '../promotion_page.dart';
+import '../security_page.dart';
+import '../sell_page.dart';
+import '../sold_page.dart';
+import '../support_page.dart';
+import '../theme_settings_page.dart';
 
 import 'legal/cookie_banner.dart';
 
@@ -23,11 +38,27 @@ class WebShell extends StatefulWidget {
 
 class _WebShellState extends State<WebShell> {
   late int _selectedIndex;
+  final TextEditingController _searchController = TextEditingController();
+  String _exploreQuery = '';
+  String _exploreCategory = 'all';
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _selectSection(int index, {bool requiresAuthentication = true}) {
+    final authenticated = context.read<AuthProvider>().isLoggedIn;
+    setState(() {
+      _selectedIndex = requiresAuthentication && !authenticated ? 4 : index;
+    });
   }
 
   @override
@@ -63,55 +94,54 @@ class _WebShellState extends State<WebShell> {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1440),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Row(
-              children: [
-                _buildLogo(context),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 1050;
+              final narrow = constraints.maxWidth < 650;
 
-                const SizedBox(width: 36),
-
-                Expanded(child: _buildSearch(context)),
-
-                const SizedBox(width: 28),
-
-                _buildHeaderAction(
-                  context,
-                  icon: Icons.favorite_border_rounded,
-                  label: 'Favorite',
-                  onTap: () {},
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 32),
+                child: Row(
+                  children: [
+                    _buildLogo(context, compact: compact),
+                    SizedBox(width: compact ? 12 : 36),
+                    Expanded(child: _buildSearch(context)),
+                    SizedBox(width: compact ? 6 : 28),
+                    if (!narrow) ...[
+                      _buildHeaderAction(
+                        context,
+                        icon: Icons.favorite_border_rounded,
+                        label: 'Favorite',
+                        onTap: () => _selectSection(8),
+                      ),
+                      _buildHeaderAction(
+                        context,
+                        icon: Icons.chat_bubble_outline_rounded,
+                        label: 'Mesaje',
+                        onTap: () => _selectSection(2),
+                      ),
+                      _buildHeaderAction(
+                        context,
+                        icon: Icons.notifications_none_rounded,
+                        label: 'Notificări',
+                        onTap: () => _selectSection(12),
+                      ),
+                    ],
+                    SizedBox(width: compact ? 4 : 12),
+                    _buildSellButton(context, compact: compact),
+                    SizedBox(width: compact ? 6 : 16),
+                    _buildProfileButton(context),
+                  ],
                 ),
-
-                _buildHeaderAction(
-                  context,
-                  icon: Icons.chat_bubble_outline_rounded,
-                  label: 'Mesaje',
-                  onTap: () {},
-                ),
-
-                _buildHeaderAction(
-                  context,
-                  icon: Icons.notifications_none_rounded,
-                  label: 'Notificări',
-                  onTap: () {},
-                ),
-
-                const SizedBox(width: 12),
-
-                _buildSellButton(context),
-
-                const SizedBox(width: 16),
-
-                _buildProfileButton(context),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLogo(BuildContext context) {
+  Widget _buildLogo(BuildContext context, {required bool compact}) {
     final theme = Theme.of(context);
 
     return InkWell(
@@ -140,17 +170,18 @@ class _WebShellState extends State<WebShell> {
               ),
             ),
 
-            const SizedBox(width: 10),
-
-            Text(
-              'Nexora',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.7,
-                color: theme.colorScheme.onSurface,
+            if (!compact) ...[
+              const SizedBox(width: 10),
+              Text(
+                'Nexora',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.7,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -163,6 +194,15 @@ class _WebShellState extends State<WebShell> {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 620),
       child: TextField(
+        controller: _searchController,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (value) {
+          setState(() {
+            _exploreQuery = value.trim();
+            _exploreCategory = 'all';
+            _selectedIndex = 1;
+          });
+        },
         decoration: InputDecoration(
           hintText: 'Caută produse, branduri, categorii...',
           prefixIcon: const Icon(Icons.search_rounded),
@@ -210,14 +250,20 @@ class _WebShellState extends State<WebShell> {
     );
   }
 
-  Widget _buildSellButton(BuildContext context) {
+  Widget _buildSellButton(BuildContext context, {required bool compact}) {
     final theme = Theme.of(context);
+
+    if (compact) {
+      return IconButton.filled(
+        onPressed: () => _selectSection(16),
+        icon: const Icon(Icons.add_rounded),
+        tooltip: 'Adaugă anunț',
+      );
+    }
 
     return FilledButton.icon(
       onPressed: () {
-        setState(() {
-          _selectedIndex = 4;
-        });
+        _selectSection(16);
       },
       icon: const Icon(Icons.add_rounded, size: 19),
       label: const Text('Vinde', style: TextStyle(fontWeight: FontWeight.w800)),
@@ -242,19 +288,19 @@ class _WebShellState extends State<WebShell> {
         color ?? theme.colorScheme.onSurface.withValues(alpha: 0.75);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.zero,
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: itemColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(icon, size: 20, color: itemColor),
+            child: Icon(icon, size: 18, color: itemColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +308,7 @@ class _WebShellState extends State<WebShell> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -272,7 +318,7 @@ class _WebShellState extends State<WebShell> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.48),
                   ),
                 ),
@@ -299,6 +345,9 @@ class _WebShellState extends State<WebShell> {
     final username = user?['username']?.toString() ?? 'Utilizator';
     final email = user?['email']?.toString() ?? '';
     final avatar = user?['avatar']?.toString() ?? '';
+    final menuMaxHeight = (MediaQuery.sizeOf(context).height - 96)
+        .clamp(320.0, 620.0)
+        .toDouble();
 
     return PopupMenuButton<String>(
       tooltip: 'Cont',
@@ -307,6 +356,12 @@ class _WebShellState extends State<WebShell> {
       color: theme.colorScheme.surface,
       shadowColor: Colors.black.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      menuPadding: const EdgeInsets.symmetric(vertical: 6),
+      constraints: BoxConstraints(
+        minWidth: 330,
+        maxWidth: 360,
+        maxHeight: menuMaxHeight,
+      ),
       onSelected: (value) async {
         switch (value) {
           case 'login':
@@ -333,18 +388,6 @@ class _WebShellState extends State<WebShell> {
             });
             break;
 
-          case 'favorites':
-            setState(() {
-              _selectedIndex = 8;
-            });
-            break;
-
-          case 'messages':
-            setState(() {
-              _selectedIndex = 2;
-            });
-            break;
-
           case 'orders':
             setState(() {
               _selectedIndex = 3;
@@ -357,9 +400,27 @@ class _WebShellState extends State<WebShell> {
             });
             break;
 
-          case 'shipping':
+          case 'balance':
             setState(() {
-              _selectedIndex = 10;
+              _selectedIndex = 17;
+            });
+            break;
+
+          case 'promotions':
+            setState(() {
+              _selectedIndex = 18;
+            });
+            break;
+
+          case 'addresses':
+            setState(() {
+              _selectedIndex = 19;
+            });
+            break;
+
+          case 'security':
+            setState(() {
+              _selectedIndex = 20;
             });
             break;
 
@@ -372,12 +433,6 @@ class _WebShellState extends State<WebShell> {
           case 'reviews':
             setState(() {
               _selectedIndex = 11;
-            });
-            break;
-
-          case 'notifications':
-            setState(() {
-              _selectedIndex = 12;
             });
             break;
 
@@ -587,26 +642,6 @@ class _WebShellState extends State<WebShell> {
             ),
           ),
 
-          PopupMenuItem<String>(
-            value: 'favorites',
-            child: _profileMenuItem(
-              context,
-              icon: Icons.favorite_border_rounded,
-              title: 'Favorite',
-              subtitle: 'Produsele salvate',
-            ),
-          ),
-
-          PopupMenuItem<String>(
-            value: 'messages',
-            child: _profileMenuItem(
-              context,
-              icon: Icons.chat_bubble_outline_rounded,
-              title: 'Mesaje',
-              subtitle: 'Conversațiile tale',
-            ),
-          ),
-
           const PopupMenuDivider(),
 
           PopupMenuItem<String>(
@@ -616,6 +651,16 @@ class _WebShellState extends State<WebShell> {
               icon: Icons.shopping_bag_outlined,
               title: 'Comenzile mele',
               subtitle: 'Produsele cumpărate',
+            ),
+          ),
+
+          PopupMenuItem<String>(
+            value: 'balance',
+            child: _profileMenuItem(
+              context,
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Sold și încasări',
+              subtitle: 'Tranzacții și retrageri',
             ),
           ),
 
@@ -630,16 +675,6 @@ class _WebShellState extends State<WebShell> {
           ),
 
           PopupMenuItem<String>(
-            value: 'shipping',
-            child: _profileMenuItem(
-              context,
-              icon: Icons.local_shipping_outlined,
-              title: 'Livrările mele',
-              subtitle: 'Statusul expedierilor',
-            ),
-          ),
-
-          PopupMenuItem<String>(
             value: 'cards',
             child: _profileMenuItem(
               context,
@@ -650,22 +685,32 @@ class _WebShellState extends State<WebShell> {
           ),
 
           PopupMenuItem<String>(
+            value: 'promotions',
+            child: _profileMenuItem(
+              context,
+              icon: Icons.rocket_launch_outlined,
+              title: 'Promovări',
+              subtitle: 'Promovează anunțurile tale',
+            ),
+          ),
+
+          PopupMenuItem<String>(
+            value: 'addresses',
+            child: _profileMenuItem(
+              context,
+              icon: Icons.location_on_outlined,
+              title: 'Adrese salvate',
+              subtitle: 'Adrese pentru livrare',
+            ),
+          ),
+
+          PopupMenuItem<String>(
             value: 'reviews',
             child: _profileMenuItem(
               context,
               icon: Icons.star_border_rounded,
               title: 'Recenziile mele',
-              subtitle: 'Recenzii primite și oferite',
-            ),
-          ),
-
-          PopupMenuItem<String>(
-            value: 'notifications',
-            child: _profileMenuItem(
-              context,
-              icon: Icons.notifications_none_rounded,
-              title: 'Notificări',
-              subtitle: 'Activitatea contului',
+              subtitle: 'Evaluările primite de la cumpărători',
             ),
           ),
 
@@ -678,6 +723,16 @@ class _WebShellState extends State<WebShell> {
               icon: Icons.settings_outlined,
               title: 'Setări',
               subtitle: 'Preferințe și securitate',
+            ),
+          ),
+
+          PopupMenuItem<String>(
+            value: 'security',
+            child: _profileMenuItem(
+              context,
+              icon: Icons.security_outlined,
+              title: 'Securitate',
+              subtitle: 'Parolă, 2FA și sesiuni',
             ),
           ),
 
@@ -756,18 +811,44 @@ class _WebShellState extends State<WebShell> {
   }
 
   Widget _buildContent() {
+    final authenticated = context.watch<AuthProvider>().isLoggedIn;
+    const publicSections = {0, 1, 4, 5};
+
+    if (!authenticated && !publicSections.contains(_selectedIndex)) {
+      return const LoginPage();
+    }
+
     switch (_selectedIndex) {
       case 0:
-        return const WebHome();
+        return WebHome(
+          onExplore: () {
+            setState(() {
+              _exploreQuery = '';
+              _exploreCategory = 'all';
+              _selectedIndex = 1;
+            });
+          },
+          onCategory: (category) {
+            setState(() {
+              _exploreQuery = '';
+              _exploreCategory = category;
+              _selectedIndex = 1;
+            });
+          },
+        );
 
       case 1:
-        return const WebExplore();
+        return WebExplore(
+          key: ValueKey('$_exploreQuery|$_exploreCategory'),
+          initialQuery: _exploreQuery,
+          initialCategory: _exploreCategory,
+        );
 
       case 2:
-        return _buildPlaceholder('Mesaje', Icons.chat_bubble_outline_rounded);
+        return const MessagesTab();
 
       case 3:
-        return _buildPlaceholder('Comenzile mele', Icons.shopping_bag_outlined);
+        return const OrderPage();
 
       case 4:
         return const LoginPage();
@@ -776,61 +857,206 @@ class _WebShellState extends State<WebShell> {
         return const RegisterPage();
 
       case 6:
-        return _buildPlaceholder('Profilul meu', Icons.person_outline_rounded);
+        return ProfilePage(
+          embedded: true,
+          onNavigate: (destination) {
+            switch (destination) {
+              case 'listings':
+                _selectSection(7);
+                break;
+              case 'sales':
+                _selectSection(9);
+                break;
+              case 'reviews':
+                _selectSection(11);
+                break;
+            }
+          },
+          onLogout: () async {
+            await context.read<AuthProvider>().logout();
+            if (mounted) setState(() => _selectedIndex = 0);
+          },
+        );
 
       case 7:
-        return _buildPlaceholder('Anunțurile mele', Icons.inventory_2_outlined);
+        return const MyListingsPage();
 
       case 8:
-        return _buildPlaceholder('Favorite', Icons.favorite_border_rounded);
+        return const FavoritesPage();
 
       case 9:
-        return _buildPlaceholder('Vânzările mele', Icons.sell_outlined);
-
-      case 10:
-        return _buildPlaceholder(
-          'Livrările mele',
-          Icons.local_shipping_outlined,
-        );
+        return const OrderPage(initialTab: 1);
 
       case 11:
-        return _buildPlaceholder('Recenziile mele', Icons.star_border_rounded);
+        return const MyReviewsPage();
 
       case 12:
-        return _buildPlaceholder(
-          'Notificări',
-          Icons.notifications_none_rounded,
-        );
+        return const NotificationsPage();
 
       case 13:
-        return _buildPlaceholder('Setări', Icons.settings_outlined);
+        return _buildSettings(context);
 
       case 14:
-        return _buildPlaceholder(
-          'Ajutor și suport',
-          Icons.help_outline_rounded,
-        );
+        return const SupportPage();
 
       case 15:
         return const SavedCardsPage(embedded: true);
+
+      case 16:
+        return SellPage(
+          embedded: true,
+          onPublished: () {
+            if (mounted) setState(() => _selectedIndex = 7);
+          },
+        );
+
+      case 17:
+        return const SoldPage();
+
+      case 18:
+        return const PromotionPage();
+
+      case 19:
+        return const AddressesPage();
+
+      case 20:
+        return const SecurityPage();
 
       default:
         return const WebHome();
     }
   }
 
-  Widget _buildPlaceholder(String title, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 52),
-          const SizedBox(height: 18),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+  Widget _buildSettings(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Setări',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Gestionează preferințele, securitatea și datele contului.',
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 28),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth >= 720
+                      ? (constraints.maxWidth - 16) / 2
+                      : constraints.maxWidth;
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _settingsCard(
+                        context,
+                        width: width,
+                        icon: Icons.security_outlined,
+                        title: 'Securitate',
+                        subtitle: 'Parolă, autentificare 2FA și sesiuni active',
+                        page: const SecurityPage(),
+                      ),
+                      _settingsCard(
+                        context,
+                        width: width,
+                        icon: Icons.notifications_outlined,
+                        title: 'Preferințe notificări',
+                        subtitle: 'Mesaje, oferte și activitatea contului',
+                        page: const NotificationSettingsPage(),
+                      ),
+                      _settingsCard(
+                        context,
+                        width: width,
+                        icon: Icons.dark_mode_outlined,
+                        title: 'Tema aplicației',
+                        subtitle: 'Luminos, întunecat sau automat',
+                        page: const ThemeSettingsPage(),
+                      ),
+                      _settingsCard(
+                        context,
+                        width: width,
+                        icon: Icons.location_on_outlined,
+                        title: 'Adrese salvate',
+                        subtitle: 'Gestionează adresele pentru livrare',
+                        page: const AddressesPage(),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _settingsCard(
+    BuildContext context, {
+    required double width,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget page,
+  }) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: width,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: .1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: theme.colorScheme.primary),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

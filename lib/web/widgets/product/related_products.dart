@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../api_service.dart';
 import '../../../models/listing.dart';
 import '../../../shared/widgets/product_card.dart';
+import '../../web_product_page.dart';
 
 class RelatedProducts extends StatefulWidget {
   final String currentListingId;
@@ -84,7 +85,13 @@ class _RelatedProductsState extends State<RelatedProducts> {
                   image: product.images.isNotEmpty ? product.images.first : "",
                   price: product.price,
                   location: product.city,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => WebProductPage(productId: product.id),
+                      ),
+                    );
+                  },
                   onFavorite: () {},
                 ),
               );

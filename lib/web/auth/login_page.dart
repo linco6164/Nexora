@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../api_service.dart';
+import '../../forgotten_password.dart';
+import '../../notification_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/facebook_web_auth.dart';
+import '../../socket_service.dart';
+import '../../two_factor_page.dart';
+import '../web_shell.dart';
 import 'widgets/auth_card.dart';
 import 'widgets/auth_divider.dart';
 import 'widgets/auth_header.dart';
@@ -24,6 +31,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _rememberMe = false;
   bool _obscurePassword = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -34,33 +42,120 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
 
-    final auth = context.read<AuthProvider>();
+    try {
+      final result = await ApiService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    final success = await auth.login(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.of(context).pushReplacementNamed("/");
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Email sau parolă incorectă.",
+      if (result['requiresTwoFactor'] == true) {
+        final userId = result['userId']?.toString() ?? '';
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TwoFactorPage(
+              userId: userId,
+              successPage: const WebShell(),
+              onVerified: context.read<AuthProvider>().loadUser,
+            ),
           ),
-        ),
+        );
+        return;
+      }
+
+      await _completeLogin();
+    } catch (error) {
+      if (!mounted) return;
+      _showError(error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _completeLogin() async {
+    final auth = context.read<AuthProvider>();
+    await auth.loadUser();
+
+    if (!auth.isLoggedIn) {
+      throw ApiException(
+        'Sesiunea a fost creată, dar profilul nu a putut fi încărcat.',
       );
     }
+
+    try {
+      await NotificationService.instance.registerCurrentTokenWithBackend();
+    } catch (error) {
+      debugPrint('[WEB LOGIN] Notificările nu au fost conectate: $error');
+    }
+
+    try {
+      await SocketService.connect();
+    } catch (error) {
+      debugPrint('[WEB LOGIN] Socket-ul nu a fost conectat: $error');
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const WebShell()),
+      (route) => false,
+    );
+  }
+
+  Future<void> _googleLogin(String idToken) async {
+    if (_loading) return;
+    setState(() => _loading = true);
+
+    try {
+      await ApiService.googleLogin(idToken);
+      await _completeLogin();
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _facebookLogin() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+
+    try {
+      final accessToken = await requestFacebookAccessToken();
+      await ApiService.facebookLogin(accessToken);
+      await _completeLogin();
+    } catch (error) {
+      if (mounted) _showError(error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _showError(Object error) {
+    final fallback = error
+        .toString()
+        .replaceFirst('Exception: ', '')
+        .replaceFirst('Bad state: ', '')
+        .replaceFirst('FormatException: ', '')
+        .trim();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error is ApiException
+              ? error.message
+              : fallback.isEmpty
+              ? 'Autentificarea nu a putut fi finalizată.'
+              : fallback,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -72,9 +167,8 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const AuthHeader(
-                    title: "Welcome Back",
-                    subtitle:
-                        "Login to continue to your Nexora account.",
+                    title: "Bine ai revenit",
+                    subtitle: "Autentifică-te pentru a continua în Nexora.",
                   ),
 
                   const SizedBox(height: 32),
@@ -92,21 +186,18 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: _obscurePassword,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Enter password";
+                        return "Introdu parola";
                       }
 
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: "Password",
-                      prefixIcon: const Icon(
-                        Icons.lock_outline,
-                      ),
+                      labelText: "Parolă",
+                      prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {
-                            _obscurePassword =
-                                !_obscurePassword;
+                            _obscurePassword = !_obscurePassword;
                           });
                         },
                         icon: Icon(
@@ -116,8 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -134,13 +224,17 @@ class _LoginPageState extends State<LoginPage> {
                           });
                         },
                       ),
-                      const Text("Remember me"),
+                      const Text("Ține-mă minte"),
                       const Spacer(),
                       TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          "Forgot password?",
-                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ForgottenPassword(),
+                            ),
+                          );
+                        },
+                        child: const Text("Ai uitat parola?"),
                       ),
                     ],
                   ),
@@ -148,18 +242,14 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
 
                   FilledButton(
-                    onPressed:
-                        auth.loading ? null : _login,
-                    child: auth.loading
+                    onPressed: _loading ? null : _login,
+                    child: _loading
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text("Login"),
+                        : const Text("Autentificare"),
                   ),
 
                   const SizedBox(height: 24),
@@ -168,28 +258,29 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 24),
 
-                  const SocialLoginButtons(),
+                  SocialLoginButtons(
+                    loading: _loading,
+                    onGoogleCredential: _googleLogin,
+                    onGoogleError: _showError,
+                    onFacebook: _facebookLogin,
+                  ),
 
                   const SizedBox(height: 24),
 
                   Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        "Don't have an account?",
-                      ),
+                      const Text("Nu ai cont?"),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const RegisterPage(),
+                              builder: (_) => const RegisterPage(),
                             ),
                           );
                         },
-                        child: const Text("Register"),
+                        child: const Text("Înregistrează-te"),
                       ),
                     ],
                   ),

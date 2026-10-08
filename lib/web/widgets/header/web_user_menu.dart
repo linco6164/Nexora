@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../dialogs/login_dialog.dart';
+import '../../dialogs/register_dialog.dart';
 
 class WebUserMenu extends StatelessWidget {
-  const WebUserMenu({super.key});
+  final ValueChanged<String>? onNavigate;
+
+  const WebUserMenu({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -25,17 +28,17 @@ class WebUserMenu extends StatelessWidget {
                     builder: (_) => const LoginDialog(),
                   );
                 },
-                child: const Text("Login"),
+                child: const Text("Autentificare"),
               ),
               const SizedBox(width: 12),
               FilledButton(
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (_) => const LoginDialog(),
+                    builder: (_) => const RegisterDialog(),
                   );
                 },
-                child: const Text("Register"),
+                child: const Text("Înregistrare"),
               ),
             ],
           );
@@ -53,39 +56,45 @@ class WebUserMenu extends StatelessWidget {
         return PopupMenuButton<String>(
           offset: const Offset(0, 50),
           onSelected: (value) async {
-            switch (value) {
-              case "profile":
-                break;
-
-              case "listings":
-                break;
-
-              case "favorites":
-                break;
-
-              case "messages":
-                break;
-
-              case "orders":
-                break;
-
-              case "settings":
-                break;
-
-              case "logout":
-                await auth.logout();
-                break;
+            if (value == "logout") {
+              await auth.logout();
+            } else {
+              onNavigate?.call(value);
             }
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: "profile", child: Text("Profile")),
-            PopupMenuItem(value: "listings", child: Text("My Listings")),
-            PopupMenuItem(value: "favorites", child: Text("Favorites")),
-            PopupMenuItem(value: "messages", child: Text("Messages")),
-            PopupMenuItem(value: "orders", child: Text("Orders")),
-            PopupMenuItem(value: "settings", child: Text("Settings")),
-            PopupMenuDivider(),
-            PopupMenuItem(value: "logout", child: Text("Logout")),
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: "profile",
+              enabled: onNavigate != null,
+              child: const Text("Profil"),
+            ),
+            PopupMenuItem(
+              value: "listings",
+              enabled: onNavigate != null,
+              child: const Text("Anunțurile mele"),
+            ),
+            PopupMenuItem(
+              value: "favorites",
+              enabled: onNavigate != null,
+              child: const Text("Favorite"),
+            ),
+            PopupMenuItem(
+              value: "messages",
+              enabled: onNavigate != null,
+              child: const Text("Mesaje"),
+            ),
+            PopupMenuItem(
+              value: "orders",
+              enabled: onNavigate != null,
+              child: const Text("Comenzi"),
+            ),
+            PopupMenuItem(
+              value: "settings",
+              enabled: onNavigate != null,
+              child: const Text("Setări"),
+            ),
+            const PopupMenuDivider(),
+            const PopupMenuItem(value: "logout", child: Text("Deconectare")),
           ],
           child: Row(
             mainAxisSize: MainAxisSize.min,

@@ -23,6 +23,7 @@ import 'theme_notifier.dart';
 import 'welcome_page.dart';
 
 import 'web/web_shell.dart';
+import 'web/web_product_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -232,7 +233,9 @@ class _MainAppState extends State<MainApp> {
       if (listingId.isNotEmpty) {
         debugPrint('🛍️ Opening product directly: $listingId');
 
-        return ListingDetailPage(listingId: listingId);
+        return kIsWeb
+            ? WebProductPage(productId: listingId)
+            : ListingDetailPage(listingId: listingId);
       }
     }
 
@@ -252,6 +255,13 @@ class _MainAppState extends State<MainApp> {
       debugPrint('💳 Status: $status');
 
       return PromotionPaymentReturnPage(paymentId: paymentId, status: status);
+    }
+
+    if (path == '/reset-password') {
+      final token = uri.queryParameters['token'] ?? '';
+      if (token.isNotEmpty) {
+        return NewPasswordPage(resetToken: token);
+      }
     }
 
     if (kIsWeb) {
@@ -343,7 +353,9 @@ class _MainAppState extends State<MainApp> {
                 if (listingId.isNotEmpty) {
                   return MaterialPageRoute(
                     settings: settings,
-                    builder: (_) => ListingDetailPage(listingId: listingId),
+                    builder: (_) => kIsWeb
+                        ? WebProductPage(productId: listingId)
+                        : ListingDetailPage(listingId: listingId),
                   );
                 }
               }
@@ -370,6 +382,16 @@ class _MainAppState extends State<MainApp> {
                     status: status,
                   ),
                 );
+              }
+
+              if (path == '/reset-password') {
+                final token = uri.queryParameters['token'] ?? '';
+                if (token.isNotEmpty) {
+                  return MaterialPageRoute(
+                    settings: settings,
+                    builder: (_) => NewPasswordPage(resetToken: token),
+                  );
+                }
               }
 
               // ====================================================

@@ -6,6 +6,8 @@ class SellerCard extends StatelessWidget {
   final bool verified;
   final int? listingsCount;
   final String? memberSince;
+  final VoidCallback? onMessage;
+  final VoidCallback? onProfile;
 
   const SellerCard({
     super.key,
@@ -14,6 +16,8 @@ class SellerCard extends StatelessWidget {
     this.verified = false,
     this.listingsCount = 0,
     this.memberSince = "",
+    this.onMessage,
+    this.onProfile,
   });
 
   @override
@@ -114,7 +118,7 @@ class SellerCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: () {},
+                    onPressed: onMessage,
                     icon: const Icon(Icons.chat_bubble_outline),
                     label: const Text('Mesaj'),
                   ),
@@ -124,7 +128,7 @@ class SellerCard extends StatelessWidget {
 
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: onProfile,
                     icon: const Icon(Icons.person_outline),
                     label: const Text('Profil'),
                   ),

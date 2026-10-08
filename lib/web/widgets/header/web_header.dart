@@ -7,7 +7,26 @@ import 'web_search_bar.dart';
 import 'web_user_menu.dart';
 
 class WebHeader extends StatelessWidget {
-  const WebHeader({super.key});
+  final VoidCallback? onHome;
+  final ValueChanged<String>? onSearch;
+  final VoidCallback? onFilters;
+  final VoidCallback? onFavorites;
+  final VoidCallback? onMessages;
+  final VoidCallback? onNotifications;
+  final VoidCallback? onSell;
+  final ValueChanged<String>? onUserNavigate;
+
+  const WebHeader({
+    super.key,
+    this.onHome,
+    this.onSearch,
+    this.onFilters,
+    this.onFavorites,
+    this.onMessages,
+    this.onNotifications,
+    this.onSell,
+    this.onUserNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,21 +42,29 @@ class WebHeader extends StatelessWidget {
             height: 80,
             child: Row(
               children: [
-                const WebLogo(),
+                WebLogo(onTap: onHome),
 
                 const SizedBox(width: 40),
 
-                const Expanded(
-                  child: WebSearchBar(),
+                Expanded(
+                  child: WebSearchBar(
+                    onSubmitted: onSearch,
+                    onFilters: onFilters,
+                  ),
                 ),
 
                 const SizedBox(width: 24),
 
-                const WebActions(),
+                WebActions(
+                  onFavorites: onFavorites,
+                  onMessages: onMessages,
+                  onNotifications: onNotifications,
+                  onSell: onSell,
+                ),
 
                 const SizedBox(width: 20),
 
-                const WebUserMenu(),
+                WebUserMenu(onNavigate: onUserNavigate),
               ],
             ),
           ),

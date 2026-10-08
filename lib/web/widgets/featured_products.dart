@@ -27,11 +27,6 @@ class _FeaturedProductsState extends State<FeaturedProducts> {
 
   Future<void> _loadProducts() async {
     try {
-      // TODO:
-      // Înlocuiește cu endpointul real:
-      //
-      // ApiService.getFeaturedProducts()
-
       final products = await ApiService.getListings();
 
       if (!mounted) return;
@@ -55,18 +50,14 @@ class _FeaturedProductsState extends State<FeaturedProducts> {
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.all(40),
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_error != null) {
       return Padding(
         padding: const EdgeInsets.all(40),
-        child: Center(
-          child: Text(_error!),
-        ),
+        child: Center(child: Text(_error!)),
       );
     }
 
@@ -75,13 +66,11 @@ class _FeaturedProductsState extends State<FeaturedProducts> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SectionTitle(
-            title: "Featured products",
-            subtitle: "Popular products chosen for you",
+            title: "Produse recomandate",
+            subtitle: "Anunțuri populare alese pentru tine",
           ),
 
-          ProductGrid(
-            products: _products,
-          ),
+          ProductGrid(products: _products),
         ],
       ),
     );

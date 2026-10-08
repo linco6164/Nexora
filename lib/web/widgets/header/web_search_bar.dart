@@ -1,17 +1,33 @@
 import 'package:flutter/material.dart';
 
 class WebSearchBar extends StatelessWidget {
-  const WebSearchBar({super.key});
+  final TextEditingController? controller;
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onFilters;
+
+  const WebSearchBar({
+    super.key,
+    this.controller,
+    this.onSubmitted,
+    this.onFilters,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 48,
       child: TextField(
+        controller: controller,
+        textInputAction: TextInputAction.search,
+        onSubmitted: onSubmitted,
         decoration: InputDecoration(
-          hintText: "Search products...",
+          hintText: "Caută produse...",
           prefixIcon: const Icon(Icons.search),
-          suffixIcon: const Icon(Icons.tune),
+          suffixIcon: IconButton(
+            onPressed: onFilters,
+            icon: const Icon(Icons.tune),
+            tooltip: 'Filtre',
+          ),
           filled: true,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(40),

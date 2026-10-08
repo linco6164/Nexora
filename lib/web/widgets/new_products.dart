@@ -59,8 +59,8 @@ class _NewProductsState extends State<NewProducts> {
       child: Column(
         children: [
           const SectionTitle(
-            title: "New Arrivals",
-            subtitle: "Recently added products",
+            title: "Produse noi",
+            subtitle: "Anunțuri adăugate recent",
           ),
           ProductGrid(products: _products),
         ],

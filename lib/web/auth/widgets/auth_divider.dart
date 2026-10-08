@@ -10,7 +10,7 @@ class AuthDivider extends StatelessWidget {
         Expanded(child: Divider()),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 12),
-          child: Text("OR"),
+          child: Text("SAU"),
         ),
         Expanded(child: Divider()),
       ],

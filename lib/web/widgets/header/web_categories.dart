@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/demo_categories.dart';
 
 class WebCategories extends StatelessWidget {
-  const WebCategories({super.key});
+  final ValueChanged<String>? onCategory;
+
+  const WebCategories({super.key, this.onCategory});
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +21,7 @@ class WebCategories extends StatelessWidget {
 
           return InkWell(
             borderRadius: BorderRadius.circular(24),
-            onTap: () {
-              // TODO:
-              // Open category
-            },
+            onTap: onCategory == null ? null : () => onCategory!(category.slug),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(

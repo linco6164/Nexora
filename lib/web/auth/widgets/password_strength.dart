@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
 
-enum PasswordStrengthLevel {
-  veryWeak,
-  weak,
-  medium,
-  strong,
-  veryStrong,
-}
+enum PasswordStrengthLevel { veryWeak, weak, medium, strong, veryStrong }
 
 class PasswordStrength extends StatelessWidget {
   final String password;
 
-  const PasswordStrength({
-    super.key,
-    required this.password,
-  });
+  const PasswordStrength({super.key, required this.password});
 
   PasswordStrengthLevel get level {
     int score = 0;
@@ -71,19 +62,19 @@ class PasswordStrength extends StatelessWidget {
   String get label {
     switch (level) {
       case PasswordStrengthLevel.veryWeak:
-        return "Very Weak";
+        return "Foarte slabă";
 
       case PasswordStrengthLevel.weak:
-        return "Weak";
+        return "Slabă";
 
       case PasswordStrengthLevel.medium:
-        return "Medium";
+        return "Medie";
 
       case PasswordStrengthLevel.strong:
-        return "Strong";
+        return "Puternică";
 
       case PasswordStrengthLevel.veryStrong:
-        return "Very Strong";
+        return "Foarte puternică";
     }
   }
 
@@ -135,31 +126,22 @@ class PasswordStrength extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: color, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
-        _Requirement(
-          ok: password.length >= 8,
-          text: "Minimum 8 characters",
-        ),
+        _Requirement(ok: password.length >= 8, text: "Minimum 8 caractere"),
         _Requirement(
           ok: RegExp(r'[A-Z]').hasMatch(password),
-          text: "One uppercase letter",
+          text: "O literă mare",
         ),
         _Requirement(
           ok: RegExp(r'[a-z]').hasMatch(password),
-          text: "One lowercase letter",
+          text: "O literă mică",
         ),
-        _Requirement(
-          ok: RegExp(r'[0-9]').hasMatch(password),
-          text: "One number",
-        ),
+        _Requirement(ok: RegExp(r'[0-9]').hasMatch(password), text: "O cifră"),
         _Requirement(
           ok: RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password),
-          text: "One special character",
+          text: "Un caracter special",
         ),
       ],
     );
@@ -170,10 +152,7 @@ class _Requirement extends StatelessWidget {
   final bool ok;
   final String text;
 
-  const _Requirement({
-    required this.ok,
-    required this.text,
-  });
+  const _Requirement({required this.ok, required this.text});
 
   @override
   Widget build(BuildContext context) {

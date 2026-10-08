@@ -19,6 +19,8 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta name="google-signin-client_id" content="704537003987-nhbquge06mbasglpsush74qpj8a42t1n.apps.googleusercontent.com">
+  <meta property="fb:app_id" content="2067017487543159">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -33,6 +35,60 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    (() => {
+      let resolveFacebookReady;
+      window.nexoraFacebookReady = new Promise((resolve) => {
+        resolveFacebookReady = resolve;
+      });
+
+      window.fbAsyncInit = function () {
+        FB.init({
+          appId: '2067017487543159',
+          cookie: true,
+          xfbml: false,
+          version: 'v21.0'
+        });
+        resolveFacebookReady();
+      };
+
+      window.nexoraFacebookLogin = async function () {
+        await Promise.race([
+          window.nexoraFacebookReady,
+          new Promise((_, reject) => setTimeout(
+            () => reject(new Error('SDK-ul Facebook nu a putut fi încărcat.')),
+            8000
+          ))
+        ]);
+
+        return new Promise((resolve, reject) => {
+          FB.login((response) => {
+            const token = response?.authResponse?.accessToken;
+            if (token) {
+              resolve(token);
+              return;
+            }
+
+            reject(new Error(
+              response?.status === 'not_authorized'
+                ? 'Aplicația Facebook nu a fost autorizată.'
+                : 'Autentificarea cu Facebook a fost anulată.'
+            ));
+          }, {
+            scope: 'public_profile,email',
+            return_scopes: true
+          });
+        });
+      };
+
+      const script = document.createElement('script');
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = 'anonymous';
+      script.src = 'https://connect.facebook.net/ro_RO/sdk.js';
+      document.head.appendChild(script);
+    })();
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

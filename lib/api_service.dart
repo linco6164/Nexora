@@ -5,6 +5,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'models/listing.dart';
 import 'models/chat_models.dart';
@@ -939,8 +940,22 @@ class ApiService {
   static Future<List<String>> uploadImages(
     List<File> images, {
     String folder = 'listings',
+  }) {
+    return uploadXFiles(
+      images.map((image) => XFile(image.path)).toList(),
+      folder: folder,
+    );
+  }
+
+  static Future<List<String>> uploadXFiles(
+    List<XFile> images, {
+    String folder = 'listings',
   }) async {
     final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
 
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
 
@@ -948,9 +963,23 @@ class ApiService {
     request.fields['folder'] = folder;
 
     for (final image in images) {
-      request.files.add(
-        await http.MultipartFile.fromPath('images', image.path),
-      );
+      if (kIsWeb) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'images',
+            await image.readAsBytes(),
+            filename: image.name,
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'images',
+            image.path,
+            filename: image.name,
+          ),
+        );
+      }
     }
 
     final streamedResponse = await request.send();

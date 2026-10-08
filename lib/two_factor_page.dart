@@ -7,8 +7,15 @@ import 'notification_service.dart';
 
 class TwoFactorPage extends StatefulWidget {
   final String userId;
+  final Widget? successPage;
+  final Future<void> Function()? onVerified;
 
-  const TwoFactorPage({super.key, required this.userId});
+  const TwoFactorPage({
+    super.key,
+    required this.userId,
+    this.successPage,
+    this.onVerified,
+  });
 
   @override
   State<TwoFactorPage> createState() => _TwoFactorPageState();
@@ -25,53 +32,52 @@ class _TwoFactorPageState extends State<TwoFactorPage> {
   }
 
   Future<void> _handleVerify() async {
-  if (_codeController.text.trim().length != 6) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Codul trebuie să aibă 6 cifre')),
-    );
-    return;
-  }
-
-  setState(() => _isLoading = true);
-
-  try {
-    await ApiService.verify2FA(
-      userId: widget.userId,
-      token: _codeController.text.trim(),
-    );
-
-    // JWT-ul este acum salvat.
-    // Asociem tokenul FCM cu utilizatorul autentificat.
-    final fcmToken =
-        await NotificationService.instance.getToken();
-
-    if (fcmToken != null && fcmToken.isNotEmpty) {
-      await NotificationService.instance
-          .registerTokenWithBackend(fcmToken);
+    if (_codeController.text.trim().length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Codul trebuie să aibă 6 cifre')),
+      );
+      return;
     }
 
-    await SocketService.connect();
+    setState(() => _isLoading = true);
 
-    if (!mounted) return;
+    try {
+      await ApiService.verify2FA(
+        userId: widget.userId,
+        token: _codeController.text.trim(),
+      );
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const HomePage(),
-      ),
-      (route) => false,
-    );
-  } on ApiException catch (e) {
-    if (!mounted) return;
+      // JWT-ul este acum salvat.
+      // Asociem tokenul FCM cu utilizatorul autentificat.
+      final fcmToken = await NotificationService.instance.getToken();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.message)),
-    );
-  } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await NotificationService.instance.registerTokenWithBackend(fcmToken);
+      }
+
+      await SocketService.connect();
+
+      await widget.onVerified?.call();
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => widget.successPage ?? const HomePage(),
+        ),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {

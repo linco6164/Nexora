@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../shared/widgets/responsive_container.dart';
 
 class HeroSection extends StatelessWidget {
-  const HeroSection({super.key});
+  final VoidCallback? onExplore;
+
+  const HeroSection({super.key, this.onExplore});
 
   @override
   Widget build(BuildContext context) {
@@ -10,10 +13,7 @@ class HeroSection extends StatelessWidget {
       height: 520,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xff4F46E5),
-            Color(0xff2563EB),
-          ],
+          colors: [Color(0xff4F46E5), Color(0xff2563EB)],
         ),
       ),
       child: ResponsiveContainer(
@@ -26,27 +26,21 @@ class HeroSection extends StatelessWidget {
                 children: [
                   Text(
                     "Buy. Sell. Repeat.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .displaySmall
-                        ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     "Discover millions of products from trusted sellers.",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 20,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 20),
                   ),
                   const SizedBox(height: 40),
                   FilledButton(
-                    onPressed: () {},
-                    child: const Text("Start shopping"),
-                  )
+                    onPressed: onExplore,
+                    child: const Text('Explorează produsele'),
+                  ),
                 ],
               ),
             ),
@@ -58,7 +52,7 @@ class HeroSection extends StatelessWidget {
                   color: Colors.white24,
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

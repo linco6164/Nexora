@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 class WebLogo extends StatelessWidget {
-  const WebLogo({super.key});
+  final VoidCallback? onTap;
+
+  const WebLogo({super.key, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        // TODO: Navigate Home
-      },
+      onTap:
+          onTap ??
+          () => Navigator.of(context).popUntil((route) => route.isFirst),
       child: Row(
         children: [
           Icon(
@@ -19,10 +21,8 @@ class WebLogo extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             "NEXORA",
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 2),
           ),
         ],
       ),

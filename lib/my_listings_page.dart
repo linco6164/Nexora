@@ -23,7 +23,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   Future<void> _loadListings() async {
     try {
-      final listings = await ApiService.getListings();
+      final listings = await ApiService.getMyListings();
 
       if (!mounted) return;
 
@@ -79,85 +79,99 @@ class _MyListingsPageState extends State<MyListingsPage> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadListings,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: _listings.length,
-        itemBuilder: (context, index) {
-          final listing = _listings[index];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1200
+            ? 5
+            : constraints.maxWidth >= 900
+            ? 4
+            : constraints.maxWidth >= 600
+            ? 3
+            : 2;
 
-          final title = listing.title;
-          final price = listing.price;
-          final currency = listing.currency;
-          final images = listing.images;
+        return RefreshIndicator(
+          onRefresh: _loadListings,
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            physics: const AlwaysScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.72,
+            ),
+            itemCount: _listings.length,
+            itemBuilder: (context, index) {
+              final listing = _listings[index];
 
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PromotionDurationPage(listing: listing),
+              final title = listing.title;
+              final price = listing.price;
+              final currency = listing.currency;
+              final images = listing.images;
+
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PromotionDurationPage(listing: listing),
+                    ),
+                  );
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: images.isNotEmpty
+                            ? Image.network(
+                                images.first.toString(),
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => const Center(
+                                  child: Icon(
+                                    Icons.image_not_supported_outlined,
+                                    size: 40,
+                                  ),
+                                ),
+                              )
+                            : const Center(
+                                child: Icon(Icons.image_outlined, size: 40),
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '$price $currency',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: images.isNotEmpty
-                        ? Image.network(
-                            images.first.toString(),
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const Center(
-                              child: Icon(
-                                Icons.image_not_supported_outlined,
-                                size: 40,
-                              ),
-                            ),
-                          )
-                        : const Center(
-                            child: Icon(Icons.image_outlined, size: 40),
-                          ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '$price $currency',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
