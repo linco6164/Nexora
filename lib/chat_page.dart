@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
+import 'app_navigator.dart';
 import 'app_feedback.dart';
 import 'models/chat_models.dart';
 import 'socket_service.dart';
@@ -29,7 +30,8 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage>
+    with WidgetsBindingObserver, RouteAware {
   static const int _maximumAttachments = 5;
 
   final TextEditingController _messageController = TextEditingController();
@@ -62,7 +64,26 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initialize();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() => _loadMessages(showLoading: false);
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        ModalRoute.of(context)?.isCurrent == true) {
+      _loadMessages(showLoading: false);
+    }
   }
 
   Future<void> _initialize() async {
@@ -365,6 +386,9 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _markConversationAsSeen() async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
     final unseenIncoming = _messages
         .where(
           (message) =>
@@ -742,6 +766,8 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    appRouteObserver.unsubscribe(this);
     _stopTyping();
     SocketService.leaveConversation(widget.conversationId);
     _removeNewMessageListener?.call();

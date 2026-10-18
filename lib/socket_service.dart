@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'api_service.dart';
+import 'activity_events.dart';
 import 'models/chat_models.dart';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 class SocketService {
   static io.Socket? _socket;
   static Future<void>? _connecting;
+  static int _generation = 0;
   static final Set<String> _conversationRooms = <String>{};
 
   static bool get isConnected => _socket?.connected == true;
@@ -37,29 +39,45 @@ class SocketService {
   static Future<void> _connect() async {
     if (isConnected) return;
 
+    final generation = _generation;
     final token = await ApiService.getToken();
+    if (generation != _generation) return;
     if (token == null || token.isEmpty) {
       throw StateError('Nu ești autentificat.');
     }
 
-    _socket?.dispose();
-
-    final socket = io.io(
-      ApiService.baseUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .setAuth({'token': token})
-          .disableAutoConnect()
-          .build(),
-    );
+    final existingSocket = _socket;
+    final socket =
+        existingSocket ??
+        io.io(
+          ApiService.baseUrl,
+          io.OptionBuilder()
+              .setTransports(['websocket'])
+              .setAuth({'token': token})
+              .enableForceNew()
+              .disableAutoConnect()
+              .build(),
+        );
 
     _socket = socket;
 
-    socket.onConnect((_) {
-      for (final conversationId in _conversationRooms) {
-        socket.emit('joinConversation', conversationId);
+    if (existingSocket == null) {
+      socket.onConnect((_) {
+        for (final conversationId in _conversationRooms) {
+          socket.emit('joinConversation', conversationId);
+        }
+        activityEvents.add(ActivityEvent.changed);
+      });
+
+      for (final event in [
+        'notification:new',
+        'notification:unread-count',
+        'conversationUpdated',
+        'messagesSeen',
+      ]) {
+        socket.on(event, (_) => activityEvents.add(ActivityEvent.changed));
       }
-    });
+    }
 
     final completer = Completer<void>();
 
@@ -99,6 +117,7 @@ class SocketService {
   }
 
   static void disconnect() {
+    _generation++;
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;

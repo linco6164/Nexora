@@ -37,6 +37,12 @@ dependencies:
   flutter_map_marker_cluster: 8.2.2
   google_maps_flutter: ^2.18.2
 
+# shared_preferences_android 2.5.0 a trecut la Pigeon JNI și poate încărca
+# semnături native incompatibile cu artefactele Android existente. Păstrăm
+# temporar implementarea stabilă, anterioară migrării JNI.
+dependency_overrides:
+  shared_preferences_android: 2.4.28
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

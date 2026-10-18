@@ -5,6 +5,8 @@ import 'socket_service.dart';
 import 'api_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<ModalRoute<dynamic>> appRouteObserver =
+    RouteObserver<ModalRoute<dynamic>>();
 
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();

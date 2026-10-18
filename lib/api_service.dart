@@ -11,6 +11,7 @@ import 'models/listing.dart';
 import 'models/chat_models.dart';
 import 'models/notification_model.dart';
 import 'app_navigator.dart';
+import 'activity_events.dart';
 
 import '../models/sameday_ooh_location.dart';
 
@@ -36,6 +37,7 @@ class ApiService {
 
   static Future<void> saveToken(String token) async {
     await _storage.write(key: 'jwt_token', value: token);
+    activityEvents.add(ActivityEvent.sessionChanged);
   }
 
   static Future<String?> getToken() async {
@@ -44,6 +46,7 @@ class ApiService {
 
   static Future<void> deleteToken() async {
     await _storage.delete(key: 'jwt_token');
+    activityEvents.add(ActivityEvent.sessionChanged);
   }
 
   static Future<void> handleSessionExpired() async {
@@ -791,6 +794,7 @@ class ApiService {
         data['message'] ?? 'Eroare la marcarea mesajelor ca citite',
       );
     }
+    activityEvents.add(ActivityEvent.changed);
   }
 
   static Future<Conversation> startConversation(String listingId) async {
@@ -941,6 +945,7 @@ class ApiService {
         data['message']?.toString() ?? 'Eroare la ștergerea conversației',
       );
     }
+    activityEvents.add(ActivityEvent.changed);
   }
 
   // ============================================================
@@ -1034,11 +1039,12 @@ class ApiService {
     }
   }
 
-  static Future<List<AppNotification>> getNotifications() async {
+  static Future<List<AppNotification>> getNotifications({String? type}) async {
     final token = await getToken();
 
     final response = await _client.get(
-      Uri.parse('$baseUrl/notifications'),
+      Uri.parse('$baseUrl/notifications')
+          .replace(queryParameters: type == null ? null : {'type': type}),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -1052,10 +1058,17 @@ class ApiService {
 
     final List<dynamic> list = data['notifications'];
 
-    return list.map((json) => AppNotification.fromJson(json)).toList();
+    return list
+        .map((json) => AppNotification.fromJson(json))
+        .where((item) => type == null || item.type == type)
+        .toList();
   }
 
   static Future<int> getUnreadNotificationCount() async {
+    return (await getUnreadActivity()).total;
+  }
+
+  static Future<({int total, int favorites})> getUnreadActivity() async {
     final token = await getToken();
 
     final response = await _client.get(
@@ -1066,37 +1079,70 @@ class ApiService {
     final data = jsonDecode(response.body);
 
     if (response.statusCode != 200 || data['success'] != true) {
-      return 0;
+      throw ApiException(
+        data['message'] ?? 'Eroare la încărcarea notificărilor',
+      );
     }
 
-    return data['count'] ?? 0;
+    final total = int.tryParse('${data['count']}');
+    if (total == null || total < 0) {
+      throw const FormatException('Număr de notificări invalid.');
+    }
+    final byType = data['byType'];
+    // Compatible with the server before the per-type count is deployed.
+    final favorites = byType is Map
+        ? int.tryParse('${byType['favorite']}') ?? 0
+        : (await getNotifications(type: 'favorite'))
+              .where((n) => !n.read)
+              .length;
+    return (total: total, favorites: favorites);
   }
 
   static Future<void> markNotificationAsRead(String id) async {
     final token = await getToken();
 
-    await _client.patch(
+    final response = await _client.patch(
       Uri.parse('$baseUrl/notifications/$id/read'),
       headers: {'Authorization': 'Bearer $token'},
     );
+    _checkNotificationMutation(response);
   }
 
-  static Future<void> markAllNotificationsAsRead() async {
+  static Future<void> markAllNotificationsAsRead({String? type}) async {
     final token = await getToken();
 
-    await _client.patch(
-      Uri.parse('$baseUrl/notifications/read-all'),
+    final response = await _client.patch(
+      Uri.parse('$baseUrl/notifications/read-all')
+          .replace(queryParameters: type == null ? null : {'type': type}),
       headers: {'Authorization': 'Bearer $token'},
     );
+    _checkNotificationMutation(response);
   }
 
   static Future<void> deleteNotification(String id) async {
     final token = await getToken();
 
-    await _client.delete(
+    final response = await _client.delete(
       Uri.parse('$baseUrl/notifications/$id'),
       headers: {'Authorization': 'Bearer $token'},
     );
+    _checkNotificationMutation(response);
+  }
+
+  static void _checkNotificationMutation(http.Response response) {
+    final data = jsonDecode(response.body);
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        data is! Map ||
+        data['success'] != true) {
+      throw ApiException(
+        data is Map
+            ? data['message']?.toString() ??
+                  'Notificarea nu a putut fi actualizată.'
+            : 'Notificarea nu a putut fi actualizată.',
+      );
+    }
+    activityEvents.add(ActivityEvent.changed);
   }
 
   // ============================================================

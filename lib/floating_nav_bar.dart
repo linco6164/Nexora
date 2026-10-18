@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'shared/widgets/activity_badge.dart';
+
 class FloatingNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onItemTapped;
@@ -286,6 +288,7 @@ class _AnimatedNavItem extends StatelessWidget {
               opacity: opacity,
               child: _NavItem(
                 icon: icon,
+                badge: index == 2 ? ActivityKind.messages : null,
                 activeIcon: activeIcon,
                 label: label,
                 isSelected: isSelected,
@@ -304,6 +307,7 @@ class _AnimatedNavItem extends StatelessWidget {
 // ========================================================================
 
 class _NavItem extends StatelessWidget {
+  final ActivityKind? badge;
   final IconData icon;
   final IconData activeIcon;
   final String label;
@@ -311,6 +315,7 @@ class _NavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavItem({
+    this.badge,
     required this.icon,
     required this.activeIcon,
     required this.label,
@@ -328,13 +333,10 @@ class _NavItem extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            isSelected ? activeIcon : icon,
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
-            size: 24,
-          ),
+          if (badge != null)
+            ActivityBadge(kind: badge!, child: _icon(colorScheme))
+          else
+            _icon(colorScheme),
 
           const SizedBox(height: 2),
 
@@ -352,4 +354,10 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+
+  Widget _icon(ColorScheme colors) => Icon(
+    isSelected ? activeIcon : icon,
+    color: isSelected ? colors.primary : colors.onSurfaceVariant,
+    size: 24,
+  );
 }

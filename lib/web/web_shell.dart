@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../l10n/app_locale.dart';
+import '../shared/widgets/activity_badge.dart';
 
 import 'web_home.dart';
 import '../web/widgets/web_explore.dart';
@@ -116,18 +117,21 @@ class _WebShellState extends State<WebShell> {
                   _buildHeaderAction(
                     context,
                     icon: Icons.favorite_border_rounded,
+                    badge: ActivityKind.favorites,
                     label: context.tr('Favorite'),
                     onTap: () => _selectSection(8),
                   ),
                   _buildHeaderAction(
                     context,
                     icon: Icons.chat_bubble_outline_rounded,
+                    badge: ActivityKind.messages,
                     label: context.tr('Mesaje'),
                     onTap: () => _selectSection(2),
                   ),
                   _buildHeaderAction(
                     context,
                     icon: Icons.notifications_none_rounded,
+                    badge: ActivityKind.notifications,
                     label: context.tr('Notificări'),
                     onTap: () => _selectSection(12),
                   ),
@@ -269,6 +273,7 @@ class _WebShellState extends State<WebShell> {
 
   Widget _buildHeaderAction(
     BuildContext context, {
+    required ActivityKind badge,
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -279,7 +284,7 @@ class _WebShellState extends State<WebShell> {
       message: label,
       child: IconButton(
         onPressed: onTap,
-        icon: Icon(icon, size: 20),
+        icon: ActivityBadge(kind: badge, child: Icon(icon, size: 20)),
         color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
       ),
     );
@@ -855,14 +860,20 @@ class _WebShellState extends State<WebShell> {
     return PopupMenuButton<int>(
       tooltip: context.tr('Mai multe'),
       onSelected: _selectSection,
-      icon: const Icon(Icons.more_horiz_rounded),
+      icon: const ActivityBadge(
+        kind: ActivityKind.notifications,
+        child: Icon(Icons.more_horiz_rounded),
+      ),
       itemBuilder: (context) => [
         PopupMenuItem(
           value: 8,
           child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.favorite_border_rounded),
+            leading: const ActivityBadge(
+              kind: ActivityKind.favorites,
+              child: Icon(Icons.favorite_border_rounded),
+            ),
             title: Text(context.tr('Favorite')),
           ),
         ),
@@ -871,7 +882,10 @@ class _WebShellState extends State<WebShell> {
           child: ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.notifications_none_rounded),
+            leading: const ActivityBadge(
+              kind: ActivityKind.notifications,
+              child: Icon(Icons.notifications_none_rounded),
+            ),
             title: Text(context.tr('Notificări')),
           ),
         ),
@@ -913,8 +927,14 @@ class _WebShellState extends State<WebShell> {
           label: context.tr('Vinde'),
         ),
         NavigationDestination(
-          icon: const Icon(Icons.chat_bubble_outline_rounded),
-          selectedIcon: const Icon(Icons.chat_bubble_rounded),
+          icon: const ActivityBadge(
+            kind: ActivityKind.messages,
+            child: Icon(Icons.chat_bubble_outline_rounded),
+          ),
+          selectedIcon: const ActivityBadge(
+            kind: ActivityKind.messages,
+            child: Icon(Icons.chat_bubble_rounded),
+          ),
           label: context.tr('Mesaje'),
         ),
         NavigationDestination(

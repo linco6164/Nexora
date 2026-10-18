@@ -11,6 +11,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'app_navigator.dart';
+import 'activity_controller.dart';
 import 'firebase_options.dart';
 import 'listing_detail_page.dart';
 import 'l10n/app_locale.dart';
@@ -322,6 +323,7 @@ class _MainAppState extends State<MainApp> {
   void initState() {
     super.initState();
 
+    activityController.start();
     _initDeepLinks();
   }
 
@@ -332,6 +334,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void dispose() {
     _linkSubscription?.cancel();
+    activityController.dispose();
     super.dispose();
   }
 
@@ -427,6 +430,7 @@ class _MainAppState extends State<MainApp> {
             builder: (context, _, _) {
               return MaterialApp(
                 navigatorKey: navigatorKey,
+                navigatorObservers: [appRouteObserver],
                 scaffoldMessengerKey: scaffoldMessengerKey,
 
                 title: 'Nexora',

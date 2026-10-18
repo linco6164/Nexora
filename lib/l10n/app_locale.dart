@@ -8,10 +8,17 @@ class AppLocaleController extends ValueNotifier<String> {
   static const supportedLanguages = {'ro', 'en'};
 
   Future<void> load() async {
-    final preferences = await SharedPreferences.getInstance();
-    final savedLanguage = preferences.getString(_storageKey);
-    if (savedLanguage != null && supportedLanguages.contains(savedLanguage)) {
-      value = savedLanguage;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final savedLanguage = preferences.getString(_storageKey);
+      if (savedLanguage != null && supportedLanguages.contains(savedLanguage)) {
+        value = savedLanguage;
+      }
+    } catch (error, stackTrace) {
+      // Preferințele sunt auxiliare; aplicația trebuie să pornească și dacă
+      // pluginul nativ nu este încă disponibil sau cache-ul este incompatibil.
+      debugPrint('Nu am putut încărca limba salvată: $error');
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
@@ -21,8 +28,15 @@ class AppLocaleController extends ValueNotifier<String> {
     }
 
     value = languageCode;
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_storageKey, languageCode);
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_storageKey, languageCode);
+    } catch (error, stackTrace) {
+      // Schimbarea rămâne activă în sesiunea curentă chiar dacă persistența
+      // locală eșuează temporar.
+      debugPrint('Nu am putut salva limba selectată: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
   }
 }
 

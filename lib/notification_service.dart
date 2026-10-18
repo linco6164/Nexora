@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -8,12 +9,14 @@ import 'package:shorebird_code_push/shorebird_code_push.dart';
 
 import 'app_feedback.dart';
 import 'app_navigator.dart';
+import 'activity_events.dart';
 
 import 'api_service.dart';
 import 'chat_page.dart';
 import 'account_banned_page.dart';
 import 'invite_friend_page.dart';
 import 'order_page.dart';
+import 'notifications_page.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -47,6 +50,7 @@ class NotificationService {
   Completer<String?>? _registrationCompleter;
 
   String? _pendingOrderId;
+  Map<String, dynamic>? _pendingNotificationData;
 
   static const int _shorebirdNotificationId = 9001;
 
@@ -138,6 +142,7 @@ class NotificationService {
       RemoteMessage message,
     ) async {
       debugPrint('FCM FOREGROUND MESSAGE: ${message.data}');
+      activityEvents.add(ActivityEvent.changed);
 
       final type = message.data['type']?.toString();
 
@@ -364,10 +369,6 @@ class NotificationService {
 
     final body = notification.body ?? '';
 
-    final conversationId = message.data['conversationId']?.toString();
-
-    final type = message.data['type']?.toString();
-
     final sound = message.data['sound']?.toString().toLowerCase() != 'false';
 
     final vibration =
@@ -377,39 +378,13 @@ class NotificationService {
 
     debugPrint('FCM VIBRATION: $vibration');
 
-    final route = message.data['route']?.toString();
-
-    final orderId = message.data['orderId']?.toString();
-
-    final canOpenOrder =
-        route == 'order_details' && orderId != null && orderId.isNotEmpty;
-    final canOpenReferral = route == 'referrals';
-    final canOpenConversation =
-        type == 'message' &&
-        conversationId != null &&
-        conversationId.isNotEmpty;
-
     final shownInApp = AppFeedback.notification(
       title: title,
       message: body,
-      onAction: canOpenOrder || canOpenReferral || canOpenConversation
-          ? () => _handleNotificationTap(message)
-          : null,
+      onAction: () => _handleNotificationTap(message),
     );
 
     if (shownInApp) return;
-
-    String? payload;
-
-    if (route == 'order_details' && orderId != null && orderId.isNotEmpty) {
-      payload = 'order_details|$orderId';
-    } else if (route == 'referrals') {
-      payload = 'referrals|open';
-    } else if (type == 'message' &&
-        conversationId != null &&
-        conversationId.isNotEmpty) {
-      payload = 'message|$conversationId';
-    }
 
     final channel = sound && vibration
         ? _notificationChannel
@@ -431,7 +406,7 @@ class NotificationService {
           icon: '@mipmap/ic_launcher',
         ),
       ),
-      payload: payload,
+      payload: jsonEncode(message.data),
     );
   }
 
@@ -491,6 +466,17 @@ class NotificationService {
 
     debugPrint('LOCAL NOTIFICATION TAP: $payload');
 
+    if (payload.startsWith('{')) {
+      try {
+        _handleNotificationData(
+          Map<String, dynamic>.from(jsonDecode(payload) as Map),
+        );
+      } catch (error) {
+        debugPrint('Notification payload: $error');
+      }
+      return;
+    }
+
     /*
      * Shorebird update.
      *
@@ -532,7 +518,24 @@ class NotificationService {
   }
 
   void _handleNotificationTap(RemoteMessage message) {
-    final data = message.data;
+    _handleNotificationData(message.data);
+  }
+
+  void _handleNotificationData(Map<String, dynamic> data) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      _pendingNotificationData = Map<String, dynamic>.from(data);
+      return;
+    }
+    activityEvents.add(ActivityEvent.changed);
+    final notificationId = data['notificationId']?.toString();
+    if (notificationId != null && notificationId.isNotEmpty) {
+      unawaited(
+        ApiService.markNotificationAsRead(notificationId).catchError(
+          (Object error) => debugPrint('Read push notification: $error'),
+        ),
+      );
+    }
 
     final route = data['route']?.toString();
 
@@ -552,15 +555,19 @@ class NotificationService {
 
     final conversationId = data['conversationId']?.toString();
 
-    if (type != 'message') {
+    if ((type == 'message' || type == 'offer') &&
+        conversationId != null &&
+        conversationId.isNotEmpty) {
+      _openConversation(conversationId);
       return;
     }
 
-    if (conversationId == null || conversationId.isEmpty) {
-      return;
-    }
-
-    _openConversation(conversationId);
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) =>
+            NotificationsPage(type: type == 'favorite' ? 'favorite' : null),
+      ),
+    );
   }
 
   void _openReferrals() {
@@ -603,6 +610,11 @@ class NotificationService {
   }
 
   void processPendingNavigation() {
+    final data = _pendingNotificationData;
+    if (data != null) {
+      _pendingNotificationData = null;
+      _handleNotificationData(data);
+    }
     final orderId = _pendingOrderId;
 
     if (orderId == null || orderId.isEmpty) {

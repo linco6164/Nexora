@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/activity_badge.dart';
+
 class WebActions extends StatelessWidget {
   final VoidCallback? onFavorites;
   final VoidCallback? onMessages;
@@ -23,19 +25,28 @@ class WebActions extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onFavorites,
-          icon: const Icon(Icons.favorite_border_rounded),
+          icon: const ActivityBadge(
+            kind: ActivityKind.favorites,
+            child: Icon(Icons.favorite_border_rounded),
+          ),
           tooltip: 'Favorite',
         ),
 
         IconButton(
           onPressed: onMessages,
-          icon: const Icon(Icons.chat_bubble_outline_rounded),
+          icon: const ActivityBadge(
+            kind: ActivityKind.messages,
+            child: Icon(Icons.chat_bubble_outline_rounded),
+          ),
           tooltip: 'Mesaje',
         ),
 
         IconButton(
           onPressed: onNotifications,
-          icon: const Icon(Icons.notifications_none_rounded),
+          icon: const ActivityBadge(
+            kind: ActivityKind.notifications,
+            child: Icon(Icons.notifications_none_rounded),
+          ),
           tooltip: 'Notificări',
         ),
 

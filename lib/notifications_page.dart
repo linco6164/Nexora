@@ -1,7 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'activity_events.dart';
+import 'activity_controller.dart';
+import 'chat_page.dart';
+import 'listing_detail_page.dart';
+import 'web/web_product_page.dart';
 import 'app_feedback.dart';
 import 'invite_friend_page.dart';
 import 'models/notification_model.dart';
@@ -9,7 +16,8 @@ import 'order_page.dart';
 import 'web/widgets/web_page_frame.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({super.key});
+  final String? type;
+  const NotificationsPage({super.key, this.type});
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -17,16 +25,44 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   late Future<List<AppNotification>> _notificationsFuture;
+  StreamSubscription<ActivityEvent>? _activitySubscription;
+  Timer? _reloadTimer;
 
   @override
   void initState() {
     super.initState();
-    _notificationsFuture = ApiService.getNotifications();
+    _notificationsFuture = ApiService.getNotifications(type: widget.type);
+    _activitySubscription = activityEvents.stream.listen(
+      (_) => _scheduleReload(),
+    );
+    activityController.addListener(_scheduleReload);
+  }
+
+  void _scheduleReload() {
+    _reloadTimer?.cancel();
+    _reloadTimer = Timer(const Duration(milliseconds: 400), _reloadQuietly);
+  }
+
+  Future<void> _reloadQuietly() async {
+    try {
+      final items = await ApiService.getNotifications(type: widget.type);
+      if (mounted) setState(() => _notificationsFuture = Future.value(items));
+    } catch (_) {
+      // Keep the current list when the network is temporarily unavailable.
+    }
+  }
+
+  @override
+  void dispose() {
+    _reloadTimer?.cancel();
+    _activitySubscription?.cancel();
+    activityController.removeListener(_scheduleReload);
+    super.dispose();
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _notificationsFuture = ApiService.getNotifications();
+      _notificationsFuture = ApiService.getNotifications(type: widget.type);
     });
 
     await _notificationsFuture;
@@ -34,17 +70,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Future<void> _markAllAsRead() async {
     try {
-      await ApiService.markAllNotificationsAsRead();
+      if (widget.type == null) {
+        await ApiService.markAllNotificationsAsRead();
+      } else {
+        // Never clear unrelated notifications on an older server.
+        final items = await _notificationsFuture;
+        await Future.wait(
+          items
+              .where((item) => !item.read)
+              .map((item) => ApiService.markNotificationAsRead(item.id)),
+        );
+      }
 
       if (!mounted) return;
 
       setState(() {
-        _notificationsFuture = ApiService.getNotifications();
+        _notificationsFuture = ApiService.getNotifications(type: widget.type);
       });
 
       AppFeedback.success(
         context,
-        'Toate notificările au fost marcate ca citite.',
+        widget.type == null
+            ? 'Toate notificările au fost marcate ca citite.'
+            : 'Notificările afișate au fost marcate ca citite.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -66,7 +114,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
 
       setState(() {
-        _notificationsFuture = ApiService.getNotifications();
+        _notificationsFuture = ApiService.getNotifications(type: widget.type);
       });
     } catch (e) {
       if (!mounted) return;
@@ -122,8 +170,46 @@ class _NotificationsPageState extends State<NotificationsPage> {
       return;
     }
 
-    // Pentru notificările fără rută dedicată păstrăm
-    // comportamentul existent: doar le marcăm ca citite.
+    final conversationId = notification.conversationId;
+    if (conversationId != null && conversationId.isNotEmpty) {
+      try {
+        final user = await ApiService.getCurrentUser();
+        final userId = (user['_id'] ?? user['id'])?.toString() ?? '';
+        final conversations = await ApiService.getConversations();
+        final conversation = conversations.firstWhere(
+          (c) => c.id == conversationId,
+        );
+        final other = conversation.otherParticipant(userId);
+        if (!mounted || other == null) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatPage(
+              conversationId: conversationId,
+              otherUsername: other.username,
+              myUserId: userId,
+              listing: conversation.listing,
+            ),
+          ),
+        );
+      } catch (error) {
+        if (mounted) {
+          AppFeedback.error(
+            context,
+            error,
+            fallback: 'Conversația nu a putut fi deschisă.',
+          );
+        }
+      }
+    } else if (notification.listingId?.isNotEmpty == true) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => kIsWeb
+              ? WebProductPage(productId: notification.listingId!)
+              : ListingDetailPage(listingId: notification.listingId!),
+        ),
+      );
+    }
+    if (mounted) await _refresh();
   }
 
   Future<void> _deleteNotification(AppNotification notification) async {
@@ -133,7 +219,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
 
       setState(() {
-        _notificationsFuture = ApiService.getNotifications();
+        _notificationsFuture = ApiService.getNotifications(type: widget.type);
       });
     } catch (e) {
       if (!mounted) return;
@@ -195,7 +281,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
         }
 
         final notifications = snapshot.data ?? [];
-        final unreadCount = _unreadCount(notifications);
+        final pageUnreadCount = _unreadCount(notifications);
+        final totalUnreadCount = widget.type == null
+            ? activityController.counts.notifications
+            : activityController.counts.favorites;
+        final unreadCount = totalUnreadCount > pageUnreadCount
+            ? totalUnreadCount
+            : pageUnreadCount;
 
         if (notifications.isEmpty) {
           return _buildEmptyState();
@@ -239,7 +331,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         TextButton.icon(
                           onPressed: _markAllAsRead,
                           icon: const Icon(Icons.done_all, size: 18),
-                          label: const Text('Citește toate'),
+                          label: Text(
+                            widget.type == null
+                                ? 'Citește toate'
+                                : 'Citește afișate',
+                          ),
                         ),
                     ],
                   ),

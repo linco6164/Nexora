@@ -10,6 +10,7 @@ import 'floating_nav_bar.dart';
 import 'nexora_logo.dart';
 import 'sell_page.dart';
 import 'explore_tab.dart';
+import 'shared/widgets/activity_badge.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -129,7 +130,10 @@ class _HomePageState extends State<HomePage> {
           actions: [
             // FAVORITE
             IconButton(
-              icon: const Icon(Icons.favorite_border),
+              icon: const ActivityBadge(
+                kind: ActivityKind.favorites,
+                child: Icon(Icons.favorite_border),
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -142,7 +146,10 @@ class _HomePageState extends State<HomePage> {
 
             // NOTIFICATIONS
             IconButton(
-              icon: const Icon(Icons.notifications_outlined),
+              icon: const ActivityBadge(
+                kind: ActivityKind.notifications,
+                child: Icon(Icons.notifications_outlined),
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
