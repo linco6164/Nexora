@@ -111,6 +111,7 @@ class _WebProductPageState extends State<WebProductPage> {
         toolbarHeight: 58,
         titleSpacing: 4,
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 32,
@@ -125,16 +126,18 @@ class _WebProductPageState extends State<WebProductPage> {
                 color: Colors.white,
               ),
             ),
-            const SizedBox(width: 10),
-            const Text(
-              'Nexora',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-            ),
+            if (!compact) ...[
+              const SizedBox(width: 10),
+              const Text(
+                'Nexora',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+            ],
           ],
         ),
         actions: [
-          const WebLanguageSelector(),
-          const SizedBox(width: 8),
+          WebLanguageSelector(compact: compact),
+          SizedBox(width: compact ? 2 : 8),
           IconButton(
             onPressed: () =>
                 Navigator.of(context)
@@ -144,7 +147,7 @@ class _WebProductPageState extends State<WebProductPage> {
                 : 'Pagina principală',
             icon: const Icon(Icons.home_outlined),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: compact ? 6 : 16),
         ],
       ),
       body: SingleChildScrollView(
@@ -183,7 +186,7 @@ class _WebProductPageState extends State<WebProductPage> {
                 const SizedBox(height: 14),
 
                 Container(
-                  padding: EdgeInsets.all(compact ? 16 : 22),
+                  padding: EdgeInsets.all(compact ? 12 : 22),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(18),

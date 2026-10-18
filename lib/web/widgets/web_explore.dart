@@ -165,7 +165,14 @@ class _WebExploreState extends State<WebExplore> {
 
             return Column(
               children: [
-                _buildFilters(context, compact: true),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight * .58,
+                  ),
+                  child: SingleChildScrollView(
+                    child: _buildFilters(context, compact: true),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Expanded(child: _buildProducts(context)),
               ],

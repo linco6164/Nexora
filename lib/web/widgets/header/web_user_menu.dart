@@ -7,8 +7,9 @@ import '../../dialogs/register_dialog.dart';
 
 class WebUserMenu extends StatelessWidget {
   final ValueChanged<String>? onNavigate;
+  final bool compact;
 
-  const WebUserMenu({super.key, this.onNavigate});
+  const WebUserMenu({super.key, this.onNavigate, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +19,25 @@ class WebUserMenu extends StatelessWidget {
         // NOT LOGGED IN
         // =========================
         if (!auth.isLoggedIn) {
+          if (compact) {
+            return PopupMenuButton<String>(
+              tooltip: 'Cont',
+              onSelected: (value) {
+                showDialog(
+                  context: context,
+                  builder: (_) => value == 'register'
+                      ? const RegisterDialog()
+                      : const LoginDialog(),
+                );
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'login', child: Text('Autentificare')),
+                PopupMenuItem(value: 'register', child: Text('Înregistrare')),
+              ],
+              icon: const Icon(Icons.person_outline_rounded),
+            );
+          }
+
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -106,12 +126,14 @@ class WebUserMenu extends StatelessWidget {
                     : null,
                 child: avatar.isEmpty ? const Icon(Icons.person) : null,
               ),
-              const SizedBox(width: 10),
-              Text(
-                username,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const Icon(Icons.keyboard_arrow_down),
+              if (!compact) ...[
+                const SizedBox(width: 10),
+                Text(
+                  username,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Icon(Icons.keyboard_arrow_down),
+              ],
             ],
           ),
         );

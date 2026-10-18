@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../l10n/app_locale.dart';
 
 class WebLanguageSelector extends StatelessWidget {
-  const WebLanguageSelector({super.key});
+  final bool compact;
+
+  const WebLanguageSelector({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +36,7 @@ class WebLanguageSelector extends StatelessWidget {
           ],
           child: Container(
             height: 38,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 9 : 10),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(10),
@@ -46,13 +48,15 @@ class WebLanguageSelector extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.language_rounded, size: 18),
-                const SizedBox(width: 7),
-                Text(
-                  languageCode.toUpperCase(),
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(width: 3),
-                const Icon(Icons.keyboard_arrow_down_rounded, size: 17),
+                if (!compact) ...[
+                  const SizedBox(width: 7),
+                  Text(
+                    languageCode.toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(width: 3),
+                  const Icon(Icons.keyboard_arrow_down_rounded, size: 17),
+                ],
               ],
             ),
           ),

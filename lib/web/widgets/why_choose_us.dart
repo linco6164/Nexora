@@ -24,7 +24,9 @@ class WhyChooseUs extends StatelessWidget {
             builder: (context, constraints) {
               final itemWidth = constraints.maxWidth >= 760
                   ? (constraints.maxWidth - 42) / 4
-                  : (constraints.maxWidth - 14) / 2;
+                  : constraints.maxWidth >= 520
+                  ? (constraints.maxWidth - 14) / 2
+                  : constraints.maxWidth;
               return Wrap(
                 spacing: 14,
                 runSpacing: 14,

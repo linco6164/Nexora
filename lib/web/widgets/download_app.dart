@@ -18,47 +18,68 @@ class DownloadApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 40),
-      padding: const EdgeInsets.symmetric(vertical: 36),
+      padding: EdgeInsets.symmetric(
+        vertical: MediaQuery.sizeOf(context).width < 600 ? 26 : 36,
+      ),
       color: Theme.of(context).colorScheme.primaryContainer,
       child: ResponsiveContainer(
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 700;
+            final copy = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr('Descarcă aplicația Nexora'),
+                  style: TextStyle(
+                    fontSize: compact ? 23 : 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  context.tr(
+                    'Cumpără și vinde de oriunde din aplicația mobilă.',
+                  ),
+                ),
+              ],
+            );
+            final buttons = Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: googlePlayUrl == null
+                      ? null
+                      : () => _openStore(googlePlayUrl!),
+                  icon: const Icon(Icons.android),
+                  label: const Text("Google Play"),
+                ),
+                OutlinedButton.icon(
+                  onPressed: appStoreUrl == null
+                      ? null
+                      : () => _openStore(appStoreUrl!),
+                  icon: const Icon(Icons.apple),
+                  label: const Text("App Store"),
+                ),
+              ],
+            );
+
+            if (compact) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr('Descarcă aplicația Nexora'),
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    context.tr(
-                      'Cumpără și vinde de oriunde din aplicația mobilă.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            FilledButton.icon(
-              onPressed: googlePlayUrl == null
-                  ? null
-                  : () => _openStore(googlePlayUrl!),
-              icon: const Icon(Icons.android),
-              label: const Text("Google Play"),
-            ),
-            const SizedBox(width: 16),
-            OutlinedButton.icon(
-              onPressed: appStoreUrl == null
-                  ? null
-                  : () => _openStore(appStoreUrl!),
-              icon: const Icon(Icons.apple),
-              label: const Text("App Store"),
-            ),
-          ],
+                children: [copy, const SizedBox(height: 20), buttons],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: copy),
+                const SizedBox(width: 24),
+                buttons,
+              ],
+            );
+          },
         ),
       ),
     );

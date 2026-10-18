@@ -65,6 +65,8 @@ class _WebShellState extends State<WebShell> {
 
   @override
   Widget build(BuildContext context) {
+    final useMobileNavigation = MediaQuery.sizeOf(context).width < 650;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
@@ -79,14 +81,18 @@ class _WebShellState extends State<WebShell> {
           const CookieBanner(),
         ],
       ),
+      bottomNavigationBar: useMobileNavigation
+          ? _buildMobileNavigation(context)
+          : null,
     );
   }
 
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
+    final narrow = MediaQuery.sizeOf(context).width < 650;
 
     return Container(
-      height: 64,
+      height: narrow ? 116 : 64,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
@@ -101,44 +107,67 @@ class _WebShellState extends State<WebShell> {
               final compact = constraints.maxWidth < 1050;
               final narrow = constraints.maxWidth < 650;
 
+              final desktopHeader = Row(
+                children: [
+                  _buildLogo(context, compact: compact),
+                  SizedBox(width: compact ? 10 : 24),
+                  Expanded(child: _buildSearch(context)),
+                  SizedBox(width: compact ? 6 : 16),
+                  _buildHeaderAction(
+                    context,
+                    icon: Icons.favorite_border_rounded,
+                    label: context.tr('Favorite'),
+                    onTap: () => _selectSection(8),
+                  ),
+                  _buildHeaderAction(
+                    context,
+                    icon: Icons.chat_bubble_outline_rounded,
+                    label: context.tr('Mesaje'),
+                    onTap: () => _selectSection(2),
+                  ),
+                  _buildHeaderAction(
+                    context,
+                    icon: Icons.notifications_none_rounded,
+                    label: context.tr('Notificări'),
+                    onTap: () => _selectSection(12),
+                  ),
+                  SizedBox(width: compact ? 4 : 12),
+                  const WebLanguageSelector(),
+                  SizedBox(width: compact ? 6 : 10),
+                  _buildSellButton(context, compact: compact),
+                  SizedBox(width: compact ? 6 : 16),
+                  _buildProfileButton(context),
+                ],
+              );
+
+              final mobileHeader = Column(
+                children: [
+                  SizedBox(
+                    height: 56,
+                    child: Row(
+                      children: [
+                        _buildLogo(
+                          context,
+                          compact: constraints.maxWidth < 370,
+                        ),
+                        const Spacer(),
+                        const WebLanguageSelector(compact: true),
+                        const SizedBox(width: 4),
+                        _buildMobileQuickMenu(context),
+                        const SizedBox(width: 2),
+                        _buildSellButton(context, compact: true),
+                        const SizedBox(width: 4),
+                        _buildProfileButton(context),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 46, child: _buildSearch(context)),
+                ],
+              );
+
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 24),
-                child: Row(
-                  children: [
-                    _buildLogo(context, compact: compact),
-                    SizedBox(width: compact ? 10 : 24),
-                    Expanded(child: _buildSearch(context)),
-                    SizedBox(width: compact ? 6 : 16),
-                    if (!narrow) ...[
-                      _buildHeaderAction(
-                        context,
-                        icon: Icons.favorite_border_rounded,
-                        label: context.tr('Favorite'),
-                        onTap: () => _selectSection(8),
-                      ),
-                      _buildHeaderAction(
-                        context,
-                        icon: Icons.chat_bubble_outline_rounded,
-                        label: context.tr('Mesaje'),
-                        onTap: () => _selectSection(2),
-                      ),
-                      _buildHeaderAction(
-                        context,
-                        icon: Icons.notifications_none_rounded,
-                        label: context.tr('Notificări'),
-                        onTap: () => _selectSection(12),
-                      ),
-                    ],
-                    SizedBox(width: compact ? 4 : 12),
-                    if (!narrow) ...[
-                      const WebLanguageSelector(),
-                      SizedBox(width: compact ? 6 : 10),
-                    ],
-                    _buildSellButton(context, compact: compact),
-                    SizedBox(width: compact ? 6 : 16),
-                    _buildProfileButton(context),
-                  ],
-                ),
+                child: narrow ? mobileHeader : desktopHeader,
               );
             },
           ),
@@ -354,9 +383,12 @@ class _WebShellState extends State<WebShell> {
     final username = user?['username']?.toString() ?? 'Utilizator';
     final email = user?['email']?.toString() ?? '';
     final avatar = user?['avatar']?.toString() ?? '';
-    final menuMaxHeight = (MediaQuery.sizeOf(context).height - 96)
+    final viewportSize = MediaQuery.sizeOf(context);
+    final menuMaxHeight = (viewportSize.height - 96)
         .clamp(320.0, 620.0)
         .toDouble();
+    final menuWidth = (viewportSize.width - 24).clamp(280.0, 360.0).toDouble();
+    final menuContentWidth = menuWidth - 28;
 
     return PopupMenuButton<String>(
       tooltip: context.tr('Cont'),
@@ -367,8 +399,8 @@ class _WebShellState extends State<WebShell> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       menuPadding: const EdgeInsets.symmetric(vertical: 6),
       constraints: BoxConstraints(
-        minWidth: 330,
-        maxWidth: 360,
+        minWidth: menuWidth,
+        maxWidth: menuWidth,
         maxHeight: menuMaxHeight,
       ),
       onSelected: (value) async {
@@ -469,7 +501,7 @@ class _WebShellState extends State<WebShell> {
               enabled: false,
               padding: EdgeInsets.zero,
               child: SizedBox(
-                width: 320,
+                width: menuContentWidth,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                   child: Row(
@@ -574,7 +606,7 @@ class _WebShellState extends State<WebShell> {
             enabled: false,
             padding: EdgeInsets.zero,
             child: SizedBox(
-              width: 330,
+              width: menuContentWidth,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                 child: Row(
@@ -819,6 +851,81 @@ class _WebShellState extends State<WebShell> {
     );
   }
 
+  Widget _buildMobileQuickMenu(BuildContext context) {
+    return PopupMenuButton<int>(
+      tooltip: context.tr('Mai multe'),
+      onSelected: _selectSection,
+      icon: const Icon(Icons.more_horiz_rounded),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 8,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.favorite_border_rounded),
+            title: Text(context.tr('Favorite')),
+          ),
+        ),
+        PopupMenuItem(
+          value: 12,
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.notifications_none_rounded),
+            title: Text(context.tr('Notificări')),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileNavigation(BuildContext context) {
+    const sections = [0, 1, 16, 2, 6];
+    final accountSections = {3, 4, 5, 6, 7, 9, 11, 13, 14, 15, 17, 18, 19, 20};
+    final selected = switch (_selectedIndex) {
+      0 => 0,
+      1 => 1,
+      16 => 2,
+      2 => 3,
+      _ when accountSections.contains(_selectedIndex) => 4,
+      _ => 0,
+    };
+
+    return NavigationBar(
+      height: 68,
+      selectedIndex: selected,
+      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      onDestinationSelected: (index) => _selectSection(sections[index]),
+      destinations: [
+        NavigationDestination(
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home_rounded),
+          label: context.tr('Acasă'),
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.explore_outlined),
+          selectedIcon: const Icon(Icons.explore_rounded),
+          label: context.tr('Explorează'),
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.add_circle_outline_rounded),
+          selectedIcon: const Icon(Icons.add_circle_rounded),
+          label: context.tr('Vinde'),
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.chat_bubble_outline_rounded),
+          selectedIcon: const Icon(Icons.chat_bubble_rounded),
+          label: context.tr('Mesaje'),
+        ),
+        NavigationDestination(
+          icon: const Icon(Icons.person_outline_rounded),
+          selectedIcon: const Icon(Icons.person_rounded),
+          label: context.tr('Profil'),
+        ),
+      ],
+    );
+  }
+
   Widget _buildContent() {
     final authenticated = context.watch<AuthProvider>().isLoggedIn;
     const publicSections = {0, 1, 4, 5};
@@ -938,9 +1045,10 @@ class _WebShellState extends State<WebShell> {
 
   Widget _buildSettings(BuildContext context) {
     final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 700;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(compact ? 14 : 24),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1000),
@@ -960,7 +1068,7 @@ class _WebShellState extends State<WebShell> {
                 ),
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: compact ? 18 : 28),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final width = constraints.maxWidth >= 720

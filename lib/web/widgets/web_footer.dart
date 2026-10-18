@@ -65,13 +65,230 @@ class WebFooter extends StatelessWidget {
     );
   }
 
+  Widget _brandBlock(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: const Icon(
+                Icons.storefront_rounded,
+                color: Colors.white,
+                size: 21,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Nexora',
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.7,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Text(
+            appLocaleController.value == 'en'
+                ? 'A modern marketplace for online buying and selling.'
+                : 'Marketplace modern pentru cumpărături și vânzări online.',
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.6,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'NEXORA STORE S.R.L.\n'
+          'CUI 51686427 • J2025029466000\n'
+          'Str. Argentina nr. 25, parter, Sector 1, București',
+          style: TextStyle(
+            fontSize: 12,
+            height: 1.55,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _companyBlock(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          context,
+          appLocaleController.value == 'en' ? 'Company' : 'Companie',
+        ),
+        const SizedBox(height: 14),
+        _link(
+          context,
+          appLocaleController.value == 'en'
+              ? 'Company details and role'
+              : 'Date companie și rol',
+          page: const AboutPage(),
+        ),
+      ],
+    );
+  }
+
+  Widget _supportBlock(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(
+          context,
+          appLocaleController.value == 'en' ? 'Support' : 'Suport',
+        ),
+        const SizedBox(height: 14),
+        _link(
+          context,
+          'Contact: contact@nx-store.com',
+          onTap: () async {
+            await launchUrl(Uri.parse('mailto:contact@nx-store.com'));
+          },
+        ),
+        _link(
+          context,
+          appLocaleController.value == 'en' ? 'Delivery' : 'Livrare',
+          page: const DeliveryPage(),
+        ),
+        _link(
+          context,
+          appLocaleController.value == 'en'
+              ? 'Returns / online withdrawal'
+              : 'Retur / retragere online',
+          page: const WithdrawalPage(),
+        ),
+        _link(
+          context,
+          appLocaleController.value == 'en'
+              ? 'Order cancellation'
+              : 'Anularea comenzilor',
+          page: const CancellationPage(),
+        ),
+      ],
+    );
+  }
+
+  Widget _legalBlock(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Legal'),
+        const SizedBox(height: 14),
+        _link(
+          context,
+          appLocaleController.value == 'en'
+              ? 'Privacy policy'
+              : 'Politica de confidențialitate',
+          page: const PrivacyPage(),
+        ),
+        _link(
+          context,
+          appLocaleController.value == 'en'
+              ? 'Terms and conditions'
+              : 'Termeni și condiții',
+          page: const TermsPage(),
+        ),
+        _link(
+          context,
+          appLocaleController.value == 'en'
+              ? 'Right of withdrawal'
+              : 'Dreptul de retragere',
+          page: const WithdrawalPage(),
+        ),
+        _link(context, 'GDPR', page: const GdprPage()),
+        _link(context, 'Cookies', page: const CookiesPage()),
+        _link(
+          context,
+          'ANPC',
+          onTap: () async {
+            await launchUrl(
+              Uri.parse('https://anpc.ro/'),
+              mode: LaunchMode.externalApplication,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _responsiveColumns(BuildContext context, BoxConstraints constraints) {
+    if (constraints.maxWidth < 560) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _brandBlock(context),
+          const SizedBox(height: 30),
+          _companyBlock(context),
+          const SizedBox(height: 24),
+          _supportBlock(context),
+          const SizedBox(height: 24),
+          _legalBlock(context),
+        ],
+      );
+    }
+
+    if (constraints.maxWidth < 900) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _brandBlock(context),
+          const SizedBox(height: 32),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _companyBlock(context)),
+              const SizedBox(width: 20),
+              Expanded(child: _supportBlock(context)),
+              const SizedBox(width: 20),
+              Expanded(child: _legalBlock(context)),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 2, child: _brandBlock(context)),
+        const SizedBox(width: 24),
+        Expanded(child: _companyBlock(context)),
+        const SizedBox(width: 24),
+        Expanded(child: _supportBlock(context)),
+        const SizedBox(width: 24),
+        Expanded(child: _legalBlock(context)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
       margin: const EdgeInsets.only(top: 24),
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: EdgeInsets.symmetric(
+        vertical: MediaQuery.sizeOf(context).width < 600 ? 28 : 40,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
@@ -81,203 +298,9 @@ class WebFooter extends StatelessWidget {
       child: ResponsiveContainer(
         child: Column(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // BRAND
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(
-                              Icons.storefront_rounded,
-                              color: Colors.white,
-                              size: 21,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Nexora',
-                            style: TextStyle(
-                              fontSize: 21,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.7,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      SizedBox(
-                        width: 300,
-                        child: Text(
-                          appLocaleController.value == 'en'
-                              ? 'A modern marketplace for online buying and selling.'
-                              : 'Marketplace modern pentru cumpărături și vânzări online.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.6,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.60,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      Text(
-                        'NEXORA STORE S.R.L.\n'
-                        'CUI 51686427 • J2025029466000\n'
-                        'Str. Argentina nr. 25, parter, Sector 1, București',
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.55,
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.55,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // COMPANY
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _sectionTitle(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Company'
-                            : 'Companie',
-                      ),
-                      const SizedBox(height: 14),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Company details and role'
-                            : 'Date companie și rol',
-                        page: const AboutPage(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // SUPPORT
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _sectionTitle(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Support'
-                            : 'Suport',
-                      ),
-                      const SizedBox(height: 14),
-
-                      _link(
-                        context,
-                        'Contact: contact@nx-store.com',
-                        onTap: () async {
-                          await launchUrl(
-                            Uri.parse('mailto:contact@nx-store.com'),
-                          );
-                        },
-                      ),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Delivery'
-                            : 'Livrare',
-                        page: const DeliveryPage(),
-                      ),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Returns / online withdrawal'
-                            : 'Retur / retragere online',
-                        page: const WithdrawalPage(),
-                      ),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Order cancellation'
-                            : 'Anularea comenzilor',
-                        page: const CancellationPage(),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // LEGAL
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _sectionTitle(context, 'Legal'),
-                      const SizedBox(height: 14),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Privacy policy'
-                            : 'Politica de confidențialitate',
-                        page: const PrivacyPage(),
-                      ),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Terms and conditions'
-                            : 'Termeni și condiții',
-                        page: const TermsPage(),
-                      ),
-
-                      _link(
-                        context,
-                        appLocaleController.value == 'en'
-                            ? 'Right of withdrawal'
-                            : 'Dreptul de retragere',
-                        page: const WithdrawalPage(),
-                      ),
-
-                      _link(context, 'GDPR', page: const GdprPage()),
-
-                      _link(context, 'Cookies', page: const CookiesPage()),
-                      _link(
-                        context,
-                        'ANPC',
-                        onTap: () async {
-                          await launchUrl(
-                            Uri.parse('https://anpc.ro/'),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) =>
+                  _responsiveColumns(context, constraints),
             ),
 
             const SizedBox(height: 34),
@@ -293,10 +316,9 @@ class WebFooter extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final copyright = Text(
                   appLocaleController.value == 'en'
                       ? '© 2026 Nexora Store. All rights reserved.'
                       : '© 2026 Nexora Store. Toate drepturile rezervate.',
@@ -304,16 +326,28 @@ class WebFooter extends StatelessWidget {
                     fontSize: 13,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
                   ),
-                ),
-                Text(
+                );
+                final signature = Text(
                   'Made with Nexora',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                   ),
-                ),
-              ],
+                );
+
+                if (constraints.maxWidth < 560) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [copyright, const SizedBox(height: 8), signature],
+                  );
+                }
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [copyright, signature],
+                );
+              },
             ),
           ],
         ),
@@ -327,53 +361,55 @@ Widget _buildPaymentMethods(BuildContext context) {
 
   return Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(20),
+    padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 16 : 20),
     decoration: BoxDecoration(
       color: theme.colorScheme.onSurface.withValues(alpha: 0.035),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: theme.dividerColor.withValues(alpha: 0.18)),
     ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.lock_outline_rounded,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
-
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                appLocaleController.value == 'en'
-                    ? 'Secure online payments'
-                    : 'Plăți online securizate',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.onSurface,
-                ),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final copy = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appLocaleController.value == 'en'
+                        ? 'Secure online payments'
+                        : 'Plăți online securizate',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    appLocaleController.value == 'en'
+                        ? 'Card payments are processed through NETOPIA Payments.'
+                        : 'Plățile cu cardul sunt procesate prin NETOPIA Payments.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.55,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                appLocaleController.value == 'en'
-                    ? 'Card payments are processed through NETOPIA Payments.'
-                    : 'Plățile cu cardul sunt procesate prin NETOPIA Payments.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(width: 20),
-
-        Container(
+            ),
+          ],
+        );
+        final logo = Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -385,8 +421,23 @@ Widget _buildPaymentMethods(BuildContext context) {
             height: 40,
             fit: BoxFit.contain,
           ),
-        ),
-      ],
+        );
+
+        if (constraints.maxWidth < 520) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [copy, const SizedBox(height: 14), logo],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: copy),
+            const SizedBox(width: 20),
+            logo,
+          ],
+        );
+      },
     ),
   );
 }

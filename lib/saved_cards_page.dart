@@ -357,14 +357,16 @@ class _SavedCardsPageState extends State<SavedCardsPage>
       return _buildErrorState();
     }
 
+    final compact = MediaQuery.sizeOf(context).width < 600;
+
     return RefreshIndicator(
       onRefresh: () => _loadCards(showLoader: false),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          widget.embedded ? 24 : 16,
-          widget.embedded ? 24 : 8,
-          widget.embedded ? 24 : 16,
+          compact ? 12 : (widget.embedded ? 24 : 16),
+          compact ? 16 : (widget.embedded ? 24 : 8),
+          compact ? 12 : (widget.embedded ? 24 : 16),
           36,
         ),
         children: [

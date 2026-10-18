@@ -299,6 +299,7 @@ class _SellPageState extends State<SellPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final compact = MediaQuery.sizeOf(context).width < 600;
     final pageTitle = _isEditing ? 'Editează anunțul' : 'Publică un anunț';
     return Scaffold(
       backgroundColor: colors.surfaceContainerLowest,
@@ -312,15 +313,22 @@ class _SellPageState extends State<SellPage> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: widget.embedded ? 1100 : 900),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+            padding: EdgeInsets.fromLTRB(
+              compact ? 12 : 24,
+              compact ? 14 : 22,
+              compact ? 12 : 24,
+              compact ? 12 : 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   context.tr(pageTitle),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style:
+                      (compact
+                              ? theme.textTheme.titleLarge
+                              : theme.textTheme.headlineSmall)
+                          ?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -342,7 +350,7 @@ class _SellPageState extends State<SellPage> {
                             : StepperType.horizontal,
                         currentStep: _currentStep,
                         elevation: 0,
-                        margin: const EdgeInsets.only(top: 12),
+                        margin: EdgeInsets.only(top: compact ? 4 : 12),
                         onStepTapped: (step) {
                           if (step < _currentStep && !_isSubmitting) {
                             setState(() => _currentStep = step);
@@ -401,10 +409,11 @@ class _SellPageState extends State<SellPage> {
 
   Widget _surface(Widget child) {
     final colors = Theme.of(context).colorScheme;
+    final compact = MediaQuery.sizeOf(context).width < 600;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(compact ? 14 : 22),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(14),
@@ -417,7 +426,12 @@ class _SellPageState extends State<SellPage> {
   Widget _buildControls(BuildContext context, ControlsDetails details) {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
-      child: Row(
+      child: Wrap(
+        alignment: _currentStep > 0
+            ? WrapAlignment.spaceBetween
+            : WrapAlignment.end,
+        spacing: 10,
+        runSpacing: 10,
         children: [
           if (_currentStep > 0)
             OutlinedButton.icon(
@@ -425,7 +439,6 @@ class _SellPageState extends State<SellPage> {
               icon: const Icon(Icons.arrow_back_rounded),
               label: Text(context.tr('Înapoi')),
             ),
-          const Spacer(),
           if (_currentStep < 3)
             FilledButton.icon(
               onPressed: details.onStepContinue,
@@ -698,7 +711,7 @@ class _SellPageState extends State<SellPage> {
             final preview = ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: SizedBox(
-                width: 240,
+                width: constraints.maxWidth < 650 ? double.infinity : 240,
                 height: 190,
                 child: _existingImages.isNotEmpty
                     ? Image.network(

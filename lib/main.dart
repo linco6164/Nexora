@@ -429,7 +429,7 @@ class _MainAppState extends State<MainApp> {
                 navigatorKey: navigatorKey,
                 scaffoldMessengerKey: scaffoldMessengerKey,
 
-                title: 'Nexora Store 🚀',
+                title: 'Nexora',
 
                 debugShowCheckedModeBanner: false,
 

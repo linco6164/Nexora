@@ -17,40 +17,43 @@ class WebHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 700;
+    final sectionGap = compact ? 34.0 : 56.0;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: HeroSection(onExplore: onExplore)),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 52)),
+          SliverToBoxAdapter(child: SizedBox(height: compact ? 34 : 52)),
 
           SliverToBoxAdapter(child: CategorySection(onCategory: onCategory)),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          SliverToBoxAdapter(child: SizedBox(height: sectionGap)),
 
           const SliverToBoxAdapter(child: FeaturedProducts()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          SliverToBoxAdapter(child: SizedBox(height: sectionGap)),
 
           const SliverToBoxAdapter(child: NewProducts()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          SliverToBoxAdapter(child: SizedBox(height: sectionGap)),
 
           const SliverToBoxAdapter(child: RecommendedProducts()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          SliverToBoxAdapter(child: SizedBox(height: sectionGap)),
 
           const SliverToBoxAdapter(child: BrandsSection()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          SliverToBoxAdapter(child: SizedBox(height: sectionGap)),
 
           const SliverToBoxAdapter(child: WhyChooseUs()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          SliverToBoxAdapter(child: SizedBox(height: compact ? 34 : 56)),
 
           const SliverToBoxAdapter(child: WebFooter()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          SliverToBoxAdapter(child: SizedBox(height: compact ? 16 : 40)),
         ],
       ),
     );

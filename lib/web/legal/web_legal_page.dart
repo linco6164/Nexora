@@ -15,6 +15,7 @@ class WebLegalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -30,14 +31,17 @@ class WebLegalPage extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 16 : 24,
+              vertical: compact ? 22 : 32,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: compact ? 24 : 28,
                     fontWeight: FontWeight.w800,
                     color: theme.colorScheme.onSurface,
                   ),
@@ -63,7 +67,7 @@ class WebLegalPage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                SizedBox(height: compact ? 28 : 40),
 
                 ...sections.map(
                   (section) => Padding(
@@ -90,6 +94,7 @@ class _LegalSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 600;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +102,7 @@ class _LegalSection extends StatelessWidget {
         Text(
           section.title,
           style: TextStyle(
-            fontSize: 22,
+            fontSize: compact ? 19 : 22,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onSurface,
           ),

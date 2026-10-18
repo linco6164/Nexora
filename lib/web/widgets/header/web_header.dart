@@ -38,35 +38,57 @@ class WebHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: ResponsiveContainer(
-          child: SizedBox(
-            height: 64,
-            child: Row(
-              children: [
-                WebLogo(onTap: onHome),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 760;
+              final search = WebSearchBar(
+                onSubmitted: onSearch,
+                onFilters: onFilters,
+              );
+              final actions = WebActions(
+                compact: compact,
+                onFavorites: onFavorites,
+                onMessages: onMessages,
+                onNotifications: onNotifications,
+                onSell: onSell,
+              );
 
-                const SizedBox(width: 24),
-
-                Expanded(
-                  child: WebSearchBar(
-                    onSubmitted: onSearch,
-                    onFilters: onFilters,
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                WebActions(
-                  onFavorites: onFavorites,
-                  onMessages: onMessages,
-                  onNotifications: onNotifications,
-                  onSell: onSell,
-                ),
-
-                const SizedBox(width: 12),
-
-                WebUserMenu(onNavigate: onUserNavigate),
-              ],
-            ),
+              return SizedBox(
+                height: compact ? 116 : 64,
+                child: compact
+                    ? Column(
+                        children: [
+                          SizedBox(
+                            height: 60,
+                            child: Row(
+                              children: [
+                                WebLogo(onTap: onHome, compact: true),
+                                const Spacer(),
+                                actions,
+                                const SizedBox(width: 4),
+                                WebUserMenu(
+                                  onNavigate: onUserNavigate,
+                                  compact: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 48, child: search),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          WebLogo(onTap: onHome),
+                          const SizedBox(width: 24),
+                          Expanded(child: search),
+                          const SizedBox(width: 16),
+                          actions,
+                          const SizedBox(width: 12),
+                          WebUserMenu(onNavigate: onUserNavigate),
+                        ],
+                      ),
+              );
+            },
           ),
         ),
       ),

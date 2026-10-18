@@ -23,63 +23,102 @@ class WebPageFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final compact = viewportWidth < 700;
 
     return ColoredBox(
       color: theme.scaffoldBackgroundColor,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+          padding: EdgeInsets.fromLTRB(
+            compact ? 12 : 24,
+            compact ? 14 : 24,
+            compact ? 12 : 24,
+            compact ? 12 : 20,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stackHeader =
+                          compact ||
+                          (actions.length > 1 && constraints.maxWidth < 820);
+                      final heading = Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr(title),
+                            style:
+                                (compact
+                                        ? theme.textTheme.titleLarge
+                                        : theme.textTheme.headlineSmall)
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -.5,
+                                    ),
+                          ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 4),
                             Text(
-                              context.tr(title),
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -.5,
+                              context.tr(subtitle!),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            if (subtitle != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                context.tr(subtitle!),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
                           ],
-                        ),
-                      ),
-                      if (actions.isNotEmpty) ...[
-                        const SizedBox(width: 16),
-                        ...actions,
-                      ],
-                    ],
+                        ],
+                      );
+
+                      if (actions.isEmpty) return heading;
+
+                      final actionBar = Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: actions,
+                      );
+
+                      if (stackHeader) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            heading,
+                            const SizedBox(height: 12),
+                            actionBar,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(child: heading),
+                          const SizedBox(width: 16),
+                          Flexible(child: actionBar),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 18),
+                  SizedBox(height: compact ? 14 : 18),
                   Expanded(
                     child: useSurface
                         ? DecoratedBox(
                             decoration: BoxDecoration(
                               color: theme.colorScheme.surface,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                compact ? 12 : 14,
+                              ),
                               border: Border.all(
                                 color: theme.colorScheme.outlineVariant,
                               ),
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                compact ? 12 : 14,
+                              ),
                               child: child,
                             ),
                           )

@@ -1389,14 +1389,22 @@ class _MessageImages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final availableWidth = (MediaQuery.sizeOf(context).width - 80)
+        .clamp(160.0, 330.0)
+        .toDouble();
+
     if (images.length == 1) {
       return _NetworkMessageImage(
         url: images.first,
-        width: 330,
-        height: 220,
+        width: availableWidth,
+        height: availableWidth * 2 / 3,
         onTap: () => onOpen(images.first),
       );
     }
+
+    final thumbnailWidth = ((availableWidth - 4) / 2)
+        .clamp(76.0, 142.0)
+        .toDouble();
 
     return Wrap(
       spacing: 4,
@@ -1405,8 +1413,8 @@ class _MessageImages extends StatelessWidget {
           .map(
             (url) => _NetworkMessageImage(
               url: url,
-              width: 142,
-              height: 112,
+              width: thumbnailWidth,
+              height: thumbnailWidth * .79,
               onTap: () => onOpen(url),
             ),
           )

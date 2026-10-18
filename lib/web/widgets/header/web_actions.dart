@@ -5,6 +5,7 @@ class WebActions extends StatelessWidget {
   final VoidCallback? onMessages;
   final VoidCallback? onNotifications;
   final VoidCallback? onSell;
+  final bool compact;
 
   const WebActions({
     super.key,
@@ -12,6 +13,7 @@ class WebActions extends StatelessWidget {
     this.onMessages,
     this.onNotifications,
     this.onSell,
+    this.compact = false,
   });
 
   @override
@@ -37,16 +39,23 @@ class WebActions extends StatelessWidget {
           tooltip: 'Notificări',
         ),
 
-        const SizedBox(width: 12),
+        SizedBox(width: compact ? 2 : 12),
 
-        FilledButton.icon(
-          onPressed: onSell,
-          icon: const Icon(Icons.add_rounded, size: 20),
-          label: const Text(
-            'Vinde',
-            style: TextStyle(fontWeight: FontWeight.w700),
+        if (compact)
+          IconButton.filled(
+            onPressed: onSell,
+            tooltip: 'Vinde',
+            icon: const Icon(Icons.add_rounded, size: 20),
+          )
+        else
+          FilledButton.icon(
+            onPressed: onSell,
+            icon: const Icon(Icons.add_rounded, size: 20),
+            label: const Text(
+              'Vinde',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
-        ),
       ],
     );
   }

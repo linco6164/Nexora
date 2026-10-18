@@ -117,7 +117,7 @@ class _ProductGridState extends State<ProductGrid> {
             maxCrossAxisExtent: compact ? 205 : 235,
             crossAxisSpacing: compact ? 12 : 16,
             mainAxisSpacing: compact ? 12 : 16,
-            childAspectRatio: compact ? .70 : .78,
+            childAspectRatio: compact ? .66 : .78,
           ),
           itemBuilder: (_, index) {
             final product = widget.products[index];

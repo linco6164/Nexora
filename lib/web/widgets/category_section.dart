@@ -21,57 +21,61 @@ class CategorySection extends StatelessWidget {
                 ? 'Quickly find what you are looking for'
                 : 'Găsește rapid ceea ce cauți',
           ),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: demoCategories.length,
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 205,
-              mainAxisExtent: 96,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-            ),
-            itemBuilder: (_, index) {
-              final category = demoCategories[index];
+          LayoutBuilder(
+            builder: (context, constraints) => GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: demoCategories.length,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: constraints.maxWidth < 380
+                    ? constraints.maxWidth
+                    : 205,
+                mainAxisExtent: constraints.maxWidth < 380 ? 82 : 96,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+              ),
+              itemBuilder: (_, index) {
+                final category = demoCategories[index];
 
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => onCategory?.call(category.slug),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 21,
-                          backgroundColor: category.color.withValues(
-                            alpha: 0.15,
-                          ),
-                          child: Icon(
-                            category.icon,
-                            color: category.color,
-                            size: 21,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            category.localizedName(appLocaleController.value),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                return Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => onCategory?.call(category.slug),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 21,
+                            backgroundColor: category.color.withValues(
+                              alpha: 0.15,
+                            ),
+                            child: Icon(
+                              category.icon,
+                              color: category.color,
+                              size: 21,
                             ),
                           ),
-                        ),
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 12),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              category.localizedName(appLocaleController.value),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ],
       ),

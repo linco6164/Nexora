@@ -931,7 +931,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               title: const Text('Am o problemă'),
 
               content: SizedBox(
-                width: 450,
+                width: (MediaQuery.sizeOf(dialogContext).width - 96)
+                    .clamp(0.0, 450.0)
+                    .toDouble(),
 
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -945,6 +947,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
                     DropdownButtonFormField<String>(
                       initialValue: selectedReason,
+                      isExpanded: true,
 
                       decoration: const InputDecoration(
                         labelText: 'Motiv',

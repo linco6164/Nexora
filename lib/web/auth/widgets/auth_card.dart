@@ -7,6 +7,8 @@ class AuthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 520;
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
@@ -15,7 +17,10 @@ class AuthCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Padding(padding: const EdgeInsets.all(26), child: child),
+          child: Padding(
+            padding: EdgeInsets.all(compact ? 18 : 26),
+            child: child,
+          ),
         ),
       ),
     );

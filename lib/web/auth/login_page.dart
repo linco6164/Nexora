@@ -150,7 +150,9 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(
+            MediaQuery.sizeOf(context).width < 520 ? 12 : 24,
+          ),
           child: AuthCard(
             child: Form(
               key: _formKey,
@@ -213,22 +215,29 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 16),
 
-                  Row(
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
                     children: [
-                      Checkbox(
-                        value: _rememberMe,
-                        onChanged: (value) {
-                          setState(() {
-                            _rememberMe = value ?? false;
-                          });
-                        },
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (value) {
+                              setState(() {
+                                _rememberMe = value ?? false;
+                              });
+                            },
+                          ),
+                          Text(
+                            appLocaleController.value == 'en'
+                                ? 'Remember me'
+                                : 'Ține-mă minte',
+                          ),
+                        ],
                       ),
-                      Text(
-                        appLocaleController.value == 'en'
-                            ? 'Remember me'
-                            : 'Ține-mă minte',
-                      ),
-                      const Spacer(),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
@@ -274,8 +283,9 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 24),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
                         appLocaleController.value == 'en'

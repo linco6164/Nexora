@@ -36,6 +36,7 @@ class HeroSection extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxWidth < 780;
+              final phone = constraints.maxWidth < 520;
               return Stack(
                 children: [
                   Positioned(
@@ -51,10 +52,13 @@ class HeroSection extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.all(compact ? 28 : 48),
+                    padding: EdgeInsets.all(phone ? 20 : (compact ? 28 : 48)),
                     child: Row(
                       children: [
-                        Expanded(flex: 6, child: _buildCopy(context, compact)),
+                        Expanded(
+                          flex: 6,
+                          child: _buildCopy(context, compact, phone),
+                        ),
                         if (!compact) ...[
                           const SizedBox(width: 44),
                           Expanded(flex: 4, child: _buildVisual(theme)),
@@ -71,7 +75,7 @@ class HeroSection extends StatelessWidget {
     );
   }
 
-  Widget _buildCopy(BuildContext context, bool compact) {
+  Widget _buildCopy(BuildContext context, bool compact, bool phone) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +106,7 @@ class HeroSection extends StatelessWidget {
               : 'Lucrurile bune merită o nouă poveste.',
           style: TextStyle(
             color: Colors.white,
-            fontSize: compact ? 32 : 44,
+            fontSize: phone ? 28 : (compact ? 32 : 44),
             height: 1.05,
             letterSpacing: -1.4,
             fontWeight: FontWeight.w900,

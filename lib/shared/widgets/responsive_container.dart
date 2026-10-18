@@ -15,14 +15,18 @@ class ResponsiveContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    final horizontal = viewportWidth < 700 ? 16.0 : 24.0;
+    final horizontal = viewportWidth < 420
+        ? 12.0
+        : viewportWidth < 700
+        ? 16.0
+        : 24.0;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontal).add(padding),
       child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth),
-          child: child,
+          child: SizedBox(width: double.infinity, child: child),
         ),
       ),
     );
