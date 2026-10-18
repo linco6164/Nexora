@@ -277,18 +277,16 @@ class _MainAppState extends State<MainApp> {
     // INVITE REGISTRATION
     // ============================================================
 
-    if (uri.path == '/register') {
-      final referralCode = uri.queryParameters['ref']?.trim();
+    final referralCode = uri.queryParameters['ref']?.trim();
 
-      if (referralCode != null && referralCode.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (_) => RegisterPage(referralCode: referralCode),
-            ),
-          );
-        });
-      }
+    if (referralCode != null && referralCode.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (_) => RegisterPage(referralCode: referralCode),
+          ),
+        );
+      });
 
       return;
     }
@@ -393,7 +391,9 @@ class _MainAppState extends State<MainApp> {
     }
 
     if (kIsWeb) {
-      final webInitialIndex = path == '/register'
+      final hasReferralCode =
+          uri.queryParameters['ref']?.trim().isNotEmpty == true;
+      final webInitialIndex = path == '/register' || hasReferralCode
           ? 5
           : uri.queryParameters.containsKey('cardSetup')
           ? 15
