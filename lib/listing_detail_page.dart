@@ -132,6 +132,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
             conversationId: conversation.id,
             otherUsername: listing.seller?.username ?? 'Vânzător',
             myUserId: me['_id'],
+            listing: conversation.listing,
           ),
         ),
       );

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_locale.dart';
+
 class AuthDivider extends StatelessWidget {
   const AuthDivider({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       children: [
-        Expanded(child: Divider()),
+        const Expanded(child: Divider()),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: Text("SAU"),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(appLocaleController.value == 'en' ? 'OR' : 'SAU'),
         ),
-        Expanded(child: Divider()),
+        const Expanded(child: Divider()),
       ],
     );
   }

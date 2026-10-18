@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class AddressesPage extends StatefulWidget {
   const AddressesPage({super.key});
@@ -122,15 +124,32 @@ class _AddressesPageState extends State<AddressesPage> {
   }
 
   Future<void> _openAddressForm({Map<String, dynamic>? address}) async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return _AddressFormSheet(address: address);
-      },
-    );
+    final result = kIsWeb
+        ? await showDialog<bool>(
+            context: context,
+            builder: (_) {
+              return Dialog(
+                insetPadding: const EdgeInsets.all(24),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 620,
+                    maxHeight: 760,
+                  ),
+                  child: _AddressFormSheet(address: address),
+                ),
+              );
+            },
+          )
+        : await showModalBottomSheet<bool>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) {
+              return _AddressFormSheet(address: address);
+            },
+          );
 
     if (result == true && mounted) {
       await _loadAddresses();
@@ -198,90 +217,88 @@ class _AddressesPageState extends State<AddressesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : RefreshIndicator(
+            onRefresh: _loadAddresses,
+            child: _addresses.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    children: [
+                      SizedBox(height: kIsWeb ? 60 : 100),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: kIsWeb ? 54 : 72,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Nu ai nicio adresă salvată',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Adaugă o adresă pentru a face cumpărăturile și livrările mai rapide.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 28),
+                      FilledButton.icon(
+                        onPressed: _openAddressForm,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Adaugă adresă'),
+                      ),
+                    ],
+                  )
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    children: [
+                      ..._addresses.map((address) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _AddressCard(
+                            address: address,
+                            addressLine: _buildAddressLine(address),
+                            cityLine: _buildCityLine(address),
+                            onEdit: () => _openAddressForm(address: address),
+                            onDelete: () => _deleteAddress(address),
+                            onSetDefault: () => _setDefaultAddress(address),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _openAddressForm,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Adaugă adresă'),
+                      ),
+                    ],
+                  ),
+          );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Adrese salvate')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadAddresses,
-              child: _addresses.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      children: [
-                        const SizedBox(height: 100),
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 72,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Nu ai nicio adresă salvată',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Adaugă o adresă pentru a face cumpărăturile și livrările mai rapide.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                        const SizedBox(height: 28),
-                        FilledButton.icon(
-                          onPressed: _openAddressForm,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Adaugă adresă'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                      children: [
-                        ..._addresses.map((address) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _AddressCard(
-                              address: address,
-                              addressLine: _buildAddressLine(address),
-                              cityLine: _buildCityLine(address),
-                              onEdit: () {
-                                _openAddressForm(address: address);
-                              },
-                              onDelete: () {
-                                _deleteAddress(address);
-                              },
-                              onSetDefault: () {
-                                _setDefaultAddress(address);
-                              },
-                            ),
-                          );
-                        }),
-                        const SizedBox(height: 8),
-                        OutlinedButton.icon(
-                          onPressed: _openAddressForm,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Adaugă adresă'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+      appBar: kIsWeb ? null : AppBar(title: const Text('Adrese salvate')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Adrese salvate',
+              subtitle: 'Gestionează adresele folosite pentru livrare',
+              maxWidth: 860,
+              actions: [
+                FilledButton.icon(
+                  onPressed: _openAddressForm,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Adresă nouă'),
+                ),
+              ],
+              child: body,
+            )
+          : body,
     );
   }
 }
@@ -605,28 +622,33 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: kIsWeb
+            ? BorderRadius.circular(18)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, bottom + 16),
+        padding: kIsWeb
+            ? const EdgeInsets.fromLTRB(24, 22, 24, 24)
+            : EdgeInsets.fromLTRB(16, 12, 16, bottom + 16),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(10),
+                if (!kIsWeb) ...[
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
+                ],
 
                 Text(
                   _isEditing ? 'Editează adresa' : 'Adaugă adresă',

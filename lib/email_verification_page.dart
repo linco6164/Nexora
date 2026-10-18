@@ -1,24 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import '../api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class EmailVerificationPage extends StatefulWidget {
   const EmailVerificationPage({super.key});
 
   @override
-  State<EmailVerificationPage> createState() =>
-      _EmailVerificationPageState();
+  State<EmailVerificationPage> createState() => _EmailVerificationPageState();
 }
 
-class _EmailVerificationPageState
-    extends State<EmailVerificationPage> {
-  final TextEditingController _codeController =
-      TextEditingController();
+class _EmailVerificationPageState extends State<EmailVerificationPage> {
+  final TextEditingController _codeController = TextEditingController();
 
-  final TextEditingController _emailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _passwordController =
-      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   bool _checkingStatus = true;
   bool _emailVerified = false;
@@ -39,8 +37,7 @@ class _EmailVerificationPageState
 
   Future<void> _loadStatus() async {
     try {
-      final verified =
-          await ApiService.getEmailVerificationStatus();
+      final verified = await ApiService.getEmailVerificationStatus();
 
       if (!mounted) return;
 
@@ -53,10 +50,7 @@ class _EmailVerificationPageState
 
       setState(() {
         _checkingStatus = false;
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -78,19 +72,14 @@ class _EmailVerificationPageState
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Codul a fost trimis pe adresa ta de email.',
-          ),
+          content: Text('Codul a fost trimis pe adresa ta de email.'),
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -117,9 +106,7 @@ class _EmailVerificationPageState
     });
 
     try {
-      await ApiService.verifyEmail(
-        code: code,
-      );
+      await ApiService.verifyEmail(code: code);
 
       if (!mounted) return;
 
@@ -130,20 +117,13 @@ class _EmailVerificationPageState
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Adresa de email a fost verificată.',
-          ),
-        ),
+        const SnackBar(content: Text('Adresa de email a fost verificată.')),
       );
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -165,9 +145,7 @@ class _EmailVerificationPageState
       return;
     }
 
-    if (!RegExp(
-      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-    ).hasMatch(email)) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
       setState(() {
         _error = 'Introdu o adresă de email validă.';
       });
@@ -201,19 +179,14 @@ class _EmailVerificationPageState
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Codul a fost trimis pe noua adresă de email.',
-          ),
+          content: Text('Codul a fost trimis pe noua adresă de email.'),
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -240,9 +213,7 @@ class _EmailVerificationPageState
     });
 
     try {
-      await ApiService.confirmEmailChange(
-        code: code,
-      );
+      await ApiService.confirmEmailChange(code: code);
 
       if (!mounted) return;
 
@@ -256,19 +227,14 @@ class _EmailVerificationPageState
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Adresa de email a fost schimbată cu succes.',
-          ),
+          content: Text('Adresa de email a fost schimbată cu succes.'),
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        _error = e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -310,25 +276,26 @@ class _EmailVerificationPageState
   @override
   Widget build(BuildContext context) {
     if (_checkingStatus) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final body = SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: _emailVerified ? _buildVerifiedView() : _buildVerificationView(),
+      ),
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Email'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: _emailVerified
-              ? _buildVerifiedView()
-              : _buildVerificationView(),
-        ),
-      ),
+      appBar: kIsWeb ? null : AppBar(title: const Text('Email')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Verificare email',
+              subtitle: 'Confirmă sau modifică adresa asociată contului',
+              maxWidth: 720,
+              child: body,
+            )
+          : body,
     );
   }
 
@@ -338,29 +305,20 @@ class _EmailVerificationPageState
       children: [
         const SizedBox(height: 20),
 
-        const Icon(
-          Icons.mark_email_unread_outlined,
-          size: 64,
-        ),
+        const Icon(Icons.mark_email_unread_outlined, size: 64),
 
         const SizedBox(height: 24),
 
         const Text(
           'Verifică adresa de email',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 10),
 
         const Text(
           'Verifică adresa de email pentru a securiza contul și pentru a putea recupera accesul.',
-          style: TextStyle(
-            fontSize: 16,
-            height: 1.5,
-          ),
+          style: TextStyle(fontSize: 16, height: 1.5),
         ),
 
         const SizedBox(height: 28),
@@ -392,15 +350,12 @@ class _EmailVerificationPageState
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed:
-                  _sending ? null : _sendVerificationCode,
+              onPressed: _sending ? null : _sendVerificationCode,
               child: _sending
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text(
                       'Trimite codul',
@@ -416,15 +371,12 @@ class _EmailVerificationPageState
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed:
-                  _loading ? null : _verifyEmail,
+              onPressed: _loading ? null : _verifyEmail,
               child: _loading
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text(
                       'Verifică emailul',
@@ -442,19 +394,14 @@ class _EmailVerificationPageState
             width: double.infinity,
             height: 52,
             child: OutlinedButton(
-              onPressed:
-                  _sending ? null : _sendVerificationCode,
+              onPressed: _sending ? null : _sendVerificationCode,
               child: _sending
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text(
-                      'Trimite din nou codul',
-                    ),
+                  : const Text('Trimite din nou codul'),
             ),
           ),
         ],
@@ -472,29 +419,20 @@ class _EmailVerificationPageState
       children: [
         const SizedBox(height: 20),
 
-        const Icon(
-          Icons.verified_rounded,
-          size: 68,
-        ),
+        const Icon(Icons.verified_rounded, size: 68),
 
         const SizedBox(height: 24),
 
         const Text(
           'Email verificat',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 10),
 
         const Text(
           'Adresa ta de email este verificată și poate fi folosită pentru securizarea contului.',
-          style: TextStyle(
-            fontSize: 16,
-            height: 1.5,
-          ),
+          style: TextStyle(fontSize: 16, height: 1.5),
         ),
 
         const SizedBox(height: 32),
@@ -506,12 +444,8 @@ class _EmailVerificationPageState
           height: 52,
           child: OutlinedButton.icon(
             onPressed: _startEmailChange,
-            icon: const Icon(
-              Icons.edit_outlined,
-            ),
-            label: const Text(
-              'Modifică adresa de email',
-            ),
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Modifică adresa de email'),
           ),
         ),
       ],
@@ -524,31 +458,20 @@ class _EmailVerificationPageState
       children: [
         const SizedBox(height: 20),
 
-        const Icon(
-          Icons.alternate_email_rounded,
-          size: 64,
-        ),
+        const Icon(Icons.alternate_email_rounded, size: 64),
 
         const SizedBox(height: 24),
 
         const Text(
           'Modifică adresa de email',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
 
         const SizedBox(height: 10),
 
         Text(
-          _codeSent
-              ? 'Introdu codul primit pe noua adresă de email.'
-              : 'Introdu noua adresă de email și parola actuală. Vom trimite un cod pe noua adresă.',
-          style: const TextStyle(
-            fontSize: 16,
-            height: 1.5,
-          ),
+          _codeSent ? 'Introdu codul primit pe noua adresă de email.' : 'Introdu noua adresă de email și parola actuală. Vom trimite un cod pe noua adresă.',
+          style: const TextStyle(fontSize: 16, height: 1.5),
         ),
 
         const SizedBox(height: 28),
@@ -583,15 +506,12 @@ class _EmailVerificationPageState
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed:
-                  _sending ? null : _requestEmailChange,
+              onPressed: _sending ? null : _requestEmailChange,
               child: _sending
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text(
                       'Trimite codul',
@@ -629,15 +549,12 @@ class _EmailVerificationPageState
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed:
-                  _loading ? null : _confirmEmailChange,
+              onPressed: _loading ? null : _confirmEmailChange,
               child: _loading
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text(
                       'Confirmă schimbarea',
@@ -656,9 +573,7 @@ class _EmailVerificationPageState
             height: 52,
             child: OutlinedButton(
               onPressed: _cancelEmailChange,
-              child: const Text(
-                'Anulează',
-              ),
+              child: const Text('Anulează'),
             ),
           ),
         ],
@@ -675,15 +590,8 @@ class _EmailVerificationPageState
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        _error!,
-        style: const TextStyle(
-          color: Colors.red,
-        ),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+      child: Text(_error!, style: const TextStyle(color: Colors.red)),
     );
   }
 }

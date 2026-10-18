@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../models/listing.dart';
 import '../../../api_service.dart';
+import '../../../app_feedback.dart';
 import '../../../chat_page.dart';
+import '../../../l10n/app_locale.dart';
 
 import '../../checkout/web_checkout_page.dart';
 
@@ -70,6 +72,7 @@ class _ProductInfoState extends State<ProductInfo> {
             otherUsername:
                 other?.username ?? listing.seller?.username ?? 'Vânzător',
             myUserId: myUserId,
+            listing: conversation.listing,
           ),
         ),
       );
@@ -82,70 +85,110 @@ class _ProductInfoState extends State<ProductInfo> {
   }
 
   void _showError(Object error, String fallback) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error is ApiException ? error.message : fallback)),
+    AppFeedback.error(
+      context,
+      error is ApiException ? error.message : error,
+      fallback: fallback,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          listing.title,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                listing.title,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -.4,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton.filledTonal(
+              tooltip: _favorite
+                  ? (appLocaleController.value == 'en'
+                        ? 'Remove from favorites'
+                        : 'Elimină din favorite')
+                  : (appLocaleController.value == 'en'
+                        ? 'Add to favorites'
+                        : 'Adaugă la favorite'),
+              onPressed: _updatingFavorite ? null : _toggleFavorite,
+              icon: Icon(
+                _favorite ? Icons.favorite_rounded : Icons.favorite_border,
+                color: _favorite ? colors.error : null,
+              ),
+            ),
+          ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
 
-        Text(
-          "${listing.price.toStringAsFixed(2)} ${listing.currency}",
-          style: TextStyle(
-            fontSize: 34,
-            fontWeight: FontWeight.bold,
-            color: Colors.green.shade700,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            color: colors.primaryContainer.withValues(alpha: .42),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            "${listing.price.toStringAsFixed(2)} ${listing.currency}",
+            style: TextStyle(
+              fontSize: 27,
+              fontWeight: FontWeight.w900,
+              color: colors.primary,
+            ),
           ),
         ),
 
         const SizedBox(height: 6),
 
         Text(
-          'Prețul produsului. Costul livrării este afișat separat înainte de plată.',
+          appLocaleController.value == 'en'
+              ? 'Item price. Shipping cost is shown separately before payment.'
+              : 'Prețul produsului. Costul livrării este afișat separat înainte de plată.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurface.withValues(alpha: .62),
             height: 1.4,
           ),
         ),
 
+        const SizedBox(height: 18),
+
+        Wrap(
+          spacing: 9,
+          runSpacing: 9,
+          children: [
+            _InfoPill(icon: Icons.location_on_outlined, label: listing.city),
+            _InfoPill(
+              icon: Icons.inventory_2_outlined,
+              label: context.tr(listing.conditionLabel),
+            ),
+            if (listing.brand != null && listing.brand!.isNotEmpty)
+              _InfoPill(
+                icon: Icons.local_offer_outlined,
+                label: listing.brand!,
+              ),
+          ],
+        ),
+
         const SizedBox(height: 24),
 
-        Row(
-          children: [
-            const Icon(Icons.location_on_outlined),
-            const SizedBox(width: 6),
-            Text(listing.city),
-          ],
-        ),
+        Divider(color: colors.outlineVariant),
 
-        const SizedBox(height: 14),
-
-        Row(
-          children: [
-            const Icon(Icons.inventory_2_outlined),
-            const SizedBox(width: 6),
-            Text(listing.condition),
-          ],
-        ),
-
-        const SizedBox(height: 30),
+        const SizedBox(height: 18),
 
         SizedBox(
           width: double.infinity,
+          height: 48,
           child: FilledButton.icon(
             onPressed: () {
               Navigator.push(
@@ -155,8 +198,8 @@ class _ProductInfoState extends State<ProductInfo> {
                 ),
               );
             },
-            icon: const Icon(Icons.shopping_cart_checkout),
-            label: const Text('Cumpără acum'),
+            icon: const Icon(Icons.shopping_cart_checkout_rounded),
+            label: Text(context.tr('Cumpără acum')),
           ),
         ),
 
@@ -164,28 +207,50 @@ class _ProductInfoState extends State<ProductInfo> {
 
         SizedBox(
           width: double.infinity,
+          height: 46,
           child: OutlinedButton.icon(
             onPressed: _openingChat ? null : _startChat,
             icon: const Icon(Icons.chat_bubble_outline),
             label: Text(
-              _openingChat ? 'Se deschide...' : 'Discută cu vânzătorul',
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _updatingFavorite ? null : _toggleFavorite,
-            icon: Icon(_favorite ? Icons.favorite : Icons.favorite_border),
-            label: Text(
-              _favorite ? 'Elimină din favorite' : 'Adaugă la favorite',
+              _openingChat
+                  ? (appLocaleController.value == 'en'
+                        ? 'Opening...'
+                        : 'Se deschide...')
+                  : (appLocaleController.value == 'en'
+                        ? 'Chat with the seller'
+                        : 'Discută cu vânzătorul'),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoPill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 17, color: colors.primary),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 }

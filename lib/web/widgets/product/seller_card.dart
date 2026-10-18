@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_locale.dart';
+
 class SellerCard extends StatelessWidget {
   final String sellerName;
   final String? avatar;
   final bool verified;
   final int? listingsCount;
   final String? memberSince;
-  final VoidCallback? onMessage;
   final VoidCallback? onProfile;
 
   const SellerCard({
@@ -16,7 +17,6 @@ class SellerCard extends StatelessWidget {
     this.verified = false,
     this.listingsCount = 0,
     this.memberSince = "",
-    this.onMessage,
     this.onProfile,
   });
 
@@ -27,36 +27,38 @@ class SellerCard extends StatelessWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: .2)),
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Vânzătorul produsului',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+              appLocaleController.value == 'en'
+                  ? 'Product seller'
+                  : 'Vânzătorul produsului',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
             Row(
               children: [
                 CircleAvatar(
-                  radius: 32,
+                  radius: 26,
                   backgroundImage: avatar != null && avatar!.isNotEmpty
                       ? NetworkImage(avatar!)
                       : null,
                   child: avatar == null || avatar!.isEmpty
-                      ? const Icon(Icons.person, size: 34)
+                      ? const Icon(Icons.person, size: 28)
                       : null,
                 ),
 
-                const SizedBox(width: 18),
+                const SizedBox(width: 14),
 
                 Expanded(
                   child: Column(
@@ -67,7 +69,7 @@ class SellerCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               sellerName,
-                              style: theme.textTheme.titleLarge?.copyWith(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -88,7 +90,9 @@ class SellerCard extends StatelessWidget {
 
                       if (listingsCount != null)
                         Text(
-                          '$listingsCount anunțuri',
+                          appLocaleController.value == 'en'
+                              ? '$listingsCount listings'
+                              : '$listingsCount anunțuri',
                           style: theme.textTheme.bodyMedium,
                         ),
 
@@ -96,7 +100,9 @@ class SellerCard extends StatelessWidget {
 
                       if (memberSince != null)
                         Text(
-                          'Membru din $memberSince',
+                          appLocaleController.value == 'en'
+                              ? 'Member since $memberSince'
+                              : 'Membru din $memberSince',
                           style: theme.textTheme.bodySmall,
                         ),
                     ],
@@ -105,35 +111,28 @@ class SellerCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
 
             Text(
-              'Acesta este vânzătorul identificat în anunț și partea contractuală pentru produs. Documentul fiscal este emis de vânzător atunci când există această obligație legală.',
+              appLocaleController.value == 'en'
+                  ? 'This is the seller identified in the listing and the contractual party for the product. The fiscal document is issued by the seller when legally required.'
+                  : 'Acesta este vânzătorul identificat în anunț și partea contractuală pentru produs. Documentul fiscal este emis de vânzător atunci când există această obligație legală.',
               style: theme.textTheme.bodySmall?.copyWith(height: 1.5),
             ),
 
             const SizedBox(height: 18),
 
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: onMessage,
-                    icon: const Icon(Icons.chat_bubble_outline),
-                    label: const Text('Mesaj'),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onProfile,
+                icon: const Icon(Icons.person_outline),
+                label: Text(
+                  appLocaleController.value == 'en'
+                      ? 'View seller profile'
+                      : 'Vezi profilul vânzătorului',
                 ),
-
-                const SizedBox(width: 16),
-
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onProfile,
-                    icon: const Icon(Icons.person_outline),
-                    label: const Text('Profil'),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),

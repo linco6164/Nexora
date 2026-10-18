@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'api_service.dart';
@@ -7,14 +9,42 @@ import 'package:flutter/material.dart';
 
 class SocketService {
   static io.Socket? _socket;
+  static Future<void>? _connecting;
+  static final Set<String> _conversationRooms = <String>{};
+
+  static bool get isConnected => _socket?.connected == true;
 
   static Future<void> connect() async {
-    if (_socket != null && _socket!.connected) return;
+    if (isConnected) return;
+
+    final activeConnection = _connecting;
+    if (activeConnection != null) {
+      return activeConnection;
+    }
+
+    final connection = _connect();
+    _connecting = connection;
+
+    try {
+      await connection;
+    } finally {
+      if (identical(_connecting, connection)) {
+        _connecting = null;
+      }
+    }
+  }
+
+  static Future<void> _connect() async {
+    if (isConnected) return;
 
     final token = await ApiService.getToken();
-    if (token == null) return;
+    if (token == null || token.isEmpty) {
+      throw StateError('Nu ești autentificat.');
+    }
 
-    _socket = io.io(
+    _socket?.dispose();
+
+    final socket = io.io(
       ApiService.baseUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
@@ -23,42 +53,168 @@ class SocketService {
           .build(),
     );
 
-    _socket!.connect();
+    _socket = socket;
+
+    socket.onConnect((_) {
+      for (final conversationId in _conversationRooms) {
+        socket.emit('joinConversation', conversationId);
+      }
+    });
+
+    final completer = Completer<void>();
+
+    late final void Function(dynamic) handleConnect;
+    late final void Function(dynamic) handleConnectError;
+
+    void clearInitialListeners() {
+      socket.off('connect', handleConnect);
+      socket.off('connect_error', handleConnectError);
+    }
+
+    handleConnect = (_) {
+      clearInitialListeners();
+      if (!completer.isCompleted) completer.complete();
+    };
+
+    handleConnectError = (dynamic error) {
+      clearInitialListeners();
+      if (!completer.isCompleted) {
+        completer.completeError(
+          StateError('Conexiunea pentru mesaje nu a putut fi inițializată.'),
+        );
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('connect_error', handleConnectError);
+    socket.connect();
+
+    await completer.future.timeout(
+      const Duration(seconds: 12),
+      onTimeout: () {
+        clearInitialListeners();
+        throw TimeoutException('Conexiunea pentru mesaje a expirat.');
+      },
+    );
   }
 
   static void disconnect() {
     _socket?.disconnect();
+    _socket?.dispose();
     _socket = null;
+    _connecting = null;
+    _conversationRooms.clear();
   }
 
   static void joinConversation(String conversationId) {
-    _socket?.emit('joinConversation', conversationId);
+    _conversationRooms.add(conversationId);
+    if (isConnected) {
+      _socket!.emit('joinConversation', conversationId);
+    }
   }
 
   static void leaveConversation(String conversationId) {
-    _socket?.emit('leaveConversation', conversationId);
+    _conversationRooms.remove(conversationId);
+    if (isConnected) {
+      _socket!.emit('leaveConversation', conversationId);
+    }
   }
 
-  static void sendMessage({
+  static Future<ChatMessage> sendMessage({
     required String conversationId,
+    required String senderId,
     required String text,
     List<String> images = const [],
-  }) {
-    _socket?.emit('sendMessage', {
-      'conversationId': conversationId,
-      'text': text,
-      'images': images,
-    });
+  }) async {
+    await connect();
+
+    final socket = _socket;
+    if (socket == null || !socket.connected) {
+      throw StateError('Nu există conexiune la mesaje.');
+    }
+
+    final normalizedText = text.trim();
+    final broadcastCompleter = Completer<ChatMessage>();
+
+    void handleNewMessage(dynamic data) {
+      if (broadcastCompleter.isCompleted || data is! Map) return;
+
+      try {
+        final message = ChatMessage.fromJson(Map<String, dynamic>.from(data));
+        final hasMatchingImages =
+            message.images.length == images.length &&
+            message.images.indexed.every(
+              (entry) => entry.$2 == images[entry.$1],
+            );
+        final isSentMessage =
+            message.conversationId == conversationId &&
+            message.sender.id == senderId &&
+            message.text.trim() == normalizedText &&
+            hasMatchingImages;
+
+        if (isSentMessage) broadcastCompleter.complete(message);
+      } catch (_) {
+        // Listenerul principal va trata separat eventualele date nevalide.
+      }
+    }
+
+    socket.on('newMessage', handleNewMessage);
+
+    try {
+      final acknowledgement = socket
+          .emitWithAckAsync('sendMessage', {
+            'conversationId': conversationId,
+            'text': normalizedText,
+            'images': images,
+          })
+          .then((response) {
+            if (response is! Map || response['success'] != true) {
+              final message = response is Map
+                  ? response['message']?.toString()
+                  : null;
+              throw StateError(message ?? 'Mesajul nu a putut fi trimis.');
+            }
+
+            final rawMessage = response['data'];
+            if (rawMessage is! Map) {
+              throw const FormatException(
+                'Răspuns invalid la trimiterea mesajului.',
+              );
+            }
+
+            return ChatMessage.fromJson(Map<String, dynamic>.from(rawMessage));
+          });
+
+      return await Future.any<ChatMessage>([
+        acknowledgement,
+        broadcastCompleter.future,
+      ]).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw TimeoutException(
+          'Serverul nu a confirmat trimiterea mesajului.',
+        ),
+      );
+    } finally {
+      socket.off('newMessage', handleNewMessage);
+    }
   }
 
-  static void onNewMessage(void Function(ChatMessage) callback) {
-    _socket?.on('newMessage', (data) {
+  static VoidCallback onNewMessage(void Function(ChatMessage) callback) {
+    final socket = _socket;
+    if (socket == null) return () {};
+
+    return socket.on('newMessage', (data) {
       callback(ChatMessage.fromJson(Map<String, dynamic>.from(data)));
     });
   }
 
-  static void onConversationUpdated(void Function(Conversation) callback) {
-    _socket?.on('conversationUpdated', (data) {
+  static VoidCallback onConversationUpdated(
+    void Function(Conversation) callback,
+  ) {
+    final socket = _socket;
+    if (socket == null) return () {};
+
+    return socket.on('conversationUpdated', (data) {
       callback(Conversation.fromJson(Map<String, dynamic>.from(data)));
     });
   }
@@ -71,12 +227,59 @@ class SocketService {
     _socket?.emit('stopTyping', {'conversationId': conversationId});
   }
 
-  static void onTyping(void Function(String userId) callback) {
-    _socket?.on('typing', (userId) => callback(userId.toString()));
+  static VoidCallback onTyping(void Function(String userId) callback) {
+    final socket = _socket;
+    if (socket == null) return () {};
+
+    return socket.on('typing', (userId) => callback(userId.toString()));
   }
 
-  static void onStopTyping(void Function(String userId) callback) {
-    _socket?.on('stopTyping', (userId) => callback(userId.toString()));
+  static VoidCallback onStopTyping(void Function(String userId) callback) {
+    final socket = _socket;
+    if (socket == null) return () {};
+
+    return socket.on('stopTyping', (userId) => callback(userId.toString()));
+  }
+
+  static VoidCallback onOfferUpdated(
+    void Function(String conversationId) callback,
+  ) {
+    final socket = _socket;
+    if (socket == null) return () {};
+
+    return socket.on('offerUpdated', (data) {
+      if (data is Map) {
+        final conversationId = data['conversationId']?.toString() ?? '';
+        if (conversationId.isNotEmpty) callback(conversationId);
+      }
+    });
+  }
+
+  static VoidCallback onMessageDeleted(
+    void Function(String conversationId) callback,
+  ) {
+    return _onConversationEvent('messageDeleted', callback);
+  }
+
+  static VoidCallback onMessagesSeen(
+    void Function(String conversationId) callback,
+  ) {
+    return _onConversationEvent('messagesSeen', callback);
+  }
+
+  static VoidCallback _onConversationEvent(
+    String event,
+    void Function(String conversationId) callback,
+  ) {
+    final socket = _socket;
+    if (socket == null) return () {};
+
+    return socket.on(event, (data) {
+      if (data is Map) {
+        final conversationId = data['conversationId']?.toString() ?? '';
+        if (conversationId.isNotEmpty) callback(conversationId);
+      }
+    });
   }
 
   static void markSeen({

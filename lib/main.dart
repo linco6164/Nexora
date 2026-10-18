@@ -13,11 +13,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'app_navigator.dart';
 import 'firebase_options.dart';
 import 'listing_detail_page.dart';
+import 'l10n/app_locale.dart';
 import 'location_service.dart';
 import 'login_page.dart';
 import 'new_password_page.dart';
 import 'notification_service.dart';
 import 'promotion_payment_return_page.dart';
+import 'register_page.dart';
 import 'saved_cards_page.dart';
 import 'theme_notifier.dart';
 import 'welcome_page.dart';
@@ -25,8 +27,97 @@ import 'welcome_page.dart';
 import 'web/web_shell.dart';
 import 'web/web_product_page.dart';
 
+ThemeData _buildAppTheme(Brightness brightness) {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF50C878),
+    brightness: brightness,
+  );
+  final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+
+  final themedBase = base.copyWith(
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      elevation: 10,
+      backgroundColor: scheme.inverseSurface,
+      contentTextStyle: TextStyle(
+        color: scheme.onInverseSurface,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+      actionTextColor: scheme.inversePrimary,
+      disabledActionTextColor: scheme.onInverseSurface.withValues(alpha: .45),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      showCloseIcon: true,
+      closeIconColor: scheme.onInverseSurface,
+    ),
+  );
+
+  if (!kIsWeb) return themedBase;
+
+  final buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(10),
+  );
+
+  return themedBase.copyWith(
+    scaffoldBackgroundColor: brightness == Brightness.light
+        ? const Color(0xFFF7F8FA)
+        : const Color(0xFF101312),
+    visualDensity: VisualDensity.compact,
+    cardTheme: CardThemeData(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: buttonShape,
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: buttonShape,
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(0, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        minimumSize: const Size.square(38),
+        iconSize: 20,
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      isDense: true,
+      filled: true,
+      fillColor: scheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: scheme.outlineVariant),
+      ),
+    ),
+  );
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await appLocaleController.load();
 
   // ============================================================
   // FIREBASE
@@ -36,9 +127,26 @@ Future<void> main() async {
 
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  await NotificationService.initialize();
+  try {
+    await NotificationService.initialize();
+  } catch (error, stackTrace) {
+    // Notificările sunt auxiliare și nu trebuie să blocheze pornirea aplicației.
+    debugPrint('NotificationService initialization failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
 
   runApp(const MainApp());
+
+  /*
+   * Dacă aplicația a fost pornită prin apăsarea unei
+   * notificări, NotificationService poate primi mesajul
+   * înainte ca Navigator-ul să fie construit.
+   *
+   * Procesăm navigarea după primul frame.
+   */
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.processPendingNavigation();
+  });
 }
 
 final position = LocationService.getCurrentLocation();
@@ -166,6 +274,26 @@ class _MainAppState extends State<MainApp> {
     }
 
     // ============================================================
+    // INVITE REGISTRATION
+    // ============================================================
+
+    if (uri.path == '/register') {
+      final referralCode = uri.queryParameters['ref']?.trim();
+
+      if (referralCode != null && referralCode.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (_) => RegisterPage(referralCode: referralCode),
+            ),
+          );
+        });
+      }
+
+      return;
+    }
+
+    // ============================================================
     // RESET PASSWORD
     // ============================================================
 
@@ -265,9 +393,13 @@ class _MainAppState extends State<MainApp> {
     }
 
     if (kIsWeb) {
-      return WebShell(
-        initialIndex: uri.queryParameters.containsKey('cardSetup') ? 15 : 0,
-      );
+      final webInitialIndex = path == '/register'
+          ? 5
+          : uri.queryParameters.containsKey('cardSetup')
+          ? 15
+          : 0;
+
+      return WebShell(initialIndex: webInitialIndex);
     }
 
     // ============================================================
@@ -290,119 +422,114 @@ class _MainAppState extends State<MainApp> {
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,
         builder: (context, currentMode, _) {
-          return MaterialApp(
-            navigatorKey: navigatorKey,
+          return ValueListenableBuilder<String>(
+            valueListenable: appLocaleController,
+            builder: (context, _, _) {
+              return MaterialApp(
+                navigatorKey: navigatorKey,
+                scaffoldMessengerKey: scaffoldMessengerKey,
 
-            title: 'Nexora Store 🚀',
+                title: 'Nexora Store 🚀',
 
-            debugShowCheckedModeBanner: false,
+                debugShowCheckedModeBanner: false,
 
-            themeMode: currentMode,
+                themeMode: currentMode,
 
-            // ======================================================
-            // LIGHT THEME
-            // ======================================================
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF50C878),
-              ),
-              useMaterial3: true,
-            ),
+                // ======================================================
+                // LIGHT THEME
+                // ======================================================
+                theme: _buildAppTheme(Brightness.light),
 
-            // ======================================================
-            // DARK THEME
-            // ======================================================
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF50C878),
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-            ),
+                // ======================================================
+                // DARK THEME
+                // ======================================================
+                darkTheme: _buildAppTheme(Brightness.dark),
 
-            // ======================================================
-            // INITIAL PAGE
-            // ======================================================
-            home: _buildInitialPage(),
+                // ======================================================
+                // INITIAL PAGE
+                // ======================================================
+                home: _buildInitialPage(),
 
-            // ======================================================
-            // ROUTES
-            // ======================================================
-            onGenerateRoute: (settings) {
-              final routeName = settings.name ?? '/';
+                // ======================================================
+                // ROUTES
+                // ======================================================
+                onGenerateRoute: (settings) {
+                  final routeName = settings.name ?? '/';
 
-              final uri = Uri.tryParse(routeName);
+                  final uri = Uri.tryParse(routeName);
 
-              if (uri == null) {
-                return null;
-              }
+                  if (uri == null) {
+                    return null;
+                  }
 
-              final path = uri.path;
+                  final path = uri.path;
 
-              // ====================================================
-              // PRODUCT
-              // ====================================================
+                  // ====================================================
+                  // PRODUCT
+                  // ====================================================
 
-              if (path.startsWith('/product/')) {
-                final listingId = path
-                    .substring('/product/'.length)
-                    .split('/')
-                    .first
-                    .trim();
+                  if (path.startsWith('/product/')) {
+                    final listingId = path
+                        .substring('/product/'.length)
+                        .split('/')
+                        .first
+                        .trim();
 
-                if (listingId.isNotEmpty) {
-                  return MaterialPageRoute(
-                    settings: settings,
-                    builder: (_) => kIsWeb
-                        ? WebProductPage(productId: listingId)
-                        : ListingDetailPage(listingId: listingId),
-                  );
-                }
-              }
+                    if (listingId.isNotEmpty) {
+                      return MaterialPageRoute(
+                        settings: settings,
+                        builder: (_) => kIsWeb
+                            ? WebProductPage(productId: listingId)
+                            : ListingDetailPage(listingId: listingId),
+                      );
+                    }
+                  }
 
-              // ====================================================
-              // PROMOTION PAYMENT RETURN
-              // ====================================================
+                  // ====================================================
+                  // PROMOTION PAYMENT RETURN
+                  // ====================================================
 
-              if (path == '/promotion/payment-return') {
-                final paymentId = uri.queryParameters['paymentId'] ?? '';
+                  if (path == '/promotion/payment-return') {
+                    final paymentId = uri.queryParameters['paymentId'] ?? '';
 
-                final status = uri.queryParameters['status'] ?? 'pending';
+                    final status = uri.queryParameters['status'] ?? 'pending';
 
-                debugPrint('💳 Promotion payment route');
+                    debugPrint('💳 Promotion payment route');
 
-                debugPrint('💳 Payment ID: $paymentId');
+                    debugPrint('💳 Payment ID: $paymentId');
 
-                debugPrint('💳 Status: $status');
+                    debugPrint('💳 Status: $status');
 
-                return MaterialPageRoute(
-                  settings: settings,
-                  builder: (_) => PromotionPaymentReturnPage(
-                    paymentId: paymentId,
-                    status: status,
-                  ),
-                );
-              }
+                    return MaterialPageRoute(
+                      settings: settings,
+                      builder: (_) => PromotionPaymentReturnPage(
+                        paymentId: paymentId,
+                        status: status,
+                      ),
+                    );
+                  }
 
-              if (path == '/reset-password') {
-                final token = uri.queryParameters['token'] ?? '';
-                if (token.isNotEmpty) {
-                  return MaterialPageRoute(
-                    settings: settings,
-                    builder: (_) => NewPasswordPage(resetToken: token),
-                  );
-                }
-              }
+                  if (path == '/reset-password') {
+                    final token = uri.queryParameters['token'] ?? '';
+                    if (token.isNotEmpty) {
+                      return MaterialPageRoute(
+                        settings: settings,
+                        builder: (_) => NewPasswordPage(resetToken: token),
+                      );
+                    }
+                  }
 
-              // ====================================================
-              // RESET PASSWORD
-              // ====================================================
+                  // ====================================================
+                  // RESET PASSWORD
+                  // ====================================================
 
-              if (routeName.startsWith('/?code=')) {
-                return MaterialPageRoute(builder: (_) => const LoginPage());
-              }
+                  if (routeName.startsWith('/?code=')) {
+                    return MaterialPageRoute(builder: (_) => const LoginPage());
+                  }
 
-              return null;
+                  return null;
+                },
+              );
             },
           );
         },

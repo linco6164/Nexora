@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import 'api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class NewPasswordPage extends StatefulWidget {
   final String resetToken;
@@ -53,9 +56,8 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
       Navigator.of(context).popUntil((route) => route.isFirst);
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -63,63 +65,85 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Parolă nouă')),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.lock_reset, size: 64, color: Colors.deepPurple),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    validator: _validatePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Parolă nouă',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
+    final content = SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(
+                  Icons.lock_reset,
+                  size: 64,
+                  color: Colors.deepPurple,
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  validator: _validatePassword,
+                  decoration: InputDecoration(
+                    labelText: 'Parolă nouă',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
                             ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            : Icons.visibility_off_outlined,
                       ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscurePassword,
-                    validator: _validateConfirmPassword,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirmă parola',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(),
-                    ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscurePassword,
+                  validator: _validateConfirmPassword,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirmă parola',
+                    prefixIcon: Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _isLoading ? null : _handleUpdatePassword,
-                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20, width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Salvează parola'),
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _isLoading ? null : _handleUpdatePassword,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                ],
-              ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Salvează parola'),
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+
+    return Scaffold(
+      appBar: kIsWeb ? null : AppBar(title: const Text('Parolă nouă')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Alege o parolă nouă',
+              subtitle: 'Folosește o parolă sigură pentru contul tău.',
+              maxWidth: 600,
+              child: content,
+            )
+          : content,
     );
   }
 }

@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
 import 'home_page.dart';
 import 'socket_service.dart';
 import 'notification_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class TwoFactorPage extends StatefulWidget {
   final String userId;
@@ -81,60 +83,69 @@ class _TwoFactorPageState extends State<TwoFactorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Verificare în 2 pași')),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.shield_outlined,
-                  size: 64,
-                  color: Colors.deepPurple,
+    final content = SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.shield_outlined,
+                size: 64,
+                color: Colors.deepPurple,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Introdu codul din aplicația de autentificare',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  counterText: '',
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Introdu codul din aplicația de autentificare',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _isLoading ? null : _handleVerify,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
                 ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _codeController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24, letterSpacing: 8),
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    counterText: '',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _isLoading ? null : _handleVerify,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Verifică'),
-                ),
-              ],
-            ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Verifică'),
+              ),
+            ],
           ),
         ),
       ),
+    );
+
+    return Scaffold(
+      appBar: kIsWeb ? null : AppBar(title: const Text('Verificare în 2 pași')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Verificare în 2 pași',
+              subtitle: 'Confirmă autentificarea cu codul tău de securitate.',
+              maxWidth: 600,
+              child: content,
+            )
+          : content,
     );
   }
 }

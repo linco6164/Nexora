@@ -6,17 +6,19 @@ import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
 import 'home_page.dart';
 
-class SellPage extends StatefulWidget {
+export 'sell_wizard_page.dart';
+
+class LegacySellPage extends StatefulWidget {
   final bool embedded;
   final VoidCallback? onPublished;
 
-  const SellPage({super.key, this.embedded = false, this.onPublished});
+  const LegacySellPage({super.key, this.embedded = false, this.onPublished});
 
   @override
-  State<SellPage> createState() => _SellPageState();
+  State<LegacySellPage> createState() => _SellPageState();
 }
 
-class _SellPageState extends State<SellPage> {
+class _SellPageState extends State<LegacySellPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _titleController = TextEditingController();
@@ -181,7 +183,7 @@ class _SellPageState extends State<SellPage> {
             ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
+          constraints: BoxConstraints(maxWidth: widget.embedded ? 760 : 900),
           child: Form(
             key: _formKey,
             child: ListView(

@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart'; // pentru funcția Api
+import 'web/widgets/web_page_frame.dart';
 
 class ForgottenPassword extends StatefulWidget {
   const ForgottenPassword({super.key});
@@ -54,16 +56,25 @@ class _ForgottenPasswordState extends State<ForgottenPassword> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Resetare parolă')),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _emailSent ? _buildSuccessView() : _buildFormView(),
-          ),
+    final content = SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: _emailSent ? _buildSuccessView() : _buildFormView(),
         ),
       ),
+    );
+
+    return Scaffold(
+      appBar: kIsWeb ? null : AppBar(title: const Text('Resetare parolă')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Resetare parolă',
+              subtitle: 'Recuperează accesul la contul tău Nexora.',
+              maxWidth: 600,
+              child: content,
+            )
+          : content,
     );
   }
 

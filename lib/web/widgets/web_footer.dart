@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_locale.dart';
 import '../../shared/widgets/responsive_container.dart';
 
 import '../legal/about_page.dart';
@@ -69,8 +70,8 @@ class WebFooter extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.only(top: 80),
-      padding: const EdgeInsets.symmetric(vertical: 60),
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.symmetric(vertical: 40),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
@@ -109,7 +110,7 @@ class WebFooter extends StatelessWidget {
                           Text(
                             'Nexora',
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: 21,
                               fontWeight: FontWeight.w900,
                               letterSpacing: -0.7,
                               color: theme.colorScheme.onSurface,
@@ -121,10 +122,11 @@ class WebFooter extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       SizedBox(
-                        width: 330,
+                        width: 300,
                         child: Text(
-                          'Marketplace modern pentru '
-                          'cumpărături și vânzări online.',
+                          appLocaleController.value == 'en'
+                              ? 'A modern marketplace for online buying and selling.'
+                              : 'Marketplace modern pentru cumpărături și vânzări online.',
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.6,
@@ -158,12 +160,19 @@ class WebFooter extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _sectionTitle(context, 'Companie'),
+                      _sectionTitle(
+                        context,
+                        appLocaleController.value == 'en'
+                            ? 'Company'
+                            : 'Companie',
+                      ),
                       const SizedBox(height: 14),
 
                       _link(
                         context,
-                        'Date companie și rol',
+                        appLocaleController.value == 'en'
+                            ? 'Company details and role'
+                            : 'Date companie și rol',
                         page: const AboutPage(),
                       ),
                     ],
@@ -175,7 +184,12 @@ class WebFooter extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _sectionTitle(context, 'Suport'),
+                      _sectionTitle(
+                        context,
+                        appLocaleController.value == 'en'
+                            ? 'Support'
+                            : 'Suport',
+                      ),
                       const SizedBox(height: 14),
 
                       _link(
@@ -188,17 +202,27 @@ class WebFooter extends StatelessWidget {
                         },
                       ),
 
-                      _link(context, 'Livrare', page: const DeliveryPage()),
+                      _link(
+                        context,
+                        appLocaleController.value == 'en'
+                            ? 'Delivery'
+                            : 'Livrare',
+                        page: const DeliveryPage(),
+                      ),
 
                       _link(
                         context,
-                        'Retur / retragere online',
+                        appLocaleController.value == 'en'
+                            ? 'Returns / online withdrawal'
+                            : 'Retur / retragere online',
                         page: const WithdrawalPage(),
                       ),
 
                       _link(
                         context,
-                        'Anularea comenzilor',
+                        appLocaleController.value == 'en'
+                            ? 'Order cancellation'
+                            : 'Anularea comenzilor',
                         page: const CancellationPage(),
                       ),
                     ],
@@ -215,19 +239,25 @@ class WebFooter extends StatelessWidget {
 
                       _link(
                         context,
-                        'Politica de confidențialitate',
+                        appLocaleController.value == 'en'
+                            ? 'Privacy policy'
+                            : 'Politica de confidențialitate',
                         page: const PrivacyPage(),
                       ),
 
                       _link(
                         context,
-                        'Termeni și condiții',
+                        appLocaleController.value == 'en'
+                            ? 'Terms and conditions'
+                            : 'Termeni și condiții',
                         page: const TermsPage(),
                       ),
 
                       _link(
                         context,
-                        'Dreptul de retragere',
+                        appLocaleController.value == 'en'
+                            ? 'Right of withdrawal'
+                            : 'Dreptul de retragere',
                         page: const WithdrawalPage(),
                       ),
 
@@ -250,26 +280,26 @@ class WebFooter extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 50),
-
-            const SizedBox(height: 42),
+            const SizedBox(height: 34),
 
             _buildPaymentMethods(context),
 
-            const SizedBox(height: 42),
+            const SizedBox(height: 28),
 
             Divider(
               color: theme.dividerColor.withValues(alpha: 0.20),
               height: 1,
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '© 2026 Nexora Store. Toate drepturile rezervate.',
+                  appLocaleController.value == 'en'
+                      ? '© 2026 Nexora Store. All rights reserved.'
+                      : '© 2026 Nexora Store. Toate drepturile rezervate.',
                   style: TextStyle(
                     fontSize: 13,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.50),
@@ -318,7 +348,9 @@ Widget _buildPaymentMethods(BuildContext context) {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Plăți online securizate',
+                appLocaleController.value == 'en'
+                    ? 'Secure online payments'
+                    : 'Plăți online securizate',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -327,7 +359,9 @@ Widget _buildPaymentMethods(BuildContext context) {
               ),
               const SizedBox(height: 4),
               Text(
-                'Plățile cu cardul sunt procesate prin NETOPIA Payments.',
+                appLocaleController.value == 'en'
+                    ? 'Card payments are processed through NETOPIA Payments.'
+                    : 'Plățile cu cardul sunt procesate prin NETOPIA Payments.',
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
@@ -340,15 +374,15 @@ Widget _buildPaymentMethods(BuildContext context) {
         const SizedBox(width: 20),
 
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Image.asset(
             'assets/payments/netopia_payments_logo.png',
-            width: 150,
-            height: 72,
+            width: 110,
+            height: 40,
             fit: BoxFit.contain,
           ),
         ),

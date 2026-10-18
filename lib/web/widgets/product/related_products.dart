@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../api_service.dart';
+import '../../../l10n/app_locale.dart';
 import '../../../models/listing.dart';
 import '../../../shared/widgets/product_card.dart';
 import '../../web_product_page.dart';
@@ -62,23 +63,24 @@ class _RelatedProductsState extends State<RelatedProducts> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Similar products",
-          style: Theme.of(context).textTheme.headlineSmall,
+          context.tr('Produse similare'),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 18),
 
         SizedBox(
-          height: 430,
+          height: 300,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: products.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 20),
+            separatorBuilder: (_, _) => const SizedBox(width: 16),
             itemBuilder: (_, index) {
               final product = products[index];
 
               return SizedBox(
-                width: 270,
+                width: 220,
                 child: ProductCard(
                   id: product.id,
                   title: product.title,

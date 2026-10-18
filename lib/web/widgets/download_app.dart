@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_locale.dart';
 import '../../shared/widgets/responsive_container.dart';
 
 class DownloadApp extends StatelessWidget {
@@ -16,22 +17,29 @@ class DownloadApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 80),
-      padding: const EdgeInsets.symmetric(vertical: 60),
+      margin: const EdgeInsets.symmetric(vertical: 40),
+      padding: const EdgeInsets.symmetric(vertical: 36),
       color: Theme.of(context).colorScheme.primaryContainer,
       child: ResponsiveContainer(
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Descarcă Nexora",
-                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                    context.tr('Descarcă aplicația Nexora'),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  SizedBox(height: 12),
-                  Text("Cumpără și vinde de oriunde din aplicația mobilă."),
+                  const SizedBox(height: 12),
+                  Text(
+                    context.tr(
+                      'Cumpără și vinde de oriunde din aplicația mobilă.',
+                    ),
+                  ),
                 ],
               ),
             ),

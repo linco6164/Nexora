@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'app_feedback.dart';
+import 'legal/legal_documents.dart';
+import 'legal/legal_center_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  final String? referralCode;
+
+  const RegisterPage({super.key, this.referralCode});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -18,6 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  bool _acceptTerms = false;
 
   @override
   void dispose() {
@@ -61,6 +67,14 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (!_acceptTerms) {
+      AppFeedback.warning(
+        context,
+        'Trebuie să accepți Termenii și Politica de confidențialitate.',
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -70,21 +84,25 @@ class _RegisterPageState extends State<RegisterPage> {
         )[0], // Folosim partea dinainte de @ ca username
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        referralCode: widget.referralCode,
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cont creat! Te poți autentifica acum.')),
+      AppFeedback.success(
+        context,
+        'Contul a fost creat. Te poți autentifica acum.',
       );
       Navigator.pop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      AppFeedback.error(context, e.message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Eroare de conexiune: $e')));
+      AppFeedback.error(
+        context,
+        e,
+        fallback: 'Conexiunea nu a putut fi realizată.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -129,6 +147,37 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: Theme.of(context).textTheme.bodyMedium
                         ?.copyWith(color: Colors.grey[600]),
                   ),
+                  if (widget.referralCode?.trim().isNotEmpty == true) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer
+                            .withValues(alpha: .55),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.card_giftcard_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Invitație aplicată: ${widget.referralCode!.trim().toUpperCase()}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 32),
 
                   // Email
@@ -192,6 +241,44 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  CheckboxListTile(
+                    value: _acceptTerms,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: _isLoading
+                        ? null
+                        : (value) {
+                            setState(() => _acceptTerms = value ?? false);
+                          },
+                    title: const Text(
+                      'Accept Termenii și condițiile și Politica de confidențialitate',
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 4,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                LegalDocumentPage(document: legalDocuments[0]),
+                          ),
+                        ),
+                        child: const Text('Citește Termenii'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                LegalDocumentPage(document: legalDocuments[1]),
+                          ),
+                        ),
+                        child: const Text('Confidențialitate'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
 
                   // Buton register
                   FilledButton(

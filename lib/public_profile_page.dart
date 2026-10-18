@@ -5,6 +5,7 @@ import 'api_service.dart';
 import 'models/listing.dart';
 import 'listing_detail_page.dart';
 import 'web/web_product_page.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class PublicProfilePage extends StatefulWidget {
   final String userId;
@@ -114,13 +115,13 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
             }
           }
 
-          return RefreshIndicator(
+          final content = RefreshIndicator(
             color: colors.primary,
             onRefresh: _refresh,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                _buildAppBar(context, user),
+                if (!kIsWeb) _buildAppBar(context, user),
 
                 SliverToBoxAdapter(
                   child: _buildProfileHeader(context, user, stats),
@@ -162,17 +163,27 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
                           },
                         );
                       }, childCount: listings.length),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 280,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.70,
-                          ),
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: kIsWeb ? 235 : 280,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: kIsWeb ? .78 : .70,
+                      ),
                     ),
                   ),
               ],
             ),
+          );
+
+          if (!kIsWeb) return content;
+
+          final username = user['username']?.toString() ?? 'Utilizator';
+          return WebPageFrame(
+            title: 'Profilul lui $username',
+            subtitle: '${listings.length} anunțuri publicate',
+            maxWidth: 1100,
+            useSurface: false,
+            child: content,
           );
         },
       ),

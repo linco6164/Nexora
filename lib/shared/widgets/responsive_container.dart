@@ -8,17 +8,20 @@ class ResponsiveContainer extends StatelessWidget {
   const ResponsiveContainer({
     super.key,
     required this.child,
-    this.maxWidth = 1440,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24),
+    this.maxWidth = 1200,
+    this.padding = EdgeInsets.zero,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: padding,
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final horizontal = viewportWidth < 700 ? 16.0 : 24.0;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontal).add(padding),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
           child: child,
         ),
       ),

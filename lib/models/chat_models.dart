@@ -10,11 +10,17 @@ class ChatParticipant {
       return ChatParticipant(id: json, username: 'Utilizator', avatar: null);
     }
 
-    final map = json as Map<String, dynamic>;
+    if (json is! Map) {
+      return ChatParticipant(id: '', username: 'Utilizator', avatar: null);
+    }
+
+    final map = Map<String, dynamic>.from(json);
     return ChatParticipant(
-      id: map['_id'] ?? '',
-      username: map['username'] ?? 'Necunoscut',
-      avatar: map['avatar'],
+      id: (map['_id'] ?? map['id'])?.toString() ?? '',
+      username: map['username']?.toString().trim().isNotEmpty == true
+          ? map['username'].toString()
+          : 'Utilizator',
+      avatar: map['avatar']?.toString(),
     );
   }
 }
@@ -23,21 +29,24 @@ class ConversationListing {
   final String id;
   final String title;
   final double price;
+  final String currency;
   final List<String> images;
 
   ConversationListing({
     required this.id,
     required this.title,
     required this.price,
+    required this.currency,
     required this.images,
   });
 
   factory ConversationListing.fromJson(Map<String, dynamic> json) {
     return ConversationListing(
-      id: json['_id'] ?? '',
-      title: json['title'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      images: List<String>.from(json['images'] ?? []),
+      id: (json['_id'] ?? json['id'])?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      price: _asDouble(json['price']),
+      currency: json['currency']?.toString() ?? 'RON',
+      images: _asStringList(json['images']),
     );
   }
 }
@@ -63,18 +72,25 @@ class Conversation {
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
     return Conversation(
-      id: json['_id'] ?? '',
-      participants: (json['participants'] as List<dynamic>? ?? [])
-          .map((p) => ChatParticipant.fromJson(p))
-          .toList(),
-      listing: json['listing'] is Map<String, dynamic>
-          ? ConversationListing.fromJson(json['listing'])
+      id: (json['_id'] ?? json['id'])?.toString() ?? '',
+      participants:
+          (json['participants'] is List
+                  ? json['participants'] as List
+                  : const <dynamic>[])
+              .map((p) => ChatParticipant.fromJson(p))
+              .toList(),
+      listing: json['listing'] is Map
+          ? ConversationListing.fromJson(
+              Map<String, dynamic>.from(json['listing']),
+            )
           : null,
-      lastMessage: json['lastMessage'] ?? '',
+      lastMessage: json['lastMessage']?.toString() ?? '',
       lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'])
+          ? DateTime.tryParse(json['lastMessageAt'].toString())
           : null,
-      unread: Map<String, dynamic>.from(json['unread'] ?? {}),
+      unread: json['unread'] is Map
+          ? Map<String, dynamic>.from(json['unread'])
+          : const <String, dynamic>{},
       lastMessageStatus: json['lastMessageStatus']?.toString(),
     );
   }
@@ -90,7 +106,8 @@ class Conversation {
   int unreadCountFor(String userId) {
     final value = unread[userId];
     if (value is int) return value;
-    return 0;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }
 
@@ -113,9 +130,9 @@ class OfferListing {
     return OfferListing(
       id: json['_id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
-      price: (json['price'] ?? 0).toDouble(),
+      price: _asDouble(json['price']),
       currency: json['currency']?.toString() ?? 'RON',
-      images: List<String>.from(json['images'] ?? const []),
+      images: _asStringList(json['images']),
     );
   }
 }
@@ -156,15 +173,15 @@ class Offer {
           : json['listing']?['_id']?.toString() ?? '',
       buyerId: json['buyer'] is String
           ? json['buyer']
-          : json['buyer']?['_id']?.toString() ?? '',
+          : _nestedId(json['buyer']),
       sellerId: json['seller'] is String
           ? json['seller']
-          : json['seller']?['_id']?.toString() ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
+          : _nestedId(json['seller']),
+      amount: _asDouble(json['amount']),
       currency: json['currency']?.toString() ?? 'RON',
       status: json['status']?.toString() ?? 'pending',
-      listing: listingJson is Map<String, dynamic>
-          ? OfferListing.fromJson(listingJson)
+      listing: listingJson is Map
+          ? OfferListing.fromJson(Map<String, dynamic>.from(listingJson))
           : null,
     );
   }
@@ -204,23 +221,51 @@ class ChatMessage {
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
-      id: json['_id'] ?? '',
+      id: (json['_id'] ?? json['id'])?.toString() ?? '',
       conversationId: json['conversation'] is String
           ? json['conversation']
-          : json['conversation']?['_id'] ?? '',
+          : _nestedId(json['conversation']),
       sender: ChatParticipant.fromJson(json['sender'] ?? {}),
-      text: json['text'] ?? '',
-      images: List<String>.from(json['images'] ?? []),
+      text: json['text']?.toString() ?? '',
+      images: _asStringList(json['images']),
       createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt']) ?? DateTime.now()
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      deliveredTo: List<String>.from(json['deliveredTo'] ?? []),
-      seenBy: List<String>.from(json['seenBy'] ?? []),
+      deliveredTo: _asIdList(json['deliveredTo']),
+      seenBy: _asIdList(json['seenBy']),
       type: json['type']?.toString() ?? 'text',
-      offer: json['offer'] is Map<String, dynamic>
-          ? Offer.fromJson(json['offer'])
+      offer: json['offer'] is Map
+          ? Offer.fromJson(Map<String, dynamic>.from(json['offer']))
           : null,
       isDeleted: json['isDeleted'] == true,
     );
   }
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+List<String> _asStringList(dynamic value) {
+  if (value is! Iterable) return const <String>[];
+  return value
+      .map((item) => item?.toString() ?? '')
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+List<String> _asIdList(dynamic value) {
+  if (value is! Iterable) return const <String>[];
+  return value
+      .map(_nestedId)
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+String _nestedId(dynamic value) {
+  if (value is Map) {
+    return (value['_id'] ?? value['id'])?.toString() ?? '';
+  }
+  return value?.toString() ?? '';
 }

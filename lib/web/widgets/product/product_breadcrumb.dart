@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_locale.dart';
+
 class ProductBreadcrumb extends StatelessWidget {
   final String category;
   final String title;
@@ -27,7 +29,7 @@ class ProductBreadcrumb extends StatelessWidget {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        InkWell(onTap: onHome, child: const Text('Acasă')),
+        InkWell(onTap: onHome, child: Text(context.tr('Acasă'))),
         separator(),
         InkWell(onTap: onCategory, child: Text(category)),
         separator(),

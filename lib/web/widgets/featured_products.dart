@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/listing.dart';
 import '../../api_service.dart';
+import '../../l10n/app_locale.dart';
 import '../../shared/widgets/product_grid.dart';
 import '../../shared/widgets/responsive_container.dart';
 import '../../shared/widgets/section_title.dart';
@@ -49,14 +50,14 @@ class _FeaturedProductsState extends State<FeaturedProducts> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Padding(
-        padding: EdgeInsets.all(40),
+        padding: EdgeInsets.all(24),
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_error != null) {
       return Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(24),
         child: Center(child: Text(_error!)),
       );
     }
@@ -65,12 +66,14 @@ class _FeaturedProductsState extends State<FeaturedProducts> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-            title: "Produse recomandate",
-            subtitle: "Anunțuri populare alese pentru tine",
+          SectionTitle(
+            title: context.tr('Produse recomandate'),
+            subtitle: appLocaleController.value == 'en'
+                ? 'Popular listings selected for you'
+                : 'Anunțuri populare alese pentru tine',
           ),
 
-          ProductGrid(products: _products),
+          ProductGrid(products: _products.take(10).toList()),
         ],
       ),
     );

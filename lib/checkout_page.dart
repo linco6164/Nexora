@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'app_feedback.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
 import 'addresses_page.dart';
 
+import 'order_page.dart';
+import 'payments/google_pay_button.dart';
 import 'saved_cards_page.dart';
+
+import 'models/sameday_ooh_location.dart';
+import 'sameday/easybox_picker_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   final String listingId;
@@ -30,11 +36,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   String _deliveryMethod = 'courier';
 
+  SamedayOohLocation? _selectedEasybox;
+
   String _selectedPaymentMethod = 'card';
 
   List<Map<String, dynamic>> _savedCards = [];
   String? _selectedCardId;
   Map<String, dynamic>? _checkout;
+  Map<String, dynamic>? _googlePayConfiguration;
+  bool _loadingGooglePay = true;
+  String? _googlePayError;
 
   @override
   void initState() {
@@ -43,6 +54,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _loadAddresses();
 
     _loadSavedCards();
+
+    _loadGooglePayConfiguration();
+  }
+
+  Future<void> _loadGooglePayConfiguration() async {
+    if (mounted) {
+      setState(() {
+        _loadingGooglePay = true;
+        _googlePayError = null;
+      });
+    }
+
+    try {
+      final configuration = await ApiService.getGooglePayConfiguration();
+      if (!mounted) return;
+      setState(() {
+        _googlePayConfiguration = configuration;
+        _loadingGooglePay = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _googlePayConfiguration = null;
+        _googlePayError = _cleanError(error);
+        _loadingGooglePay = false;
+      });
+    }
   }
 
   Future<void> _loadSavedCards() async {
@@ -686,31 +724,51 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  Future<void> _openEasyboxPicker() async {
+    final easybox = await Navigator.push<SamedayOohLocation>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EasyboxPickerPage(initialSelection: _selectedEasybox),
+      ),
+    );
+
+    if (!mounted || easybox == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedEasybox = easybox;
+      _deliveryMethod = 'pickup_point';
+    });
+
+    await _loadCheckout();
+  }
+
   Widget _buildDeliverySection() {
+    final theme = Theme.of(context);
+
+    final colors = theme.colorScheme;
+
     return _CheckoutCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           const _SectionTitle(
             icon: Icons.local_shipping_outlined,
-
             title: 'Detalii livrare',
           ),
 
           const SizedBox(height: 16),
 
+          // ====================================================
+          // CURIER
+          // ====================================================
           _DeliveryOption(
             icon: Icons.local_shipping_outlined,
-
             title: 'Livrare prin curier',
-
             subtitle: 'Livrare la adresa selectată',
-
             price: '14,99 RON',
-
             selected: _deliveryMethod == 'courier',
-
             onTap: () {
               if (_deliveryMethod == 'courier') {
                 return;
@@ -726,29 +784,93 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
           const SizedBox(height: 10),
 
+          // ====================================================
+          // SAMEDAY EASYBOX
+          // ====================================================
           _DeliveryOption(
-            icon: Icons.storefront_outlined,
-
-            title: 'Punct de ridicare',
-
-            subtitle: 'Alege un punct de ridicare',
-
+            icon: Icons.inventory_2_outlined,
+            title: 'Sameday easybox',
+            subtitle: _selectedEasybox == null
+                ? 'Alege Easybox-ul de pe hartă'
+                : _selectedEasybox!.name,
             price: '11,99 RON',
-
             selected: _deliveryMethod == 'pickup_point',
-
-            onTap: () {
-              if (_deliveryMethod == 'pickup_point') {
-                return;
-              }
-
-              setState(() {
-                _deliveryMethod = 'pickup_point';
-              });
-
-              _loadCheckout();
-            },
+            onTap: _openEasyboxPicker,
           ),
+
+          // ====================================================
+          // EASYBOX SELECTAT
+          // ====================================================
+          if (_deliveryMethod == 'pickup_point' &&
+              _selectedEasybox != null) ...[
+            const SizedBox(height: 12),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.inventory_2_outlined,
+                      color: colors.primary,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selectedEasybox!.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          _selectedEasybox!.fullAddress,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          'Easybox ID: ${_selectedEasybox!.oohId}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  TextButton(
+                    onPressed: _openEasyboxPicker,
+                    child: const Text('Schimbă'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1202,6 +1324,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     final total = price?['total'];
 
+    if (_selectedPaymentMethod == 'google_pay') {
+      return _buildGooglePayButton(price, total, currency);
+    }
+
     final theme = Theme.of(context);
 
     final colors = theme.colorScheme;
@@ -1255,21 +1381,276 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  Widget _buildGooglePayButton(
+    Map<String, dynamic>? price,
+    dynamic total,
+    String currency,
+  ) {
+    if (_loadingGooglePay) {
+      return const SizedBox(
+        height: 56,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final configuration = _googlePayConfiguration;
+    if (configuration == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _loadGooglePayConfiguration,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+            ),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Reîncearcă Google Pay'),
+          ),
+          if (_googlePayError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _googlePayError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    final totalValue = total is num
+        ? total.toDouble()
+        : double.tryParse(total?.toString() ?? '');
+    final hasDeliveryDetails =
+        _selectedAddressId != null &&
+        _selectedAddressId!.isNotEmpty &&
+        (_deliveryMethod != 'pickup_point' || _selectedEasybox != null);
+    final enabled =
+        !_isPaying &&
+        price != null &&
+        totalValue != null &&
+        totalValue > 0 &&
+        hasDeliveryDetails;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        NexoraGooglePayButton(
+          configuration: configuration,
+          total: (totalValue ?? 0).toStringAsFixed(2),
+          currencyCode: currency,
+          enabled: enabled,
+          onPaymentResult: _completeGooglePay,
+          onError: _handleGooglePayError,
+        ),
+        if (_isPaying) ...[
+          const SizedBox(height: 10),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 9),
+              Text('Se confirmă plata securizată...'),
+            ],
+          ),
+        ] else if (!hasDeliveryDetails) ...[
+          const SizedBox(height: 8),
+          const Text(
+            'Completează adresa și metoda de livrare înainte de plată.',
+            textAlign: TextAlign.center,
+          ),
+        ] else if (_googlePayError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _googlePayError!,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _handleGooglePayError(Object error) {
+    final message = _cleanError(error);
+    if (message.toUpperCase().contains('CANCELED') ||
+        message.toLowerCase().contains('anulat')) {
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _googlePayError = message);
+    AppFeedback.error(context, message);
+  }
+
+  Future<void> _completeGooglePay(Map<String, dynamic> paymentData) async {
+    if (_isPaying) return;
+
+    final addressId = _selectedAddressId;
+    final price = _price;
+    final totalValue = price?['total'] is num
+        ? (price!['total'] as num).toDouble()
+        : double.tryParse(price?['total']?.toString() ?? '');
+
+    if (addressId == null || addressId.isEmpty || totalValue == null) {
+      _handleGooglePayError('Datele checkout-ului sunt incomplete.');
+      return;
+    }
+    if (_deliveryMethod == 'pickup_point' && _selectedEasybox == null) {
+      _handleGooglePayError('Selectează un Easybox pentru livrare.');
+      return;
+    }
+
+    setState(() {
+      _isPaying = true;
+      _googlePayError = null;
+    });
+
+    try {
+      var result = await ApiService.completeGooglePayPayment(
+        listingId: widget.listingId,
+        addressId: addressId,
+        deliveryMethod: _deliveryMethod,
+        paymentData: paymentData,
+        expectedAmount: totalValue,
+        destinationLockerId: _deliveryMethod == 'pickup_point'
+            ? _selectedEasybox?.oohId
+            : null,
+      );
+
+      if (!mounted) return;
+      var status = result['status']?.toString().toLowerCase();
+
+      if (status == 'requires_action') {
+        final paymentId = result['paymentId']?.toString();
+        final actionUrl = result['actionUrl']?.toString();
+
+        if (paymentId == null ||
+            paymentId.isEmpty ||
+            actionUrl == null ||
+            actionUrl.isEmpty) {
+          throw ApiException(
+            'NETOPIA nu a returnat datele pentru confirmarea 3-D Secure.',
+          );
+        }
+
+        final opened = await launchUrl(
+          Uri.parse(actionUrl),
+          mode: LaunchMode.externalApplication,
+          webOnlyWindowName: '_blank',
+        );
+
+        if (!opened) {
+          throw ApiException(
+            'Pagina securizată pentru confirmarea plății nu a putut fi deschisă.',
+          );
+        }
+
+        if (!mounted) return;
+        AppFeedback.info(
+          context,
+          'Confirmă plata în pagina băncii. Verificăm automat rezultatul.',
+          title: 'Confirmare 3-D Secure',
+        );
+
+        result = await _waitForGooglePayConfirmation(paymentId);
+        status = result['status']?.toString().toLowerCase();
+      }
+
+      if (!mounted) return;
+
+      final orderId = result['orderId']?.toString();
+
+      if (status != 'paid') {
+        throw ApiException(
+          result['message']?.toString() ??
+              'Plata Google Pay nu a fost confirmată.',
+        );
+      }
+
+      AppFeedback.success(context, 'Plata Google Pay a fost confirmată.');
+
+      if (orderId != null && orderId.isNotEmpty) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => OrderDetailsPage(orderId: orderId)),
+        );
+      } else {
+        Navigator.of(context).pop(true);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      _handleGooglePayError(
+        error is ApiException
+            ? error.message
+            : 'Plata Google Pay nu a putut fi procesată.',
+      );
+    } finally {
+      if (mounted) setState(() => _isPaying = false);
+    }
+  }
+
+  Future<Map<String, dynamic>> _waitForGooglePayConfirmation(
+    String paymentId,
+  ) async {
+    for (var attempt = 0; attempt < 90; attempt++) {
+      if (!mounted) {
+        throw ApiException('Verificarea plății a fost întreruptă.');
+      }
+
+      final payment = await ApiService.getPaymentStatus(paymentId);
+      final status = payment['status']?.toString().toLowerCase();
+
+      if (status == 'paid') {
+        final order = payment['order'];
+        final orderId = order is Map
+            ? order['_id']?.toString()
+            : order?.toString();
+
+        return {'paymentId': paymentId, 'status': 'paid', 'orderId': orderId};
+      }
+
+      if (status == 'failed' || status == 'cancelled' || status == 'conflict') {
+        throw ApiException(
+          payment['errorMessage']?.toString() ??
+              'Banca nu a confirmat plata Google Pay.',
+        );
+      }
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+
+    throw ApiException(
+      'Confirmarea durează mai mult decât de obicei. Verifică statusul comenzii din profil.',
+    );
+  }
+
   Future<void> _pay() async {
     if (_isPaying) return;
 
+    if (_selectedPaymentMethod == 'google_pay') return;
+
     if (_selectedAddressId == null || _selectedAddressId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selectează o adresă de livrare.')),
-      );
+      AppFeedback.warning(context, 'Selectează o adresă de livrare.');
+      return;
+    }
+
+    if (_deliveryMethod == 'pickup_point' && _selectedEasybox == null) {
+      AppFeedback.warning(context, 'Selectează un Easybox pentru livrare.');
+
       return;
     }
 
     if (_selectedPaymentMethod == 'card' &&
         (_selectedCardId == null || _selectedCardId!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selectează un card salvat.')),
-      );
+      AppFeedback.warning(context, 'Selectează un card salvat.');
       return;
     }
 
@@ -1280,10 +1661,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       final payment = await ApiService.createNetopiaPayment(
         listingId: widget.listingId,
+
         addressId: _selectedAddressId!,
+
         deliveryMethod: _deliveryMethod,
+
         paymentMethod: _selectedPaymentMethod,
+
         savedCardId: _selectedPaymentMethod == 'card' ? _selectedCardId : null,
+
+        destinationLockerId: _deliveryMethod == 'pickup_point'
+            ? _selectedEasybox?.oohId
+            : null,
+
+        pickupPointName: _deliveryMethod == 'pickup_point'
+            ? _selectedEasybox?.name
+            : null,
+
+        pickupPointAddress: _deliveryMethod == 'pickup_point'
+            ? _selectedEasybox?.fullAddress
+            : null,
       );
 
       final paymentId = payment['paymentId']?.toString();
@@ -1310,12 +1707,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error is ApiException ? error.message : 'Nu am putut iniția plata.',
-          ),
-        ),
+      AppFeedback.error(
+        context,
+        error is ApiException ? error.message : error,
+        fallback: 'Nu am putut iniția plata.',
       );
     } finally {
       if (mounted) {

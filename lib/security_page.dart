@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../api_service.dart';
@@ -6,6 +7,7 @@ import 'two_factor_settings_page.dart';
 import 'session_page.dart';
 import 'email_verification_page.dart';
 import 'phone_verification_page.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class SecurityPage extends StatefulWidget {
   const SecurityPage({super.key});
@@ -53,10 +55,8 @@ class _SecurityPageState extends State<SecurityPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PhoneVerificationPage(
-          phone: _phone,
-          phoneVerified: _phoneVerified,
-        ),
+        builder: (_) =>
+            PhoneVerificationPage(phone: _phone, phoneVerified: _phoneVerified),
       ),
     );
 
@@ -67,121 +67,106 @@ class _SecurityPageState extends State<SecurityPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = ListView(
+      padding: EdgeInsets.all(kIsWeb ? 10 : 16),
+      children: [
+        const _SecuritySectionTitle(title: 'Cont'),
+
+        _SecurityTile(
+          icon: Icons.lock_outline,
+          title: 'Schimbă parola',
+          subtitle: 'Actualizează parola contului tău',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+            );
+          },
+        ),
+
+        const SizedBox(height: 24),
+
+        const _SecuritySectionTitle(title: 'Autentificare'),
+
+        _SecurityTile(
+          icon: Icons.verified_user_outlined,
+          title: 'Autentificare în doi pași',
+          subtitle: 'Protejează contul cu un cod suplimentar',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TwoFactorSettingsPage()),
+            );
+          },
+        ),
+
+        _SecurityTile(
+          icon: Icons.devices_outlined,
+          title: 'Sesiuni și dispozitive',
+          subtitle: 'Vezi unde este conectat contul tău',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SessionsPage()),
+            );
+          },
+        ),
+
+        const SizedBox(height: 24),
+
+        const _SecuritySectionTitle(title: 'Verificări'),
+
+        _SecurityTile(
+          icon: Icons.email_outlined,
+          title: 'Email',
+          subtitle: 'Verifică adresa de email a contului',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EmailVerificationPage()),
+            );
+          },
+        ),
+
+        _SecurityTile(
+          icon: Icons.phone_outlined,
+          title: 'Număr de telefon',
+          subtitle: _loadingProfile
+              ? 'Se încarcă...'
+              : _phoneVerified
+              ? 'Număr verificat'
+              : _phone == null || _phone!.isEmpty
+              ? 'Adaugă un număr de telefon'
+              : 'Verifică numărul de telefon',
+          onTap: _openPhoneVerification,
+        ),
+
+        const SizedBox(height: 24),
+
+        const _SecuritySectionTitle(title: 'Cont'),
+
+        _SecurityTile(
+          icon: Icons.delete_outline,
+          title: 'Șterge contul',
+          subtitle: 'Șterge permanent contul și datele',
+          danger: true,
+          onTap: () {
+            // Urmează implementarea ștergerii contului
+          },
+        ),
+      ],
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Securitate'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const _SecuritySectionTitle(
-            title: 'Cont',
-          ),
-
-          _SecurityTile(
-            icon: Icons.lock_outline,
-            title: 'Schimbă parola',
-            subtitle: 'Actualizează parola contului tău',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ChangePasswordPage(),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 24),
-
-          const _SecuritySectionTitle(
-            title: 'Autentificare',
-          ),
-
-          _SecurityTile(
-            icon: Icons.verified_user_outlined,
-            title: 'Autentificare în doi pași',
-            subtitle:
-                'Protejează contul cu un cod suplimentar',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const TwoFactorSettingsPage(),
-                ),
-              );
-            },
-          ),
-
-          _SecurityTile(
-            icon: Icons.devices_outlined,
-            title: 'Sesiuni și dispozitive',
-            subtitle:
-                'Vezi unde este conectat contul tău',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const SessionsPage(),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 24),
-
-          const _SecuritySectionTitle(
-            title: 'Verificări',
-          ),
-
-          _SecurityTile(
-            icon: Icons.email_outlined,
-            title: 'Email',
-            subtitle:
-                'Verifică adresa de email a contului',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const EmailVerificationPage(),
-                ),
-              );
-            },
-          ),
-
-          _SecurityTile(
-            icon: Icons.phone_outlined,
-            title: 'Număr de telefon',
-            subtitle: _loadingProfile
-                ? 'Se încarcă...'
-                : _phoneVerified
-                    ? 'Număr verificat'
-                    : _phone == null || _phone!.isEmpty
-                        ? 'Adaugă un număr de telefon'
-                        : 'Verifică numărul de telefon',
-            onTap: _openPhoneVerification,
-          ),
-
-          const SizedBox(height: 24),
-
-          const _SecuritySectionTitle(
-            title: 'Cont',
-          ),
-
-          _SecurityTile(
-            icon: Icons.delete_outline,
-            title: 'Șterge contul',
-            subtitle:
-                'Șterge permanent contul și datele',
-            danger: true,
-            onTap: () {
-              // Urmează implementarea ștergerii contului
-            },
-          ),
-        ],
-      ),
+      appBar: kIsWeb ? null : AppBar(title: const Text('Securitate')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Securitate',
+              subtitle: 'Protejează-ți contul și gestionează sesiunile active',
+              maxWidth: 860,
+              child: body,
+            )
+          : body,
     );
   }
 }
@@ -189,17 +174,12 @@ class _SecurityPageState extends State<SecurityPage> {
 class _SecuritySectionTitle extends StatelessWidget {
   final String title;
 
-  const _SecuritySectionTitle({
-    required this.title,
-  });
+  const _SecuritySectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 4,
-        bottom: 8,
-      ),
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title,
         style: TextStyle(
@@ -229,19 +209,13 @@ class _SecurityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = danger
-        ? Colors.red
-        : Theme.of(context).colorScheme.primary;
+    final color = danger ? Colors.red : Theme.of(context).colorScheme.primary;
 
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 6,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: Container(
           width: 44,
           height: 44,
@@ -249,10 +223,7 @@ class _SecurityTile extends StatelessWidget {
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: color,
-          ),
+          child: Icon(icon, color: color),
         ),
         title: Text(
           title,
@@ -265,9 +236,7 @@ class _SecurityTile extends StatelessWidget {
           padding: const EdgeInsets.only(top: 3),
           child: Text(subtitle),
         ),
-        trailing: const Icon(
-          Icons.chevron_right,
-        ),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );

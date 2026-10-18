@@ -12,6 +12,8 @@ import 'models/chat_models.dart';
 import 'models/notification_model.dart';
 import 'app_navigator.dart';
 
+import '../models/sameday_ooh_location.dart';
+
 class CardEnrollmentSession {
   final String setupId;
   final Uri checkoutUri;
@@ -79,7 +81,10 @@ class ApiService {
     required String username,
     required String email,
     required String password,
+    String? referralCode,
   }) async {
+    final normalizedReferralCode = referralCode?.trim().toUpperCase();
+
     final response = await _client.post(
       Uri.parse('$baseUrl/auth/register'),
       headers: {'Content-Type': 'application/json'},
@@ -87,6 +92,8 @@ class ApiService {
         'username': username,
         'email': email,
         'password': password,
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'referralCode': normalizedReferralCode,
       }),
     );
 
@@ -272,6 +279,44 @@ class ApiService {
     }
 
     return Map<String, dynamic>.from(data['data']);
+  }
+
+  static Future<Map<String, dynamic>> getReferralInfo() async {
+    final token = await getToken();
+
+    if (token == null) {
+      throw ApiException(
+        'Trebuie să fii autentificat pentru a invita prieteni.',
+      );
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/profile/referral'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    await handleUnauthorizedResponse(response);
+
+    Map<String, dynamic> data;
+    try {
+      final decoded = jsonDecode(response.body);
+      data = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    } catch (_) {
+      data = <String, dynamic>{};
+    }
+
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw ApiException(
+        data['message'] ?? 'Invitația nu a putut fi încărcată.',
+      );
+    }
+
+    final referral = data['data'];
+    if (referral is! Map) {
+      throw ApiException('Serverul a returnat date de invitație invalide.');
+    }
+
+    return Map<String, dynamic>.from(referral);
   }
 
   static Future<Map<String, dynamic>> getPublicProfile(String userId) async {
@@ -478,6 +523,9 @@ class ApiService {
     String? brand,
     String? color,
     String? size,
+    String? subcategory,
+    String? categoryDetail,
+    String? material,
   }) async {
     final token = await getToken();
 
@@ -500,6 +548,9 @@ class ApiService {
         ...?brand != null ? {'brand': brand} : null,
         ...?color != null ? {'color': color} : null,
         ...?size != null ? {'size': size} : null,
+        ...?subcategory != null ? {'subcategory': subcategory} : null,
+        ...?categoryDetail != null ? {'categoryDetail': categoryDetail} : null,
+        ...?material != null ? {'material': material} : null,
       }),
     );
 
@@ -510,6 +561,107 @@ class ApiService {
     }
 
     return Listing.fromJson(data['data']);
+  }
+
+  static Future<Listing> updateListing({
+    required String listingId,
+    required String title,
+    required String description,
+    required String category,
+    required String condition,
+    required double price,
+    required String city,
+    required List<String> images,
+    bool negotiable = false,
+    bool shipping = true,
+    String? brand,
+    String? color,
+    String? size,
+    String? subcategory,
+    String? categoryDetail,
+    String? material,
+  }) async {
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final uri = Uri.parse('$baseUrl/listings/$listingId');
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    final body = jsonEncode({
+      'title': title,
+      'description': description,
+      'category': category,
+      'condition': condition,
+      'price': price,
+      'city': city,
+      'images': images,
+      'negotiable': negotiable,
+      'shipping': shipping,
+      ...?brand != null ? {'brand': brand} : null,
+      ...?color != null ? {'color': color} : null,
+      ...?size != null ? {'size': size} : null,
+      ...?subcategory != null ? {'subcategory': subcategory} : null,
+      ...?categoryDetail != null ? {'categoryDetail': categoryDetail} : null,
+      ...?material != null ? {'material': material} : null,
+    });
+
+    var response = await _client.patch(uri, headers: headers, body: body);
+    if (response.statusCode == 404 || response.statusCode == 405) {
+      response = await _client.put(uri, headers: headers, body: body);
+    }
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Răspuns invalid de la server.');
+    }
+
+    if ((response.statusCode != 200 && response.statusCode != 201) ||
+        decoded is! Map<String, dynamic> ||
+        decoded['success'] != true) {
+      throw ApiException(
+        decoded is Map<String, dynamic>
+            ? (decoded['message'] ?? 'Anunțul nu a putut fi actualizat.')
+            : 'Anunțul nu a putut fi actualizat.',
+      );
+    }
+
+    final listingData = decoded['data'];
+    if (listingData is Map) {
+      return Listing.fromJson(Map<String, dynamic>.from(listingData));
+    }
+    return getListingById(listingId);
+  }
+
+  static Future<void> deleteListing(String listingId) async {
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.delete(
+      Uri.parse('$baseUrl/listings/$listingId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) return;
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      decoded = null;
+    }
+    throw ApiException(
+      decoded is Map<String, dynamic>
+          ? (decoded['message'] ?? 'Anunțul nu a putut fi șters.')
+          : 'Anunțul nu a putut fi șters.',
+    );
   }
 
   // ============================================================
@@ -767,13 +919,27 @@ class ApiService {
 
     final response = await _client.delete(
       Uri.parse('$baseUrl/chat/conversations/$conversationId'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
-    final data = jsonDecode(response.body);
+    Map<String, dynamic> data;
 
-    if (response.statusCode != 200 || data['success'] != true) {
-      throw ApiException(data['message'] ?? 'Eroare la ștergerea conversației');
+    try {
+      data = Map<String, dynamic>.from(jsonDecode(response.body));
+    } catch (_) {
+      throw ApiException(
+        response.statusCode == 404
+            ? 'Ruta pentru ștergerea conversației nu este disponibilă pe server.'
+            : 'Serverul a returnat un răspuns invalid la ștergere.',
+      );
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        data['success'] != true) {
+      throw ApiException(
+        data['message']?.toString() ?? 'Eroare la ștergerea conversației',
+      );
     }
   }
 
@@ -998,6 +1164,44 @@ class ApiService {
   // ============================================================
   // WALLET
   // ============================================================
+  static Future<Map<String, dynamic>> getWallet() async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/wallet'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    dynamic decoded;
+
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns invalid.');
+    }
+
+    if (response.statusCode != 200 ||
+        decoded is! Map ||
+        decoded['success'] != true) {
+      throw ApiException(
+        decoded is Map
+            ? decoded['message']?.toString() ?? 'Nu s-a putut încărca soldul.'
+            : 'Nu s-a putut încărca soldul.',
+      );
+    }
+
+    final data = decoded['data'];
+
+    if (data is! Map) {
+      throw ApiException('Datele portofelului sunt invalide.');
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
 
   static Future<List<dynamic>> getWalletTransactions() async {
     final token = await getToken();
@@ -1144,9 +1348,14 @@ class ApiService {
   static Future<Map<String, dynamic>> createNetopiaPayment({
     required String listingId,
     required String addressId,
-    required String? deliveryMethod,
+    required String deliveryMethod,
     required String paymentMethod,
     String? savedCardId,
+
+    // Sameday Easybox
+    int? destinationLockerId,
+    String? pickupPointName,
+    String? pickupPointAddress,
   }) async {
     final token = await getToken();
 
@@ -1154,42 +1363,213 @@ class ApiService {
       throw ApiException('Nu ești autentificat.');
     }
 
-    final response = await _client.post(
+    // ==========================================================
+    // VALIDARE EASYBOX
+    // ==========================================================
+
+    if (deliveryMethod == 'pickup_point' && destinationLockerId == null) {
+      throw ApiException('Selectează un Easybox.');
+    }
+
+    final body = <String, dynamic>{
+      'listingId': listingId,
+
+      'addressId': addressId,
+
+      'deliveryMethod': deliveryMethod,
+
+      'paymentMethod': paymentMethod,
+    };
+
+    // ==========================================================
+    // CARD SALVAT
+    // ==========================================================
+
+    if (savedCardId != null && savedCardId.isNotEmpty) {
+      body['savedCardId'] = savedCardId;
+    }
+
+    // ==========================================================
+    // SAMEDAY EASYBOX
+    // ==========================================================
+
+    if (deliveryMethod == 'pickup_point') {
+      body['destinationLockerId'] = destinationLockerId;
+
+      if (pickupPointName != null && pickupPointName.trim().isNotEmpty) {
+        body['pickupPointName'] = pickupPointName.trim();
+      }
+
+      if (pickupPointAddress != null && pickupPointAddress.trim().isNotEmpty) {
+        body['pickupPointAddress'] = pickupPointAddress.trim();
+      }
+    }
+
+    final response = await http.post(
       Uri.parse('$baseUrl/payments/netopia/create'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: jsonEncode({
-        'listingId': listingId,
-        'addressId': addressId,
-        'deliveryMethod': deliveryMethod,
-        'paymentMethod': paymentMethod,
-
-        if (savedCardId != null && savedCardId.isNotEmpty)
-          'savedCardId': savedCardId,
-      }),
+      body: jsonEncode(body),
     );
 
-    dynamic decoded;
+    Map<String, dynamic> responseBody;
 
     try {
-      decoded = jsonDecode(response.body);
+      responseBody = Map<String, dynamic>.from(jsonDecode(response.body));
     } catch (_) {
-      throw ApiException('Răspuns invalid de la server.');
+      throw ApiException('Serverul a returnat un răspuns invalid.');
     }
 
-    if (response.statusCode != 201 ||
-        decoded is! Map<String, dynamic> ||
-        decoded['success'] != true) {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
-        decoded is Map<String, dynamic>
-            ? (decoded['message'] ?? 'Nu am putut iniția plata.')
-            : 'Nu am putut iniția plata.',
+        responseBody['message']?.toString() ?? 'Nu am putut iniția plata.',
       );
     }
 
-    return Map<String, dynamic>.from(decoded['data'] ?? {});
+    if (responseBody['success'] != true) {
+      throw ApiException(
+        responseBody['message']?.toString() ?? 'Nu am putut iniția plata.',
+      );
+    }
+
+    final data = responseBody['data'];
+
+    if (data is! Map) {
+      throw ApiException('Serverul nu a returnat datele plății.');
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
+
+  static Future<Map<String, dynamic>> getGooglePayConfiguration() async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/payments/google-pay/config'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException(
+        'Serverul a returnat o configurație Google Pay invalidă.',
+      );
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map ||
+        decoded['success'] != true ||
+        decoded['data'] is! Map) {
+      throw ApiException(
+        decoded is Map
+            ? (decoded['message']?.toString() ??
+                  'Google Pay nu este disponibil momentan.')
+            : 'Google Pay nu este disponibil momentan.',
+      );
+    }
+
+    return Map<String, dynamic>.from(decoded['data'] as Map);
+  }
+
+  static Future<Map<String, dynamic>> completeGooglePayPayment({
+    required String listingId,
+    required String addressId,
+    required String deliveryMethod,
+    required Map<String, dynamic> paymentData,
+    required double expectedAmount,
+    int? destinationLockerId,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final body = <String, dynamic>{
+      'listingId': listingId,
+      'addressId': addressId,
+      'deliveryMethod': deliveryMethod,
+      'paymentData': paymentData,
+      'expectedAmount': expectedAmount,
+      'destinationLockerId': ?destinationLockerId,
+    };
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/payments/google-pay/complete'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns Google Pay invalid.');
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map ||
+        decoded['success'] != true ||
+        decoded['data'] is! Map) {
+      throw ApiException(
+        decoded is Map
+            ? (decoded['message']?.toString() ??
+                  'Plata Google Pay nu a putut fi procesată.')
+            : 'Plata Google Pay nu a putut fi procesată.',
+      );
+    }
+
+    return Map<String, dynamic>.from(decoded['data'] as Map);
+  }
+
+  static Future<Map<String, dynamic>> getPaymentStatus(String paymentId) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/payments/$paymentId'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw ApiException('Serverul a returnat un status de plată invalid.');
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        decoded is! Map ||
+        decoded['success'] != true ||
+        decoded['data'] is! Map) {
+      throw ApiException(
+        decoded is Map
+            ? (decoded['message']?.toString() ??
+                  'Statusul plății nu a putut fi verificat.')
+            : 'Statusul plății nu a putut fi verificat.',
+      );
+    }
+
+    return Map<String, dynamic>.from(decoded['data'] as Map);
   }
 
   // ============================================================
@@ -2140,25 +2520,48 @@ class ApiService {
     throw Exception(data['message'] ?? 'Nu s-au putut încărca comenzile.');
   }
 
-  static Future<List<dynamic>> getSellingOrders() async {
+  static Future<List<Map<String, dynamic>>> getSellingOrders() async {
     final token = await getToken();
 
-    if (token == null) {
-      throw Exception('Nu ești autentificat.');
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
     }
 
-    final response = await _client.get(
+    final response = await http.get(
       Uri.parse('$baseUrl/orders/selling'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
-    final data = jsonDecode(response.body);
+    Map<String, dynamic> responseBody;
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return List<dynamic>.from(data['data'] ?? []);
+    try {
+      responseBody = Map<String, dynamic>.from(jsonDecode(response.body));
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns invalid.');
     }
 
-    throw Exception(data['message'] ?? 'Nu s-au putut încărca vânzările.');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        responseBody['message']?.toString() ?? 'Nu am putut încărca vânzările.',
+      );
+    }
+
+    if (responseBody['success'] != true) {
+      throw ApiException(
+        responseBody['message']?.toString() ?? 'Nu am putut încărca vânzările.',
+      );
+    }
+
+    final data = responseBody['data'];
+
+    if (data is! List) {
+      return [];
+    }
+
+    return data
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 
   static Future<List<dynamic>> getCompletedOrders() async {
@@ -2203,6 +2606,91 @@ class ApiService {
     }
 
     throw Exception(data['message'] ?? 'Nu s-a putut încărca comanda.');
+  }
+
+  static Future<Map<String, dynamic>> confirmOrderReceived(
+    String orderId,
+  ) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.patch(
+      Uri.parse('$baseUrl/orders/$orderId/confirm-received'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    Map<String, dynamic> data;
+
+    try {
+      data = Map<String, dynamic>.from(jsonDecode(response.body));
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns invalid.');
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        data['success'] != true) {
+      throw ApiException(
+        data['message']?.toString() ?? 'Comanda nu a putut fi finalizată.',
+      );
+    }
+
+    final order = data['data'];
+
+    if (order is! Map) {
+      throw ApiException('Comanda returnată de server este invalidă.');
+    }
+
+    return Map<String, dynamic>.from(order);
+  }
+
+  static Future<Map<String, dynamic>> reportOrderIssue({
+    required String orderId,
+    required String reason,
+    String? details,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/orders/$orderId/report-issue'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({'reason': reason, 'details': details?.trim()}),
+    );
+
+    Map<String, dynamic> data;
+
+    try {
+      data = Map<String, dynamic>.from(jsonDecode(response.body));
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns invalid.');
+    }
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        data['success'] != true) {
+      throw ApiException(
+        data['message']?.toString() ?? 'Problema nu a putut fi raportată.',
+      );
+    }
+
+    final order = data['data'];
+
+    if (order is! Map) {
+      throw ApiException('Comanda returnată de server este invalidă.');
+    }
+
+    return Map<String, dynamic>.from(order);
   }
 
   static Future<List<dynamic>> getPromotionPackages() async {
@@ -2718,6 +3206,293 @@ class ApiService {
     }
 
     return Map<String, dynamic>.from(decoded['data'] ?? {});
+  }
+
+  static Future<List<SamedayOohLocation>> getSamedayEasyboxesPage({
+    int page = 1,
+    int countPerPage = 100,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final uri = Uri.parse('$baseUrl/sameday/ooh-locations').replace(
+      queryParameters: {
+        'listingType': '0',
+        'countryCode': 'RO',
+        'page': page.toString(),
+        'countPerPage': countPerPage.toString(),
+      },
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    final decoded = jsonDecode(response.body);
+
+    if (decoded is! Map) {
+      throw ApiException('Răspuns Sameday invalid.');
+    }
+
+    final body = Map<String, dynamic>.from(decoded);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        body['message']?.toString() ?? 'Nu am putut încărca Easybox-urile.',
+      );
+    }
+
+    final wrapper = body['data'];
+
+    if (wrapper is! Map) {
+      return [];
+    }
+
+    final wrapperMap = Map<String, dynamic>.from(wrapper);
+
+    final list = wrapperMap['data'];
+
+    if (list is! List) {
+      return [];
+    }
+
+    return list
+        .whereType<Map>()
+        .map(
+          (item) =>
+              SamedayOohLocation.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .where((item) => item.oohType == 0)
+        .toList();
+  }
+
+  static Future<List<SamedayOohLocation>> getAllSamedayEasyboxes() async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final all = <SamedayOohLocation>[];
+
+    int page = 1;
+    int totalPages = 1;
+
+    do {
+      final uri = Uri.parse('$baseUrl/sameday/ooh-locations').replace(
+        queryParameters: {
+          'listingType': '0',
+          'countryCode': 'RO',
+          'page': page.toString(),
+
+          // Sameday poate ignora valoarea
+          // și returna propriul perPage.
+          'countPerPage': '100',
+        },
+      );
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! Map) {
+        throw ApiException('Răspuns Sameday invalid.');
+      }
+
+      final body = Map<String, dynamic>.from(decoded);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(
+          body['message']?.toString() ?? 'Nu am putut încărca Easybox-urile.',
+        );
+      }
+
+      final wrapper = body['data'];
+
+      if (wrapper is! Map) {
+        break;
+      }
+
+      final wrapperMap = Map<String, dynamic>.from(wrapper);
+
+      totalPages = int.tryParse(wrapperMap['pages']?.toString() ?? '1') ?? 1;
+
+      final items = wrapperMap['data'];
+
+      if (items is List) {
+        for (final item in items) {
+          if (item is! Map) {
+            continue;
+          }
+
+          final easybox = SamedayOohLocation.fromJson(
+            Map<String, dynamic>.from(item),
+          );
+
+          if (easybox.oohType == 0) {
+            all.add(easybox);
+          }
+        }
+      }
+
+      debugPrint(
+        'SAMEDAY EASYBOX: pagina $page / $totalPages, total încărcate ${all.length}',
+      );
+
+      page++;
+    } while (page <= totalPages);
+
+    // Eliminăm eventualele duplicate după oohId.
+    final unique = <int, SamedayOohLocation>{};
+
+    for (final easybox in all) {
+      unique[easybox.oohId] = easybox;
+    }
+
+    debugPrint('SAMEDAY EASYBOX FINAL: ${unique.length}');
+
+    return unique.values.toList();
+  }
+
+  static Future<Map<String, dynamic>> createSamedayLockerShipment({
+    required String orderId,
+    required double packageWeight,
+    int packageType = 0,
+    double? width,
+    double? length,
+    double? height,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    if (orderId.trim().isEmpty) {
+      throw ApiException('ID-ul comenzii este invalid.');
+    }
+
+    if (packageWeight <= 0) {
+      throw ApiException(
+        'Greutatea coletului trebuie să fie mai mare decât 0.',
+      );
+    }
+
+    final body = <String, dynamic>{
+      'packageType': packageType,
+
+      'packageWeight': packageWeight,
+    };
+
+    if (width != null && width > 0) {
+      body['width'] = width;
+    }
+
+    if (length != null && length > 0) {
+      body['length'] = length;
+    }
+
+    if (height != null && height > 0) {
+      body['height'] = height;
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/sameday/shipments/orders/$orderId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+
+        'Content-Type': 'application/json',
+
+        'Accept': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    Map<String, dynamic> responseBody;
+
+    try {
+      responseBody = Map<String, dynamic>.from(jsonDecode(response.body));
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns invalid.');
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        responseBody['message']?.toString() ?? 'Nu am putut genera AWB-ul.',
+      );
+    }
+
+    if (responseBody['success'] != true) {
+      throw ApiException(
+        responseBody['message']?.toString() ?? 'Nu am putut genera AWB-ul.',
+      );
+    }
+
+    final data = responseBody['data'];
+
+    if (data is! Map) {
+      throw ApiException('Serverul nu a returnat transportul.');
+    }
+
+    return Map<String, dynamic>.from(data);
+  }
+
+  static Future<Map<String, dynamic>?> getSamedayShipmentByOrder({
+    required String orderId,
+  }) async {
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) {
+      throw ApiException('Nu ești autentificat.');
+    }
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/sameday/shipments/orders/$orderId'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    // Nu există încă transport pentru comandă.
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    Map<String, dynamic> body;
+
+    try {
+      body = Map<String, dynamic>.from(jsonDecode(response.body));
+    } catch (_) {
+      throw ApiException('Serverul a returnat un răspuns invalid.');
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        body['message']?.toString() ?? 'Nu am putut încărca transportul.',
+      );
+    }
+
+    if (body['success'] != true) {
+      throw ApiException(
+        body['message']?.toString() ?? 'Nu am putut încărca transportul.',
+      );
+    }
+
+    final data = body['data'];
+
+    if (data is! Map) {
+      return null;
+    }
+
+    return Map<String, dynamic>.from(data);
   }
 }
 

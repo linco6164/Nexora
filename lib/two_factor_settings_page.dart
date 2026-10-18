@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class TwoFactorSettingsPage extends StatefulWidget {
   const TwoFactorSettingsPage({super.key});
@@ -383,243 +385,255 @@ class _TwoFactorSettingsPageState extends State<TwoFactorSettingsPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Autentificare în doi pași')),
-        body: const Center(child: CircularProgressIndicator()),
+        appBar: kIsWeb
+            ? null
+            : AppBar(title: const Text('Autentificare în doi pași')),
+        body: kIsWeb
+            ? const WebPageFrame(
+                title: 'Autentificare în doi pași',
+                subtitle: 'Protecție suplimentară pentru contul tău',
+                maxWidth: 720,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : const Center(child: CircularProgressIndicator()),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Autentificare în doi pași')),
+    final body = ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // ======================================================
+        // ICON
+        // ======================================================
 
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // ======================================================
-          // ICON
-          // ======================================================
+        Icon(
+          _isSetup ? Icons.verified_user_rounded : Icons.security_rounded,
+          size: 72,
+          color: _isSetup
+              ? Colors.green
+              : Theme.of(context).colorScheme.primary,
+        ),
 
-          Icon(
-            _isSetup ? Icons.verified_user_rounded : Icons.security_rounded,
-            size: 72,
-            color: _isSetup
-                ? Colors.green
-                : Theme.of(context).colorScheme.primary,
+        const SizedBox(height: 20),
+
+        // ======================================================
+        // TITLU
+        // ======================================================
+        Text(
+          _isSetup ? '2FA este activat' : 'Protejează-ți contul',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        ),
+
+        const SizedBox(height: 10),
+
+        // ======================================================
+        // DESCRIERE
+        // ======================================================
+        Text(
+          _isSetup
+              ? 'La fiecare autentificare vei avea nevoie și de codul generat de aplicația de autentificare.'
+              : 'Folosește o aplicație precum Google Authenticator, Microsoft Authenticator sau Authy pentru a genera codurile de securitate.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+
+        const SizedBox(height: 30),
+
+        // ======================================================
+        // 2FA ACTIVAT
+        // ======================================================
+        if (_isSetup) ...[
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.25)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.green, size: 28),
+
+                SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Autentificarea în doi pași este activată',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      SizedBox(height: 6),
+
+                      Text(
+                        'Contul tău este protejat suplimentar atunci când te autentifici.',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // ======================================================
-          // TITLU
-          // ======================================================
-          Text(
-            _isSetup ? '2FA este activat' : 'Protejează-ți contul',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-          ),
-
-          const SizedBox(height: 10),
-
-          // ======================================================
-          // DESCRIERE
-          // ======================================================
-          Text(
-            _isSetup
-                ? 'La fiecare autentificare vei avea nevoie și de codul generat de aplicația de autentificare.'
-                : 'Folosește o aplicație precum Google Authenticator, Microsoft Authenticator sau Authy pentru a genera codurile de securitate.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-
-          const SizedBox(height: 30),
-
-          // ======================================================
-          // 2FA ACTIVAT
-          // ======================================================
-          if (_isSetup) ...[
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.25)),
+          // ====================================================
+          // DEZACTIVEAZĂ
+          // ====================================================
+          SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: _isLoading ? null : _disable2FA,
+              icon: const Icon(Icons.lock_open_rounded),
+              label: const Text(
+                'Dezactivează 2FA',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+        ],
+
+        // ======================================================
+        // 2FA NEACTIVAT
+        // ======================================================
+        if (!_isSetup && _qrCode == null) ...[
+          SizedBox(
+            height: 52,
+            child: FilledButton.icon(
+              onPressed: _isLoading ? null : _startSetup,
+              icon: const Icon(Icons.qr_code_2_rounded),
+              label: const Text('Configurează 2FA'),
+            ),
+          ),
+        ],
+
+        // ======================================================
+        // CONFIGURARE QR
+        // ======================================================
+        if (!_isSetup && _qrCode != null) ...[
+          const Text(
+            '1. Scanează codul QR',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+
+          const SizedBox(height: 16),
+
+          _buildQrCode(),
+
+          if (_secret != null) ...[
+            const SizedBox(height: 20),
+
+            const Text(
+              'Dacă nu poți scana codul QR, introdu manual cheia:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+
+            const SizedBox(height: 8),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: Colors.green,
-                    size: 28,
+                  Expanded(
+                    child: SelectableText(
+                      _secret!,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
 
-                  SizedBox(width: 14),
+                  IconButton(
+                    tooltip: 'Copiază cheia',
+                    icon: const Icon(Icons.copy_rounded),
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: _secret!));
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Autentificarea în doi pași este activată',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      if (!context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Cheia secretă a fost copiată.'),
+                          duration: Duration(seconds: 2),
                         ),
-
-                        SizedBox(height: 6),
-
-                        Text(
-                          'Contul tău este protejat suplimentar atunci când te autentifici.',
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // ====================================================
-            // DEZACTIVEAZĂ
-            // ====================================================
-            SizedBox(
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: _isLoading ? null : _disable2FA,
-                icon: const Icon(Icons.lock_open_rounded),
-                label: const Text(
-                  'Dezactivează 2FA',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
           ],
 
-          // ======================================================
-          // 2FA NEACTIVAT
-          // ======================================================
-          if (!_isSetup && _qrCode == null) ...[
-            SizedBox(
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: _isLoading ? null : _startSetup,
-                icon: const Icon(Icons.qr_code_2_rounded),
-                label: const Text('Configurează 2FA'),
-              ),
+          const SizedBox(height: 28),
+
+          const Text(
+            '2. Introdu codul generat',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+
+          const SizedBox(height: 12),
+
+          TextField(
+            controller: _codeController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 24, letterSpacing: 8),
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              counterText: '',
+              hintText: '000000',
             ),
-          ],
+          ),
 
-          // ======================================================
-          // CONFIGURARE QR
-          // ======================================================
-          if (!_isSetup && _qrCode != null) ...[
-            const Text(
-              '1. Scanează codul QR',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
+          const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
-
-            _buildQrCode(),
-
-            if (_secret != null) ...[
-              const SizedBox(height: 20),
-
-              const Text(
-                'Dacă nu poți scana codul QR, introdu manual cheia:',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-
-              const SizedBox(height: 8),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SelectableText(
-                        _secret!,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w600,
-                        ),
+          SizedBox(
+            height: 52,
+            child: FilledButton(
+              onPressed: _isLoading ? null : _verifySetup,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
                       ),
-                    ),
-
-                    IconButton(
-                      tooltip: 'Copiază cheia',
-                      icon: const Icon(Icons.copy_rounded),
-                      onPressed: () async {
-                        await Clipboard.setData(ClipboardData(text: _secret!));
-
-                        if (!context.mounted) return;
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Cheia secretă a fost copiată.'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 28),
-
-            const Text(
-              '2. Introdu codul generat',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    )
+                  : const Text('Activează 2FA'),
             ),
-
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _codeController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24, letterSpacing: 8),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                counterText: '',
-                hintText: '000000',
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                onPressed: _isLoading ? null : _verifySetup,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Activează 2FA'),
-              ),
-            ),
-          ],
+          ),
         ],
-      ),
+      ],
+    );
+
+    return Scaffold(
+      appBar: kIsWeb
+          ? null
+          : AppBar(title: const Text('Autentificare în doi pași')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Autentificare în doi pași',
+              subtitle: 'Protecție suplimentară pentru contul tău',
+              maxWidth: 720,
+              child: body,
+            )
+          : body,
     );
   }
 }

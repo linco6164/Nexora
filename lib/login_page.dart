@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'app_feedback.dart';
 
 import 'register_page.dart';
 import 'forgotten_password.dart';
 import 'home_page.dart';
 import 'two_factor_page.dart';
 import 'notification_service.dart';
+import 'google_sign_in_service.dart';
 
 import 'socket_service.dart';
 
@@ -28,6 +30,13 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  void _openHome() {
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomePage()),
+      (_) => false,
+    );
+  }
 
   @override
   void dispose() {
@@ -93,19 +102,18 @@ class _LoginPageState extends State<LoginPage> {
 
         if (!mounted) return;
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+        _openHome();
       }
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      AppFeedback.error(context, e.message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Eroare de conexiune: $e')));
+      AppFeedback.error(
+        context,
+        e,
+        fallback: 'Conexiunea nu a putut fi realizată.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -115,17 +123,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId: '704537003987-nhbquge06mbasglpsush74qpj8a42t1n.apps.googleusercontent.com',
-      );
-
-      final googleUser = await googleSignIn.signIn();
-
-      if (googleUser == null) {
-        return;
-      }
-
-      final googleAuth = await googleUser.authentication;
+      await GoogleSignInService.initialized;
+      final googleUser = await GoogleSignInService.instance.authenticate();
+      final googleAuth = googleUser.authentication;
 
       final idToken = googleAuth.idToken;
 
@@ -145,22 +145,36 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
+      _openHome();
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return;
+      }
+
+      debugPrint('GOOGLE LOGIN ERROR: $e');
+
+      if (!mounted) return;
+
+      final message = e.description?.trim();
+      AppFeedback.error(
         context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        message == null || message.isEmpty
+            ? 'Autentificarea cu Google nu a putut fi finalizată.'
+            : message,
       );
     } on ApiException catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      AppFeedback.error(context, e.message);
     } catch (e) {
       debugPrint('GOOGLE LOGIN ERROR: $e');
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Eroare la autentificarea cu Google: $e')),
+      AppFeedback.error(
+        context,
+        e,
+        fallback: 'Autentificarea cu Google nu a putut fi finalizată.',
       );
     } finally {
       if (mounted) {
@@ -244,10 +258,7 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      _openHome();
     } catch (e) {
       debugPrint('FACEBOOK LOGIN ERROR: $e');
 
@@ -255,8 +266,10 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Eroare la autentificarea cu Facebook: $e')),
+      AppFeedback.error(
+        context,
+        e,
+        fallback: 'Autentificarea cu Facebook nu a putut fi finalizată.',
       );
     } finally {
       if (mounted) {

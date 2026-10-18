@@ -22,31 +22,31 @@ class WebHome extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: HeroSection(onExplore: onExplore)),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 64)),
+          const SliverToBoxAdapter(child: SizedBox(height: 52)),
 
           SliverToBoxAdapter(child: CategorySection(onCategory: onCategory)),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
           const SliverToBoxAdapter(child: FeaturedProducts()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
           const SliverToBoxAdapter(child: NewProducts()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
           const SliverToBoxAdapter(child: RecommendedProducts()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
           const SliverToBoxAdapter(child: BrandsSection()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
           const SliverToBoxAdapter(child: WhyChooseUs()),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
 
           const SliverToBoxAdapter(child: WebFooter()),
 

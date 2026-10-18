@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'promotion_netopia_checkout.dart';
 
 import 'api_service.dart';
 import 'models/listing.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class PromotionDurationPage extends StatefulWidget {
   final Listing listing;
@@ -105,13 +107,22 @@ class _PromotionDurationPageState extends State<PromotionDurationPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Promovează anunțul',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-      body: _buildBody(context, colorScheme),
+      appBar: kIsWeb
+          ? null
+          : AppBar(
+              title: const Text(
+                'Promovează anunțul',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Promovează anunțul',
+              subtitle: 'Alege durata potrivită pentru mai multă vizibilitate.',
+              maxWidth: 860,
+              child: _buildBody(context, colorScheme),
+            )
+          : _buildBody(context, colorScheme),
     );
   }
 

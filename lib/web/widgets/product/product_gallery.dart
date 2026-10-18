@@ -18,31 +18,50 @@ class _ProductGalleryState extends State<ProductGallery> {
 
     if (images.isEmpty) {
       return AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: 1.3,
         child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
-          child: const Icon(Icons.image_not_supported_outlined, size: 70),
+          child: const Icon(Icons.image_not_supported_outlined, size: 52),
         ),
       );
     }
 
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
           child: AspectRatio(
-            aspectRatio: 1,
-            child: Image.network(images[selected], fit: BoxFit.cover),
+            aspectRatio: 1.3,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Image.network(
+                images[selected],
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const Center(
+                  child: Icon(Icons.image_not_supported_outlined, size: 48),
+                ),
+              ),
+            ),
           ),
         ),
 
-        const SizedBox(height: 18),
+        const SizedBox(height: 12),
 
         SizedBox(
-          height: 90,
+          height: 62,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: images.length,
@@ -58,19 +77,26 @@ class _ProductGalleryState extends State<ProductGallery> {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  width: 90,
+                  width: 62,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      width: selectedImage ? 3 : 1,
+                      width: selectedImage ? 2 : 1,
                       color: selectedImage
                           ? Theme.of(context).colorScheme.primary
                           : Colors.grey.shade300,
                     ),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(images[index], fit: BoxFit.cover),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      images[index],
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 22,
+                      ),
+                    ),
                   ),
                 ),
               );

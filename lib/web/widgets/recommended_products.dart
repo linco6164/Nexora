@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/listing.dart';
 import '../../api_service.dart';
+import '../../l10n/app_locale.dart';
 import '../../shared/widgets/product_grid.dart';
 import '../../shared/widgets/responsive_container.dart';
 import '../../shared/widgets/section_title.dart';
@@ -58,11 +59,15 @@ class _RecommendedProductsState extends State<RecommendedProducts> {
     return ResponsiveContainer(
       child: Column(
         children: [
-          const SectionTitle(
-            title: "Recomandate",
-            subtitle: "Produse selectate pentru tine",
+          SectionTitle(
+            title: appLocaleController.value == 'en'
+                ? 'Recommended'
+                : 'Recomandate',
+            subtitle: appLocaleController.value == 'en'
+                ? 'Products selected for you'
+                : 'Produse selectate pentru tine',
           ),
-          ProductGrid(products: _products),
+          ProductGrid(products: _products.skip(2).take(10).toList()),
         ],
       ),
     );

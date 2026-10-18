@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
 import 'my_listings_page.dart';
 import 'promotion_netopia_checkout.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class PromotionPage extends StatefulWidget {
   const PromotionPage({super.key});
@@ -231,45 +233,117 @@ class _PromotionPageState extends State<PromotionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = RefreshIndicator(
+      onRefresh: _loadPromotions,
+      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: _cardColor,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(kIsWeb ? 0 : 20, 8, kIsWeb ? 0 : 20, 32),
+        children: [
+          _buildHeroCard(),
+          const SizedBox(height: 20),
+          _buildMyPromotionsHeader(),
+          const SizedBox(height: 12),
+          _buildPromotionsContent(),
+          const SizedBox(height: 24),
+          _buildHowItWorks(),
+        ],
+      ),
+    );
+
     return Scaffold(
       backgroundColor: _backgroundColor,
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: _backgroundColor,
-        foregroundColor: _textColor,
-        title: const Text(
-          'Instrumente promoționale',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadPromotions,
-        color: Theme.of(context).colorScheme.primary,
-        backgroundColor: _cardColor,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-          children: [
-            _buildHeroCard(),
-
-            const SizedBox(height: 20),
-
-            _buildMyPromotionsHeader(),
-
-            const SizedBox(height: 12),
-
-            _buildPromotionsContent(),
-
-            const SizedBox(height: 24),
-
-            _buildHowItWorks(),
-          ],
-        ),
-      ),
+      appBar: kIsWeb
+          ? null
+          : AppBar(
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: _backgroundColor,
+              foregroundColor: _textColor,
+              title: const Text(
+                'Instrumente promoționale',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Promovări',
+              subtitle: 'Crește vizibilitatea anunțurilor tale',
+              maxWidth: 1000,
+              useSurface: false,
+              child: body,
+            )
+          : body,
     );
   }
 
   Widget _buildHeroCard() {
+    if (kIsWeb && MediaQuery.sizeOf(context).width >= 760) {
+      return Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF181818), Color(0xFF303030)],
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.campaign_rounded, color: Colors.white),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Fă-ți anunțurile mai vizibile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Alege un anunț și promovează-l în marketplace.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .70),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 24),
+            FilledButton.icon(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MyListingsPage()),
+                );
+                _loadPromotions();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Alege un anunț'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(

@@ -34,9 +34,7 @@ class _HomePageState extends State<HomePage> {
       const ExploreTab(),
       const MessagesTab(),
 
-      ProfilePage(
-        onNavBarCollapse: _setNavBarCollapsed,
-      ),
+      ProfilePage(onNavBarCollapse: _setNavBarCollapsed),
     ];
   }
 
@@ -58,9 +56,7 @@ class _HomePageState extends State<HomePage> {
   // DETECTĂM SCROLL-UL DIN ORICARE TAB
   // ============================================================
 
-  bool _handleScrollNotification(
-    ScrollNotification notification,
-  ) {
+  bool _handleScrollNotification(ScrollNotification notification) {
     // Ne interesează doar scroll-ul făcut efectiv
     // de utilizator.
     if (notification is UserScrollNotification) {
@@ -102,9 +98,7 @@ class _HomePageState extends State<HomePage> {
   void _onSellTapped() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SellPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const SellPage()),
     );
   }
 
@@ -114,80 +108,77 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop || _selectedIndex == 0) return;
 
-        title: const Row(
-          children: [
-            NexoraLogo(size: 32),
-            SizedBox(width: 10),
+        setState(() {
+          _selectedIndex = 0;
+          _navBarCollapsed = false;
+        });
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+
+          title: const Row(
+            children: [NexoraLogo(size: 32), SizedBox(width: 10)],
+          ),
+
+          actions: [
+            // FAVORITE
+            IconButton(
+              icon: const Icon(Icons.favorite_border),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesPage(),
+                  ),
+                );
+              },
+            ),
+
+            // NOTIFICATIONS
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsPage(),
+                  ),
+                );
+              },
+            ),
           ],
         ),
 
-        actions: [
-          // FAVORITE
-          IconButton(
-            icon: const Icon(
-              Icons.favorite_border,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const FavoritesPage(),
-                ),
-              );
-            },
+        // Navbarul este plutitor peste conținut.
+        extendBody: true,
+
+        // ==========================================================
+        // TOATE TABURILE SUNT ASCULTATE AICI
+        // ==========================================================
+        body: NotificationListener<ScrollNotification>(
+          onNotification: _handleScrollNotification,
+
+          child: IndexedStack(
+            index: _selectedIndex.clamp(0, _pages.length - 1),
+            children: _pages,
           ),
-
-          // NOTIFICATIONS
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_outlined,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const NotificationsPage(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-
-      // Navbarul este plutitor peste conținut.
-      extendBody: true,
-
-      // ==========================================================
-      // TOATE TABURILE SUNT ASCULTATE AICI
-      // ==========================================================
-
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _handleScrollNotification,
-
-        child: IndexedStack(
-          index: _selectedIndex.clamp(
-            0,
-            _pages.length - 1,
-          ),
-          children: _pages,
         ),
-      ),
 
-      // ==========================================================
-      // NAVBAR
-      // ==========================================================
-
-      bottomNavigationBar: FloatingNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-        onSellTapped: _onSellTapped,
-        isCollapsed: _navBarCollapsed,
+        // ==========================================================
+        // NAVBAR
+        // ==========================================================
+        bottomNavigationBar: FloatingNavBar(
+          selectedIndex: _selectedIndex,
+          onItemTapped: _onItemTapped,
+          onSellTapped: _onSellTapped,
+          isCollapsed: _navBarCollapsed,
+        ),
       ),
     );
   }

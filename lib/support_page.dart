@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'app_feedback.dart';
 import 'socket_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class SupportPage extends StatefulWidget {
   final String? ticketId;
@@ -16,19 +19,15 @@ class SupportPage extends StatefulWidget {
   });
 
   @override
-  State<SupportPage> createState() =>
-      _SupportPageState();
+  State<SupportPage> createState() => _SupportPageState();
 }
 
 class _SupportPageState extends State<SupportPage> {
-  final TextEditingController _messageController =
-      TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
 
-  final TextEditingController _subjectController =
-      TextEditingController();
+  final TextEditingController _subjectController = TextEditingController();
 
-  final ScrollController _scrollController =
-      ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   Map<String, dynamic>? _ticket;
 
@@ -62,14 +61,10 @@ class _SupportPageState extends State<SupportPage> {
 
   @override
   void dispose() {
-    final ticketId =
-        _ticket?['_id']?.toString();
+    final ticketId = _ticket?['_id']?.toString();
 
-    if (ticketId != null &&
-        ticketId.isNotEmpty) {
-      SocketService.leaveSupportTicket(
-        ticketId,
-      );
+    if (ticketId != null && ticketId.isNotEmpty) {
+      SocketService.leaveSupportTicket(ticketId);
     }
 
     SocketService.clearSupportListeners();
@@ -85,19 +80,12 @@ class _SupportPageState extends State<SupportPage> {
     try {
       await SocketService.connect();
 
-      SocketService.onSupportMessage(
-        _handleIncomingSupportMessage,
-      );
+      SocketService.onSupportMessage(_handleIncomingSupportMessage);
 
-      SocketService.onSupportError(
-        _handleSupportError,
-      );
+      SocketService.onSupportError(_handleSupportError);
 
-      if (widget.ticketId != null &&
-          widget.ticketId!.isNotEmpty) {
-        await _openTicketById(
-          widget.ticketId!,
-        );
+      if (widget.ticketId != null && widget.ticketId!.isNotEmpty) {
+        await _openTicketById(widget.ticketId!);
         return;
       }
 
@@ -114,9 +102,7 @@ class _SupportPageState extends State<SupportPage> {
         _loading = false;
       });
     } catch (e) {
-      debugPrint(
-        'SUPPORT INITIALIZE ERROR: $e',
-      );
+      debugPrint('SUPPORT INITIALIZE ERROR: $e');
 
       if (!mounted) return;
 
@@ -124,15 +110,12 @@ class _SupportPageState extends State<SupportPage> {
         _loading = false;
       });
 
-      _showError(
-        'Nu s-a putut încărca suportul: $e',
-      );
+      _showError('Nu s-a putut încărca suportul: $e');
     }
   }
 
   Future<void> _loadTickets() async {
-    final tickets =
-        await ApiService.getSupportTickets();
+    final tickets = await ApiService.getSupportTickets();
 
     if (!mounted) return;
 
@@ -141,29 +124,19 @@ class _SupportPageState extends State<SupportPage> {
     });
   }
 
-  Future<void> _openTicketById(
-    String ticketId,
-  ) async {
-    final response =
-        await ApiService.getSupportTicket(
-      ticketId,
-    );
+  Future<void> _openTicketById(String ticketId) async {
+    final response = await ApiService.getSupportTicket(ticketId);
 
-    final ticket =
-        response['ticket'] ??
-        response['data'];
+    final ticket = response['ticket'] ?? response['data'];
 
     if (ticket == null) {
-      throw ApiException(
-        'Ticketul nu a fost găsit.',
-      );
+      throw ApiException('Ticketul nu a fost găsit.');
     }
 
     if (!mounted) return;
 
     setState(() {
-      _ticket =
-          Map<String, dynamic>.from(ticket);
+      _ticket = Map<String, dynamic>.from(ticket);
 
       _loading = false;
       _showCreateForm = false;
@@ -182,33 +155,25 @@ class _SupportPageState extends State<SupportPage> {
     });
 
     try {
-      final banReason =
-          widget.banReason?.trim() ?? '';
+      final banReason = widget.banReason?.trim() ?? '';
 
-      final response =
-          await ApiService.createSupportTicket(
+      final response = await ApiService.createSupportTicket(
         subject: 'Cont blocat',
         category: 'account_banned',
-        message:
-            'Doresc să contest blocarea contului meu.',
+        message: 'Doresc să contest blocarea contului meu.',
         banReason: banReason,
       );
 
-      final ticket =
-          response['ticket'] ??
-          response['data'];
+      final ticket = response['ticket'] ?? response['data'];
 
       if (ticket == null) {
-        throw ApiException(
-          'Serverul nu a returnat ticketul creat.',
-        );
+        throw ApiException('Serverul nu a returnat ticketul creat.');
       }
 
       if (!mounted) return;
 
       setState(() {
-        _ticket =
-            Map<String, dynamic>.from(ticket);
+        _ticket = Map<String, dynamic>.from(ticket);
 
         _loading = false;
         _creatingTicket = false;
@@ -218,9 +183,7 @@ class _SupportPageState extends State<SupportPage> {
       _connectToSupportSocket();
       _scrollToBottom();
     } catch (e) {
-      debugPrint(
-        'CREATE BAN SUPPORT TICKET ERROR: $e',
-      );
+      debugPrint('CREATE BAN SUPPORT TICKET ERROR: $e');
 
       if (!mounted) return;
 
@@ -229,30 +192,22 @@ class _SupportPageState extends State<SupportPage> {
         _creatingTicket = false;
       });
 
-      _showError(
-        'Nu s-a putut crea tichetul: $e',
-      );
+      _showError('Nu s-a putut crea tichetul: $e');
     }
   }
 
   Future<void> _createTicket() async {
-    final subject =
-        _subjectController.text.trim();
+    final subject = _subjectController.text.trim();
 
-    final message =
-        _messageController.text.trim();
+    final message = _messageController.text.trim();
 
     if (subject.isEmpty) {
-      _showError(
-        'Introdu un subiect.',
-      );
+      _showError('Introdu un subiect.');
       return;
     }
 
     if (message.isEmpty) {
-      _showError(
-        'Descrie problema.',
-      );
+      _showError('Descrie problema.');
       return;
     }
 
@@ -265,28 +220,22 @@ class _SupportPageState extends State<SupportPage> {
     });
 
     try {
-      final response =
-          await ApiService.createSupportTicket(
+      final response = await ApiService.createSupportTicket(
         subject: subject,
         category: _selectedCategory,
         message: message,
       );
 
-      final ticket =
-          response['ticket'] ??
-          response['data'];
+      final ticket = response['ticket'] ?? response['data'];
 
       if (ticket == null) {
-        throw ApiException(
-          'Serverul nu a returnat ticketul creat.',
-        );
+        throw ApiException('Serverul nu a returnat ticketul creat.');
       }
 
       if (!mounted) return;
 
       setState(() {
-        _ticket =
-            Map<String, dynamic>.from(ticket);
+        _ticket = Map<String, dynamic>.from(ticket);
 
         _creatingTicket = false;
         _showCreateForm = false;
@@ -299,21 +248,11 @@ class _SupportPageState extends State<SupportPage> {
       _connectToSupportSocket();
       _scrollToBottom();
 
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Ticketul a fost trimis către Support.',
-            ),
-          ),
-        );
+      AppFeedback.success(context, 'Tichetul a fost trimis către suport.');
 
       _loadTickets();
     } catch (e) {
-      debugPrint(
-        'CREATE SUPPORT TICKET ERROR: $e',
-      );
+      debugPrint('CREATE SUPPORT TICKET ERROR: $e');
 
       if (!mounted) return;
 
@@ -321,98 +260,60 @@ class _SupportPageState extends State<SupportPage> {
         _creatingTicket = false;
       });
 
-      _showError(
-        'Nu s-a putut crea tichetul: $e',
-      );
+      _showError('Nu s-a putut crea tichetul: $e');
     }
   }
 
   void _showError(String message) {
     if (!mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-        ),
-      );
+    AppFeedback.error(context, message);
   }
 
   void _connectToSupportSocket() {
-    final ticketId =
-        _ticket?['_id']?.toString();
+    final ticketId = _ticket?['_id']?.toString();
 
-    if (ticketId == null ||
-        ticketId.isEmpty) {
-      debugPrint(
-        'SUPPORT SOCKET: ticket ID missing',
-      );
+    if (ticketId == null || ticketId.isEmpty) {
+      debugPrint('SUPPORT SOCKET: ticket ID missing');
       return;
     }
 
-    debugPrint(
-      'SUPPORT SOCKET: joining ticket $ticketId',
-    );
+    debugPrint('SUPPORT SOCKET: joining ticket $ticketId');
 
-    SocketService.joinSupportTicket(
-      ticketId,
-    );
+    SocketService.joinSupportTicket(ticketId);
   }
 
-  void _handleIncomingSupportMessage(
-    Map<String, dynamic> data,
-  ) {
+  void _handleIncomingSupportMessage(Map<String, dynamic> data) {
     if (!mounted) return;
 
-    final ticketId =
-        data['ticketId']?.toString();
+    final ticketId = data['ticketId']?.toString();
 
-    final currentTicketId =
-        _ticket?['_id']?.toString();
+    final currentTicketId = _ticket?['_id']?.toString();
 
-    if (ticketId == null ||
-        ticketId != currentTicketId) {
+    if (ticketId == null || ticketId != currentTicketId) {
       return;
     }
 
-    final newMessage =
-        data['message'];
+    final newMessage = data['message'];
 
-    if (newMessage == null ||
-        newMessage is! Map) {
+    if (newMessage == null || newMessage is! Map) {
       return;
     }
 
-    final messages =
-        List<dynamic>.from(
-      _ticket?['messages'] ?? [],
-    );
+    final messages = List<dynamic>.from(_ticket?['messages'] ?? []);
 
-    final messageId =
-        newMessage['_id']?.toString();
+    final messageId = newMessage['_id']?.toString();
 
     if (messageId != null &&
         messages.any(
-          (item) =>
-              item is Map &&
-              item['_id']?.toString() ==
-                  messageId,
+          (item) => item is Map && item['_id']?.toString() == messageId,
         )) {
       return;
     }
 
     setState(() {
-      messages.add(
-        Map<String, dynamic>.from(
-          newMessage,
-        ),
-      );
+      messages.add(Map<String, dynamic>.from(newMessage));
 
-      _ticket = {
-        ...?_ticket,
-        'messages': messages,
-      };
+      _ticket = {...?_ticket, 'messages': messages};
 
       _sending = false;
     });
@@ -420,9 +321,7 @@ class _SupportPageState extends State<SupportPage> {
     _scrollToBottom();
   }
 
-  void _handleSupportError(
-    String message,
-  ) {
+  void _handleSupportError(String message) {
     if (!mounted) return;
 
     setState(() {
@@ -433,20 +332,15 @@ class _SupportPageState extends State<SupportPage> {
   }
 
   Future<void> _sendMessage() async {
-    final message =
-        _messageController.text.trim();
+    final message = _messageController.text.trim();
 
-    if (message.isEmpty ||
-        _sending ||
-        _ticket == null) {
+    if (message.isEmpty || _sending || _ticket == null) {
       return;
     }
 
-    final ticketId =
-        _ticket!['_id']?.toString();
+    final ticketId = _ticket!['_id']?.toString();
 
-    if (ticketId == null ||
-        ticketId.isEmpty) {
+    if (ticketId == null || ticketId.isEmpty) {
       return;
     }
 
@@ -455,16 +349,11 @@ class _SupportPageState extends State<SupportPage> {
     });
 
     try {
-      SocketService.sendSupportMessage(
-        ticketId: ticketId,
-        message: message,
-      );
+      SocketService.sendSupportMessage(ticketId: ticketId, message: message);
 
       _messageController.clear();
     } catch (e) {
-      debugPrint(
-        'SEND SUPPORT SOCKET ERROR: $e',
-      );
+      debugPrint('SEND SUPPORT SOCKET ERROR: $e');
 
       if (!mounted) return;
 
@@ -472,38 +361,29 @@ class _SupportPageState extends State<SupportPage> {
         _sending = false;
       });
 
-      _showError(
-        'Mesajul nu a putut fi trimis: $e',
-      );
+      _showError('Mesajul nu a putut fi trimis: $e');
     }
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) {
-        if (!_scrollController.hasClients) {
-          return;
-        }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) {
+        return;
+      }
 
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration:
-              const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      },
-    );
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   void _showTicketList() {
-    final currentId =
-        _ticket?['_id']?.toString();
+    final currentId = _ticket?['_id']?.toString();
 
-    if (currentId != null &&
-        currentId.isNotEmpty) {
-      SocketService.leaveSupportTicket(
-        currentId,
-      );
+    if (currentId != null && currentId.isNotEmpty) {
+      SocketService.leaveSupportTicket(currentId);
     }
 
     setState(() {
@@ -524,52 +404,37 @@ class _SupportPageState extends State<SupportPage> {
 
   String _messageText(dynamic message) {
     if (message is Map) {
-      return message['message']
-              ?.toString() ??
-          '';
+      return message['message']?.toString() ?? '';
     }
 
     return '';
   }
 
-  bool _isAdminMessage(
-    dynamic message,
-  ) {
+  bool _isAdminMessage(dynamic message) {
     if (message is Map) {
-      return message['senderType'] ==
-          'admin';
+      return message['senderType'] == 'admin';
     }
 
     return false;
   }
 
-  String _ticketSubject(
-    dynamic ticket,
-  ) {
+  String _ticketSubject(dynamic ticket) {
     if (ticket is Map) {
-      return ticket['subject']
-              ?.toString() ??
-          'Ticket';
+      return ticket['subject']?.toString() ?? 'Ticket';
     }
 
     return 'Ticket';
   }
 
-  String _ticketStatus(
-    dynamic ticket,
-  ) {
+  String _ticketStatus(dynamic ticket) {
     if (ticket is Map) {
-      return ticket['status']
-              ?.toString() ??
-          'open';
+      return ticket['status']?.toString() ?? 'open';
     }
 
     return 'open';
   }
 
-  String _ticketStatusLabel(
-    String status,
-  ) {
+  String _ticketStatusLabel(String status) {
     switch (status) {
       case 'pending':
         return 'În așteptare';
@@ -583,30 +448,22 @@ class _SupportPageState extends State<SupportPage> {
     }
   }
 
-  Widget _buildCategoryDropdown(
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildCategoryDropdown(ColorScheme colorScheme) {
     return DropdownButtonFormField<String>(
       initialValue: _selectedCategory,
       decoration: InputDecoration(
         labelText: 'Categorie',
-        prefixIcon:
-            const Icon(
-          Icons.category_outlined,
-        ),
+        prefixIcon: const Icon(Icons.category_outlined),
         filled: true,
-        fillColor:
-            colorScheme.surfaceContainerHighest,
+        fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
       ),
       items: _categoryLabels.entries
           .map(
-            (entry) =>
-                DropdownMenuItem<String>(
+            (entry) => DropdownMenuItem<String>(
               value: entry.key,
               child: Text(entry.value),
             ),
@@ -622,44 +479,32 @@ class _SupportPageState extends State<SupportPage> {
     );
   }
 
-  Widget _buildCreateForm(
-    BuildContext context,
-  ) {
-    final theme =
-        Theme.of(context);
+  Widget _buildCreateForm(BuildContext context) {
+    final theme = Theme.of(context);
 
-    final colorScheme =
-        theme.colorScheme;
+    final colorScheme = theme.colorScheme;
 
     return SafeArea(
       child: ListView(
-        padding:
-            const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         children: [
           Row(
             children: [
               IconButton(
                 onPressed: () {
                   setState(() {
-                    _showCreateForm =
-                        false;
+                    _showCreateForm = false;
                   });
                 },
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                ),
+                icon: const Icon(Icons.arrow_back_rounded),
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   'Trimite un ticket',
-                  style: theme
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(
-                        fontWeight:
-                            FontWeight.w700,
-                      ),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -669,62 +514,39 @@ class _SupportPageState extends State<SupportPage> {
 
           Text(
             'Cum te putem ajuta?',
-            style: theme
-                .textTheme
-                .headlineSmall
-                ?.copyWith(
-                  fontWeight:
-                      FontWeight.w700,
-                ),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
 
           const SizedBox(height: 8),
 
           Text(
             'Descrie problema, iar echipa Nexora o va analiza.',
-            style: theme
-                .textTheme
-                .bodyMedium
-                ?.copyWith(
-                  color: colorScheme
-                      .onSurfaceVariant,
-                ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
 
           const SizedBox(height: 24),
 
-          _buildCategoryDropdown(
-            colorScheme,
-          ),
+          _buildCategoryDropdown(colorScheme),
 
           const SizedBox(height: 14),
 
           TextField(
-            controller:
-                _subjectController,
+            controller: _subjectController,
             maxLength: 200,
-            textInputAction:
-                TextInputAction.next,
-            decoration:
-                InputDecoration(
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
               labelText: 'Subiect',
-              hintText:
-                  'Ex. Nu pot finaliza plata',
-              prefixIcon:
-                  const Icon(
-                Icons.subject_rounded,
-              ),
+              hintText: 'Ex. Nu pot finaliza plata',
+              prefixIcon: const Icon(Icons.subject_rounded),
               filled: true,
-              fillColor: colorScheme
-                  .surfaceContainerHighest,
-              border:
-                  OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(
-                  14,
-                ),
-                borderSide:
-                    BorderSide.none,
+              fillColor: colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
@@ -732,41 +554,24 @@ class _SupportPageState extends State<SupportPage> {
           const SizedBox(height: 2),
 
           TextField(
-            controller:
-                _messageController,
+            controller: _messageController,
             minLines: 6,
             maxLines: 10,
             maxLength: 5000,
-            textInputAction:
-                TextInputAction.newline,
-            decoration:
-                InputDecoration(
+            textInputAction: TextInputAction.newline,
+            decoration: InputDecoration(
               labelText: 'Mesaj',
-              hintText:
-                  'Descrie problema în detaliu...',
+              hintText: 'Descrie problema în detaliu...',
               alignLabelWithHint: true,
-              prefixIcon:
-                  const Padding(
-                padding:
-                    EdgeInsets.only(
-                  bottom: 96,
-                ),
-                child: Icon(
-                  Icons
-                      .chat_bubble_outline_rounded,
-                ),
+              prefixIcon: const Padding(
+                padding: EdgeInsets.only(bottom: 96),
+                child: Icon(Icons.chat_bubble_outline_rounded),
               ),
               filled: true,
-              fillColor: colorScheme
-                  .surfaceContainerHighest,
-              border:
-                  OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(
-                  14,
-                ),
-                borderSide:
-                    BorderSide.none,
+              fillColor: colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
@@ -776,29 +581,18 @@ class _SupportPageState extends State<SupportPage> {
           SizedBox(
             height: 52,
             child: FilledButton.icon(
-              onPressed:
-                  _creatingTicket
-                      ? null
-                      : _createTicket,
+              onPressed: _creatingTicket ? null : _createTicket,
               icon: _creatingTicket
                   ? SizedBox(
                       width: 20,
                       height: 20,
-                      child:
-                          CircularProgressIndicator(
+                      child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: colorScheme
-                            .onPrimary,
+                        color: colorScheme.onPrimary,
                       ),
                     )
-                  : const Icon(
-                      Icons.send_rounded,
-                    ),
-              label: Text(
-                _creatingTicket
-                    ? 'Se trimite...'
-                    : 'Trimite ticket',
-              ),
+                  : const Icon(Icons.send_rounded),
+              label: Text(_creatingTicket ? 'Se trimite...' : 'Trimite ticket'),
             ),
           ),
         ],
@@ -806,129 +600,75 @@ class _SupportPageState extends State<SupportPage> {
     );
   }
 
-  Widget _buildTicketList(
-    BuildContext context,
-  ) {
-    final theme =
-        Theme.of(context);
+  Widget _buildTicketList(BuildContext context) {
+    final theme = Theme.of(context);
 
-    final colorScheme =
-        theme.colorScheme;
+    final colorScheme = theme.colorScheme;
 
     return RefreshIndicator(
       onRefresh: _loadTickets,
       child: _tickets.isEmpty
           ? ListView(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                SizedBox(
-                  height:
-                      MediaQuery.of(context)
-                              .size
-                              .height *
-                          .28,
-                ),
+                SizedBox(height: MediaQuery.of(context).size.height * .28),
                 Icon(
-                  Icons
-                      .support_agent_rounded,
+                  Icons.support_agent_rounded,
                   size: 64,
-                  color:
-                      colorScheme.primary,
+                  color: colorScheme.primary,
                 ),
-                const SizedBox(
-                  height: 18,
-                ),
+                const SizedBox(height: 18),
                 Center(
                   child: Text(
                     'Nu ai niciun ticket',
-                    style: theme
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(
-                          fontWeight:
-                              FontWeight.w700,
-                        ),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const SizedBox(
-                  height: 8,
-                ),
+                const SizedBox(height: 8),
                 Center(
                   child: Padding(
-                    padding:
-                        const EdgeInsets
-                            .symmetric(
-                      horizontal: 32,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
                       'Trimite un ticket dacă ai nevoie de ajutor.',
-                      textAlign:
-                          TextAlign.center,
-                      style: theme
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(
-                            color: colorScheme
-                                .onSurfaceVariant,
-                          ),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
               ],
             )
           : ListView.separated(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
-              padding:
-                  const EdgeInsets.all(16),
-              itemCount:
-                  _tickets.length,
-              separatorBuilder:
-                  (_, _) =>
-                      const SizedBox(
-                height: 10,
-              ),
-              itemBuilder:
-                  (context, index) {
-                final ticket =
-                    _tickets[index];
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: _tickets.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final ticket = _tickets[index];
 
-                final status =
-                    _ticketStatus(
-                  ticket,
-                );
+                final status = _ticketStatus(ticket);
 
-                final messages =
-                    ticket is Map
-                        ? List<dynamic>.from(
-                            ticket['messages'] ??
-                                [],
-                          )
-                        : <dynamic>[];
+                final messages = ticket is Map
+                    ? List<dynamic>.from(ticket['messages'] ?? [])
+                    : <dynamic>[];
 
-                final preview =
-                    messages.isNotEmpty
-                        ? _messageText(
-                            messages
-                                .last,
-                          )
-                        : 'Fără mesaje';
+                final preview = messages.isNotEmpty
+                    ? _messageText(messages.last)
+                    : 'Fără mesaje';
 
                 return Card(
                   elevation: 0,
-                  clipBehavior:
-                      Clip.antiAlias,
+                  clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: () async {
-                      final id =
-                          ticket is Map
-                              ? ticket['_id']
-                                  ?.toString()
-                              : null;
+                      final id = ticket is Map
+                          ? ticket['_id']?.toString()
+                          : null;
 
-                      if (id == null ||
-                          id.isEmpty) {
+                      if (id == null || id.isEmpty) {
                         return;
                       }
 
@@ -937,109 +677,64 @@ class _SupportPageState extends State<SupportPage> {
                       });
 
                       try {
-                        await _openTicketById(
-                          id,
-                        );
+                        await _openTicketById(id);
                       } catch (e) {
                         if (!mounted) {
                           return;
                         }
 
                         setState(() {
-                          _loading =
-                              false;
+                          _loading = false;
                         });
 
-                        _showError(
-                          'Nu s-a putut încărca ticketul: $e',
-                        );
+                        _showError('Nu s-a putut încărca ticketul: $e');
                       }
                     },
                     child: Padding(
-                      padding:
-                          const EdgeInsets
-                              .all(16),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               Expanded(
                                 child: Text(
-                                  _ticketSubject(
-                                    ticket,
-                                  ),
+                                  _ticketSubject(ticket),
                                   maxLines: 2,
-                                  overflow:
-                                      TextOverflow
-                                          .ellipsis,
-                                  style: theme
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight:
-                                            FontWeight
-                                                .w700,
-                                      ),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 10,
-                              ),
+                              const SizedBox(width: 10),
                               Container(
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal:
-                                      10,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
                                   vertical: 5,
                                 ),
-                                decoration:
-                                    BoxDecoration(
-                                  color: colorScheme
-                                      .primaryContainer,
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                    20,
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  _ticketStatusLabel(
-                                    status,
+                                  _ticketStatusLabel(status),
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  style: theme
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: colorScheme
-                                            .onPrimaryContainer,
-                                        fontWeight:
-                                            FontWeight
-                                                .w600,
-                                      ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(
-                            height: 8,
-                          ),
+                          const SizedBox(height: 8),
                           Text(
                             preview,
                             maxLines: 2,
-                            overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style: theme
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: colorScheme
-                                      .onSurfaceVariant,
-                                ),
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -1051,71 +746,42 @@ class _SupportPageState extends State<SupportPage> {
     );
   }
 
-  Widget _buildEmptyState(
-    BuildContext context,
-  ) {
-    final theme =
-        Theme.of(context);
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
 
-    final colorScheme =
-        theme.colorScheme;
+    final colorScheme = theme.colorScheme;
 
     return Center(
       child: Padding(
-        padding:
-            const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons
-                  .support_agent_rounded,
+              Icons.support_agent_rounded,
               size: 64,
-              color:
-                  colorScheme.primary,
+              color: colorScheme.primary,
             ),
-            const SizedBox(
-              height: 20,
-            ),
+            const SizedBox(height: 20),
             Text(
               'Suport Nexora',
-              style: theme
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(
-                    fontWeight:
-                        FontWeight.w700,
-                  ),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            const SizedBox(
-              height: 8,
-            ),
+            const SizedBox(height: 8),
             Text(
               'Contactează echipa Nexora pentru ajutor.',
-              textAlign:
-                  TextAlign.center,
-              style: theme
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                    color: colorScheme
-                        .onSurfaceVariant,
-                  ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
-            const SizedBox(
-              height: 24,
-            ),
+            const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed:
-                  _openCreateForm,
-              icon: const Icon(
-                Icons
-                    .add_comment_outlined,
-              ),
-              label: const Text(
-                'Trimite un ticket',
-              ),
+              onPressed: _openCreateForm,
+              icon: const Icon(Icons.add_comment_outlined),
+              label: const Text('Trimite un ticket'),
             ),
           ],
         ),
@@ -1128,82 +794,47 @@ class _SupportPageState extends State<SupportPage> {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    final messages =
-        List<dynamic>.from(
-      _ticket!['messages'] ?? [],
-    );
+    final messages = List<dynamic>.from(_ticket!['messages'] ?? []);
 
-    final status =
-        _ticket!['status']
-                ?.toString() ??
-            'open';
+    final status = _ticket!['status']?.toString() ?? 'open';
 
-    final isClosed =
-        status == 'closed';
+    final isClosed = status == 'closed';
 
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            controller:
-                _scrollController,
-            padding:
-                const EdgeInsets.all(16),
-            itemCount:
-                messages.length,
-            itemBuilder:
-                (context, index) {
-              final message =
-                  messages[index];
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
 
-              final isAdmin =
-                  _isAdminMessage(
-                message,
-              );
+              final isAdmin = _isAdminMessage(message);
 
-              final text =
-                  _messageText(
-                message,
-              );
+              final text = _messageText(message);
 
-              return _buildMessageBubble(
-                context,
-                text,
-                isAdmin,
-              );
+              return _buildMessageBubble(context, text, isAdmin);
             },
           ),
         ),
         if (!isClosed)
-          _buildMessageComposer(
-            context,
-            colorScheme,
-          )
+          _buildMessageComposer(context, colorScheme)
         else
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.all(16),
-            decoration:
-                BoxDecoration(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: colorScheme
-                      .outlineVariant,
-                ),
+                top: BorderSide(color: colorScheme.outlineVariant),
               ),
             ),
             child: Text(
               'Acest tichet a fost închis.',
-              textAlign:
-                  TextAlign.center,
-              style: theme
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(
-                    color: colorScheme
-                        .onSurfaceVariant,
-                  ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
       ],
@@ -1215,160 +846,94 @@ class _SupportPageState extends State<SupportPage> {
     String message,
     bool isAdmin,
   ) {
-    final theme =
-        Theme.of(context);
+    final theme = Theme.of(context);
 
-    final colorScheme =
-        theme.colorScheme;
+    final colorScheme = theme.colorScheme;
 
-    final alignment = isAdmin
-        ? Alignment.centerLeft
-        : Alignment.centerRight;
+    final alignment = isAdmin ? Alignment.centerLeft : Alignment.centerRight;
 
-    final backgroundColor =
-        isAdmin
-            ? colorScheme
-                .surfaceContainerHighest
-            : colorScheme.primary;
+    final backgroundColor = isAdmin
+        ? colorScheme.surfaceContainerHighest
+        : colorScheme.primary;
 
-    final textColor = isAdmin
-        ? colorScheme.onSurface
-        : colorScheme.onPrimary;
+    final textColor = isAdmin ? colorScheme.onSurface : colorScheme.onPrimary;
 
     return Align(
       alignment: alignment,
       child: Container(
-        constraints:
-            const BoxConstraints(
-          maxWidth: 330,
-        ),
-        margin:
-            const EdgeInsets.only(
-          bottom: 10,
-        ),
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 11,
-        ),
-        decoration:
-            BoxDecoration(
+        constraints: const BoxConstraints(maxWidth: 330),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius:
-              BorderRadius.circular(
-            16,
-          ),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           message,
-          style: theme
-              .textTheme
-              .bodyMedium
-              ?.copyWith(
-                color: textColor,
-                height: 1.4,
-              ),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: textColor,
+            height: 1.4,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMessageComposer(
-    BuildContext context,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildMessageComposer(BuildContext context, ColorScheme colorScheme) {
     return SafeArea(
       top: false,
       child: Container(
-        padding:
-            const EdgeInsets.fromLTRB(
-          12,
-          10,
-          12,
-          12,
-        ),
-        decoration:
-            BoxDecoration(
-          color:
-              colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: colorScheme
-                  .outlineVariant,
-            ),
-          ),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
         ),
         child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
               child: TextField(
-                controller:
-                    _messageController,
+                controller: _messageController,
                 minLines: 1,
                 maxLines: 5,
-                textInputAction:
-                    TextInputAction
-                        .newline,
+                textInputAction: TextInputAction.newline,
                 onSubmitted: (_) {
                   if (!_sending) {
                     _sendMessage();
                   }
                 },
-                decoration:
-                    InputDecoration(
-                  hintText:
-                      'Scrie un mesaj...',
+                decoration: InputDecoration(
+                  hintText: 'Scrie un mesaj...',
                   filled: true,
-                  fillColor: colorScheme
-                      .surfaceContainerHighest,
-                  border:
-                      OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(
-                      14,
-                    ),
-                    borderSide:
-                        BorderSide.none,
+                  fillColor: colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
                   ),
-                  contentPadding:
-                      const EdgeInsets
-                          .symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 12,
                   ),
                 ),
               ),
             ),
-            const SizedBox(
-              width: 8,
-            ),
+            const SizedBox(width: 8),
             IconButton(
-              onPressed: _sending
-                  ? null
-                  : _sendMessage,
-              style:
-                  IconButton.styleFrom(
-                backgroundColor:
-                    colorScheme.primary,
-                foregroundColor:
-                    colorScheme.onPrimary,
+              onPressed: _sending ? null : _sendMessage,
+              style: IconButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
               ),
               icon: _sending
                   ? SizedBox(
                       width: 20,
                       height: 20,
-                      child:
-                          CircularProgressIndicator(
+                      child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: colorScheme
-                            .onPrimary,
+                        color: colorScheme.onPrimary,
                       ),
                     )
-                  : const Icon(
-                      Icons.send_rounded,
-                    ),
+                  : const Icon(Icons.send_rounded),
             ),
           ],
         ),
@@ -1377,96 +942,85 @@ class _SupportPageState extends State<SupportPage> {
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    final theme =
-        Theme.of(context);
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
-    final colorScheme =
-        theme.colorScheme;
+    final colorScheme = theme.colorScheme;
+
+    final body = _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _showCreateForm
+        ? _buildCreateForm(context)
+        : _ticket == null
+        ? _tickets.isNotEmpty
+              ? _buildTicketList(context)
+              : _buildEmptyState(context)
+        : _buildChat(context, theme, colorScheme);
 
     return Scaffold(
-      backgroundColor:
-          colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          _ticket != null
-              ? 'Suport Nexora'
-              : 'Ajutor și suport',
-        ),
-        centerTitle: false,
-        backgroundColor:
-            colorScheme.surface,
-        foregroundColor:
-            colorScheme.onSurface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          if (_ticket == null &&
-              !_showCreateForm)
-            IconButton(
-              tooltip:
-                  'Trimite un ticket',
-              onPressed:
-                  _openCreateForm,
-              icon: const Icon(
-                Icons
-                    .add_comment_outlined,
+      backgroundColor: colorScheme.surface,
+      appBar: kIsWeb
+          ? null
+          : AppBar(
+              title: Text(
+                _ticket != null ? 'Suport Nexora' : 'Ajutor și suport',
               ),
+              centerTitle: false,
+              backgroundColor: colorScheme.surface,
+              foregroundColor: colorScheme.onSurface,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              actions: [
+                if (_ticket == null && !_showCreateForm)
+                  IconButton(
+                    tooltip: 'Trimite un ticket',
+                    onPressed: _openCreateForm,
+                    icon: const Icon(Icons.add_comment_outlined),
+                  ),
+                if (_ticket != null)
+                  IconButton(
+                    tooltip: 'Înapoi la ticketurile mele',
+                    onPressed: _showTicketList,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+              ],
             ),
-          if (_ticket != null)
-            IconButton(
-              tooltip:
-                  'Înapoi la ticketurile mele',
-              onPressed:
-                  _showTicketList,
-              icon: const Icon(
-                Icons
-                    .close_rounded,
-              ),
-            ),
-        ],
-      ),
-      body: _loading
-          ? const Center(
-              child:
-                  CircularProgressIndicator(),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: _ticket != null
+                  ? 'Conversație suport'
+                  : 'Ajutor și suport',
+              subtitle: 'Trimite solicitări și urmărește răspunsurile echipei',
+              maxWidth: 980,
+              actions: [
+                if (_ticket == null && !_showCreateForm)
+                  FilledButton.icon(
+                    onPressed: _openCreateForm,
+                    icon: const Icon(Icons.add_comment_outlined, size: 18),
+                    label: const Text('Ticket nou'),
+                  ),
+                if (_ticket != null)
+                  OutlinedButton.icon(
+                    onPressed: _showTicketList,
+                    icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                    label: const Text('Toate ticketurile'),
+                  ),
+              ],
+              child: body,
             )
-          : _showCreateForm
-              ? _buildCreateForm(
-                  context,
-                )
-              : _ticket == null
-                  ? _tickets.isNotEmpty
-                      ? _buildTicketList(
-                          context,
-                        )
-                      : _buildEmptyState(
-                          context,
-                        )
-                  : _buildChat(
-                      context,
-                      theme,
-                      colorScheme,
-                    ),
+          : body,
       floatingActionButton:
-          !_loading &&
-                  _ticket == null &&
-                  !_showCreateForm &&
-                  _tickets.isNotEmpty
-              ? FloatingActionButton.extended(
-                  onPressed:
-                      _openCreateForm,
-                  icon: const Icon(
-                    Icons
-                        .add_comment_outlined,
-                  ),
-                  label: const Text(
-                    'Ticket nou',
-                  ),
-                )
-              : null,
+          !kIsWeb &&
+              !_loading &&
+              _ticket == null &&
+              !_showCreateForm &&
+              _tickets.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: _openCreateForm,
+              icon: const Icon(Icons.add_comment_outlined),
+              label: const Text('Ticket nou'),
+            )
+          : null,
     );
   }
 }

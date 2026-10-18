@@ -39,12 +39,12 @@ class WebHeader extends StatelessWidget {
         bottom: false,
         child: ResponsiveContainer(
           child: SizedBox(
-            height: 80,
+            height: 64,
             child: Row(
               children: [
                 WebLogo(onTap: onHome),
 
-                const SizedBox(width: 40),
+                const SizedBox(width: 24),
 
                 Expanded(
                   child: WebSearchBar(
@@ -53,7 +53,7 @@ class WebHeader extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(width: 24),
+                const SizedBox(width: 16),
 
                 WebActions(
                   onFavorites: onFavorites,
@@ -62,7 +62,7 @@ class WebHeader extends StatelessWidget {
                   onSell: onSell,
                 ),
 
-                const SizedBox(width: 20),
+                const SizedBox(width: 12),
 
                 WebUserMenu(onNavigate: onUserNavigate),
               ],

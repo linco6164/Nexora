@@ -1,10 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
-import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -266,356 +266,371 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ? _usernameController.text.trim()
         : 'Utilizator';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editează profilul'),
-        actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _saveProfile,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text(
-                    'Salvează',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-          children: [
-            // AVATAR
-            Center(
-              child: Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(
-                    radius: 52,
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer,
-                    backgroundImage: _selectedAvatar != null
-                        ? MemoryImage(_selectedAvatarBytes!)
-                        : (_avatarUrl != null && _avatarUrl!.isNotEmpty
-                              ? NetworkImage(_avatarUrl!)
-                              : null),
-                    child:
-                        _selectedAvatar == null &&
-                            (_avatarUrl == null || _avatarUrl!.isEmpty)
-                        ? Text(
-                            username.isNotEmpty
-                                ? username[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                              fontSize: 38,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
-                  ),
-                  GestureDetector(
-                    onTap: _isUploadingAvatar ? null : _pickAvatar,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          width: 3,
-                        ),
+    final body = Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+        children: [
+          // AVATAR
+          Center(
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 52,
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primaryContainer,
+                  backgroundImage: _selectedAvatar != null
+                      ? MemoryImage(_selectedAvatarBytes!)
+                      : (_avatarUrl != null && _avatarUrl!.isNotEmpty
+                            ? NetworkImage(_avatarUrl!)
+                            : null),
+                  child:
+                      _selectedAvatar == null &&
+                          (_avatarUrl == null || _avatarUrl!.isEmpty)
+                      ? Text(
+                          username.isNotEmpty ? username[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            fontSize: 38,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
+                GestureDetector(
+                  onTap: _isUploadingAvatar ? null : _pickAvatar,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        width: 3,
                       ),
-                      child: _isUploadingAvatar
-                          ? const Padding(
-                              padding: EdgeInsets.all(7),
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.camera_alt,
-                              size: 17,
+                    ),
+                    child: _isUploadingAvatar
+                        ? const Padding(
+                            padding: EdgeInsets.all(7),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
                               color: Colors.white,
                             ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // DATE PERSONALE
-            const Text(
-              'DATE PERSONALE',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-                letterSpacing: 0.6,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _usernameController,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Nume utilizator',
-                icon: Icons.person_outline,
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Introdu numele de utilizator';
-                }
-
-                if (value.trim().length < 3) {
-                  return 'Minim 3 caractere';
-                }
-
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _fullNameController,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Nume complet',
-                icon: Icons.badge_outlined,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _emailController,
-              readOnly: _emailLocked,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              decoration:
-                  _decoration(
-                    label: 'Email',
-                    icon: Icons.email_outlined,
-                  ).copyWith(
-                    suffixIcon: _emailLocked
-                        ? const Icon(Icons.lock_outline)
-                        : null,
-                    filled: _emailLocked,
-                    fillColor: _emailLocked
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                        : null,
-                  ),
-            ),
-
-            if (_emailLocked) ...[
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  'Pentru schimbarea emailului accesează Securitate → Email.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 14),
-
-            // TELEFON
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-
-              // După prima adăugare devine blocat.
-              readOnly: _phoneLocked,
-
-              decoration:
-                  _decoration(
-                    label: 'Telefon',
-                    icon: Icons.phone_outlined,
-                  ).copyWith(
-                    suffixIcon: _phoneLocked
-                        ? const Icon(Icons.lock_outline)
-                        : null,
-                    filled: _phoneLocked,
-                    fillColor: _phoneLocked
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
-                        : null,
-                  ),
-            ),
-
-            if (_phoneLocked) ...[
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  'Pentru schimbarea numărului accesează Securitate → Număr de telefon.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _bioController,
-              maxLines: 4,
-              maxLength: 300,
-              decoration: _decoration(
-                label: 'Descriere',
-                icon: Icons.description_outlined,
-                hint: 'Spune ceva despre tine',
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // LOCAȚIE
-            const Text(
-              'LOCAȚIE',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-                letterSpacing: 0.6,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _countryController,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Țară',
-                icon: Icons.public_outlined,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _countyController,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(label: 'Județ', icon: Icons.map_outlined),
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _cityController,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Oraș',
-                icon: Icons.location_city_outlined,
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _postalCodeController,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Cod poștal',
-                icon: Icons.markunread_mailbox_outlined,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // SOCIAL
-            const Text(
-              'LINKURI',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-                letterSpacing: 0.6,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _instagramController,
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Instagram',
-                icon: Icons.camera_alt_outlined,
-                hint: 'https://instagram.com/...',
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _facebookController,
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.next,
-              decoration: _decoration(
-                label: 'Facebook',
-                icon: Icons.facebook_outlined,
-                hint: 'https://facebook.com/...',
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _websiteController,
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.done,
-              decoration: _decoration(
-                label: 'Website',
-                icon: Icons.language_outlined,
-                hint: 'https://...',
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                onPressed: _isSaving ? null : _saveProfile,
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                          )
+                        : const Icon(
+                            Icons.camera_alt,
+                            size: 17,
+                            color: Colors.white,
+                          ),
                   ),
                 ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
-                        'Salvează modificările',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // DATE PERSONALE
+          const Text(
+            'DATE PERSONALE',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+              letterSpacing: 0.6,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          TextFormField(
+            controller: _usernameController,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(
+              label: 'Nume utilizator',
+              icon: Icons.person_outline,
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Introdu numele de utilizator';
+              }
+
+              if (value.trim().length < 3) {
+                return 'Minim 3 caractere';
+              }
+
+              return null;
+            },
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _fullNameController,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(
+              label: 'Nume complet',
+              icon: Icons.badge_outlined,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _emailController,
+            readOnly: _emailLocked,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(label: 'Email', icon: Icons.email_outlined)
+                .copyWith(
+                  suffixIcon: _emailLocked
+                      ? const Icon(Icons.lock_outline)
+                      : null,
+                  filled: _emailLocked,
+                  fillColor: _emailLocked
+                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                      : null,
+                ),
+          ),
+
+          if (_emailLocked) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                'Pentru schimbarea emailului accesează Securitate → Email.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ),
           ],
-        ),
+
+          const SizedBox(height: 14),
+
+          // TELEFON
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.next,
+
+            // După prima adăugare devine blocat.
+            readOnly: _phoneLocked,
+
+            decoration:
+                _decoration(
+                  label: 'Telefon',
+                  icon: Icons.phone_outlined,
+                ).copyWith(
+                  suffixIcon: _phoneLocked
+                      ? const Icon(Icons.lock_outline)
+                      : null,
+                  filled: _phoneLocked,
+                  fillColor: _phoneLocked
+                      ? Theme.of(context).colorScheme.surfaceContainerHighest
+                      : null,
+                ),
+          ),
+
+          if (_phoneLocked) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                'Pentru schimbarea numărului accesează Securitate → Număr de telefon.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _bioController,
+            maxLines: 4,
+            maxLength: 300,
+            decoration: _decoration(
+              label: 'Descriere',
+              icon: Icons.description_outlined,
+              hint: 'Spune ceva despre tine',
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // LOCAȚIE
+          const Text(
+            'LOCAȚIE',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+              letterSpacing: 0.6,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          TextFormField(
+            controller: _countryController,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(label: 'Țară', icon: Icons.public_outlined),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _countyController,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(label: 'Județ', icon: Icons.map_outlined),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _cityController,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(
+              label: 'Oraș',
+              icon: Icons.location_city_outlined,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _postalCodeController,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(
+              label: 'Cod poștal',
+              icon: Icons.markunread_mailbox_outlined,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // SOCIAL
+          const Text(
+            'LINKURI',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+              letterSpacing: 0.6,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          TextFormField(
+            controller: _instagramController,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(
+              label: 'Instagram',
+              icon: Icons.camera_alt_outlined,
+              hint: 'https://instagram.com/...',
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _facebookController,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration(
+              label: 'Facebook',
+              icon: Icons.facebook_outlined,
+              hint: 'https://facebook.com/...',
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextFormField(
+            controller: _websiteController,
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.done,
+            decoration: _decoration(
+              label: 'Website',
+              icon: Icons.language_outlined,
+              hint: 'https://...',
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          SizedBox(
+            height: 52,
+            child: FilledButton(
+              onPressed: _isSaving ? null : _saveProfile,
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Salvează modificările',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+            ),
+          ),
+        ],
       ),
+    );
+
+    return Scaffold(
+      appBar: kIsWeb
+          ? null
+          : AppBar(
+              title: const Text('Editează profilul'),
+              actions: [
+                TextButton(
+                  onPressed: _isSaving ? null : _saveProfile,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Salvează',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                ),
+              ],
+            ),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Editează profilul',
+              subtitle: 'Actualizează informațiile vizibile în marketplace',
+              maxWidth: 820,
+              actions: [
+                FilledButton(
+                  onPressed: _isSaving ? null : _saveProfile,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Salvează'),
+                ),
+              ],
+              child: body,
+            )
+          : body,
     );
   }
 }

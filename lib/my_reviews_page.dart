@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class MyReviewsPage extends StatefulWidget {
   const MyReviewsPage({super.key});
@@ -52,9 +54,24 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _buildBody();
     return Scaffold(
-      appBar: AppBar(title: const Text('Evaluările mele')),
-      body: _buildBody(),
+      appBar: kIsWeb ? null : AppBar(title: const Text('Evaluările mele')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Recenziile mele',
+              subtitle: '${_reviews.length} evaluări primite',
+              maxWidth: 880,
+              actions: [
+                IconButton(
+                  onPressed: _loading ? null : _loadReviews,
+                  tooltip: 'Reîncarcă',
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+              child: body,
+            )
+          : body,
     );
   }
 

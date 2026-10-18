@@ -4,8 +4,10 @@ import 'welcome_page.dart';
 import 'socket_service.dart';
 import 'api_service.dart';
 
-final GlobalKey<NavigatorState> navigatorKey =
-    GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 Future<void> handleGlobalSessionExpired() async {
   SocketService.disconnect();
@@ -17,9 +19,7 @@ Future<void> handleGlobalSessionExpired() async {
   if (navigator == null) return;
 
   navigator.pushAndRemoveUntil(
-    MaterialPageRoute(
-      builder: (_) => const WelcomePage(),
-    ),
+    MaterialPageRoute(builder: (_) => const WelcomePage()),
     (route) => false,
   );
 }

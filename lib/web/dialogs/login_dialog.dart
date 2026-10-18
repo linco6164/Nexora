@@ -8,12 +8,12 @@ class LoginDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: const SizedBox(
-        width: 560,
-        height: 720,
+        width: 480,
+        height: 660,
         child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(24)),
+          borderRadius: BorderRadius.all(Radius.circular(18)),
           child: LoginPage(),
         ),
       ),

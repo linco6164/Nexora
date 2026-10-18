@@ -15,7 +15,7 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Row(
         children: [
           Expanded(
@@ -24,24 +24,26 @@ class SectionTitle extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.3,
+                  ),
                 ),
                 if (subtitle != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       subtitle!,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
               ],
             ),
           ),
           if (onSeeAll != null)
-            TextButton(
-              onPressed: onSeeAll,
-              child: const Text("See all"),
-            )
+            TextButton(onPressed: onSeeAll, child: const Text("Vezi toate")),
         ],
       ),
     );

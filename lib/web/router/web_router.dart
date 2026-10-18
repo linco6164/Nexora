@@ -7,22 +7,14 @@ class WebRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case "/":
-        return MaterialPageRoute(
-          builder: (_) => const WebHome(),
-        );
+        return MaterialPageRoute(builder: (_) => const WebHome());
 
       case "/explore":
-        return MaterialPageRoute(
-          builder: (_) => const WebExplore(),
-        );
+        return MaterialPageRoute(builder: (_) => const WebExplore());
 
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(
-              child: Text("404"),
-            ),
-          ),
+          builder: (_) => const Scaffold(body: Center(child: Text("404"))),
         );
     }
   }

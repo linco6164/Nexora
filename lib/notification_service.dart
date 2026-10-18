@@ -6,11 +6,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 
+import 'app_feedback.dart';
 import 'app_navigator.dart';
 
 import 'api_service.dart';
 import 'chat_page.dart';
 import 'account_banned_page.dart';
+import 'invite_friend_page.dart';
+import 'order_page.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -38,6 +41,12 @@ class NotificationService {
   StreamSubscription<RemoteMessage>? _openedAppSubscription;
 
   StreamSubscription<String>? _tokenRefreshSubscription;
+
+  String? _registrationId;
+
+  Completer<String?>? _registrationCompleter;
+
+  String? _pendingOrderId;
 
   static const int _shorebirdNotificationId = 9001;
 
@@ -99,23 +108,29 @@ class NotificationService {
       '${settings.authorizationStatus}',
     );
 
-    final token = await _messaging.getToken();
-
-    debugPrint('FCM TOKEN: $token');
-
-    if (token != null) {
-      await registerTokenWithBackend(token);
-    }
-
     _tokenRefreshSubscription?.cancel();
 
-    _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((
-      newToken,
+    _registrationCompleter ??= Completer<String?>();
+    _tokenRefreshSubscription = _messaging.onRegistered.listen((
+      registrationId,
     ) async {
-      debugPrint('FCM TOKEN REFRESHED: $newToken');
+      _registrationId = registrationId;
+      final completer = _registrationCompleter;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete(registrationId);
+      }
 
-      await registerTokenWithBackend(newToken);
+      debugPrint('FCM REGISTERED: $registrationId');
+
+      await registerTokenWithBackend(registrationId);
     });
+
+    try {
+      await _messaging.register();
+    } catch (error, stackTrace) {
+      debugPrint('FCM: înregistrarea dispozitivului a eșuat: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
 
     _foregroundSubscription?.cancel();
 
@@ -193,7 +208,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: _onLocalNotificationTap,
     );
 
@@ -306,10 +321,10 @@ class NotificationService {
     const notificationDetails = NotificationDetails(android: androidDetails);
 
     await _localNotifications.show(
-      _shorebirdNotificationId,
-      'Actualizare Nexora disponibilă',
-      'O versiune nouă a aplicației este disponibilă.',
-      notificationDetails,
+      id: _shorebirdNotificationId,
+      title: 'Actualizare Nexora disponibilă',
+      body: 'O versiune nouă a aplicației este disponibilă.',
+      notificationDetails: notificationDetails,
       payload: 'shorebird_update',
     );
   }
@@ -330,10 +345,10 @@ class NotificationService {
     const notificationDetails = NotificationDetails(android: androidDetails);
 
     await _localNotifications.show(
-      _shorebirdRestartNotificationId,
-      'Nexora a fost actualizată',
-      'Actualizarea este pregătită. Repornește aplicația pentru a o aplica.',
-      notificationDetails,
+      id: _shorebirdRestartNotificationId,
+      title: 'Nexora a fost actualizată',
+      body: 'Actualizarea este pregătită. Repornește aplicația pentru a o aplica.',
+      notificationDetails: notificationDetails,
       payload: 'shorebird_restart',
     );
   }
@@ -362,9 +377,37 @@ class NotificationService {
 
     debugPrint('FCM VIBRATION: $vibration');
 
+    final route = message.data['route']?.toString();
+
+    final orderId = message.data['orderId']?.toString();
+
+    final canOpenOrder =
+        route == 'order_details' && orderId != null && orderId.isNotEmpty;
+    final canOpenReferral = route == 'referrals';
+    final canOpenConversation =
+        type == 'message' &&
+        conversationId != null &&
+        conversationId.isNotEmpty;
+
+    final shownInApp = AppFeedback.notification(
+      title: title,
+      message: body,
+      onAction: canOpenOrder || canOpenReferral || canOpenConversation
+          ? () => _handleNotificationTap(message)
+          : null,
+    );
+
+    if (shownInApp) return;
+
     String? payload;
 
-    if (type == 'message' && conversationId != null) {
+    if (route == 'order_details' && orderId != null && orderId.isNotEmpty) {
+      payload = 'order_details|$orderId';
+    } else if (route == 'referrals') {
+      payload = 'referrals|open';
+    } else if (type == 'message' &&
+        conversationId != null &&
+        conversationId.isNotEmpty) {
       payload = 'message|$conversationId';
     }
 
@@ -373,10 +416,10 @@ class NotificationService {
         : _silentNotificationChannel;
 
     await _localNotifications.show(
-      notification.hashCode,
-      title,
-      body,
-      NotificationDetails(
+      id: notification.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channel.id,
           channel.name,
@@ -424,7 +467,7 @@ class NotificationService {
         return;
       }
 
-      final token = await _messaging.getToken();
+      final token = await getToken();
 
       if (token == null || token.isEmpty) {
         debugPrint('FCM: token indisponibil.');
@@ -467,17 +510,43 @@ class NotificationService {
 
     final type = parts[0];
 
-    final conversationId = parts[1];
+    final targetId = parts[1].trim();
 
-    if (type != 'message') {
+    if (targetId.isEmpty) {
       return;
     }
 
-    _openConversation(conversationId);
+    if (type == 'order_details') {
+      _openOrderDetails(targetId);
+      return;
+    }
+
+    if (type == 'message') {
+      _openConversation(targetId);
+      return;
+    }
+
+    if (type == 'referrals') {
+      _openReferrals();
+    }
   }
 
   void _handleNotificationTap(RemoteMessage message) {
     final data = message.data;
+
+    final route = data['route']?.toString();
+
+    final orderId = data['orderId']?.toString();
+
+    if (route == 'order_details' && orderId != null && orderId.isNotEmpty) {
+      _openOrderDetails(orderId);
+      return;
+    }
+
+    if (route == 'referrals') {
+      _openReferrals();
+      return;
+    }
 
     final type = data['type']?.toString();
 
@@ -492,6 +561,55 @@ class NotificationService {
     }
 
     _openConversation(conversationId);
+  }
+
+  void _openReferrals() {
+    final navigator = navigatorKey.currentState;
+
+    if (navigator == null) {
+      debugPrint('FCM: navigator indisponibil pentru invitații.');
+      return;
+    }
+
+    navigator.push(MaterialPageRoute(builder: (_) => const InviteFriendPage()));
+  }
+
+  void _openOrderDetails(String orderId) {
+    final cleanOrderId = orderId.trim();
+
+    if (cleanOrderId.isEmpty) {
+      return;
+    }
+
+    final navigator = navigatorKey.currentState;
+
+    if (navigator == null) {
+      debugPrint(
+        'FCM: navigator indisponibil, păstrez comanda pentru deschidere.',
+      );
+
+      _pendingOrderId = cleanOrderId;
+
+      return;
+    }
+
+    _pendingOrderId = null;
+
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) => OrderDetailsPage(orderId: cleanOrderId),
+      ),
+    );
+  }
+
+  void processPendingNavigation() {
+    final orderId = _pendingOrderId;
+
+    if (orderId == null || orderId.isEmpty) {
+      return;
+    }
+
+    _openOrderDetails(orderId);
   }
 
   Future<void> _openConversation(String conversationId) async {
@@ -531,6 +649,7 @@ class NotificationService {
             conversationId: conversation.id,
             otherUsername: otherParticipant.username,
             myUserId: myUserId,
+            listing: conversation.listing,
           ),
         ),
       );
@@ -540,7 +659,20 @@ class NotificationService {
   }
 
   Future<String?> getToken() async {
-    return _messaging.getToken();
+    if (kIsWeb) return null;
+
+    final currentRegistrationId = _registrationId;
+    if (currentRegistrationId != null && currentRegistrationId.isNotEmpty) {
+      return currentRegistrationId;
+    }
+
+    final completer = _registrationCompleter ??= Completer<String?>();
+    await _messaging.register();
+
+    return completer.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => null,
+    );
   }
 
   Future<NotificationSettings> getPermissionStatus() async {
@@ -548,7 +680,9 @@ class NotificationService {
   }
 
   Future<void> deleteToken() async {
-    await _messaging.deleteToken();
+    await _messaging.unregister();
+    _registrationId = null;
+    _registrationCompleter = Completer<String?>();
   }
 
   void dispose() {

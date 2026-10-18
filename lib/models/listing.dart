@@ -29,6 +29,8 @@ class Listing {
   final String title;
   final String description;
   final String category;
+  final String? subcategory;
+  final String? categoryDetail;
   final String condition;
   final double price;
   final String currency;
@@ -38,6 +40,7 @@ class Listing {
   final String? brand;
   final String? color;
   final String? size;
+  final String? material;
   final bool shipping;
   final int favorites;
   final int views;
@@ -49,6 +52,8 @@ class Listing {
     required this.title,
     required this.description,
     required this.category,
+    this.subcategory,
+    this.categoryDetail,
     required this.condition,
     required this.price,
     required this.currency,
@@ -58,6 +63,7 @@ class Listing {
     this.brand,
     this.color,
     this.size,
+    this.material,
     required this.shipping,
     required this.favorites,
     required this.views,
@@ -71,6 +77,8 @@ class Listing {
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       category: json['category'] ?? '',
+      subcategory: json['subcategory']?.toString(),
+      categoryDetail: json['categoryDetail']?.toString(),
       condition: json['condition'] ?? '',
       price: (json['price'] ?? 0).toDouble(),
       currency: json['currency'] ?? 'RON',
@@ -80,6 +88,7 @@ class Listing {
       brand: json['brand'],
       color: json['color'],
       size: json['size'],
+      material: json['material']?.toString(),
       shipping: json['shipping'] ?? true,
       favorites: json['favorites'] ?? 0,
       views: json['views'] ?? 0,
@@ -92,11 +101,16 @@ class Listing {
 
   String get conditionLabel {
     switch (condition) {
-      case 'new': return 'Nou';
-      case 'like_new': return 'Ca nou';
-      case 'good': return 'Bună';
-      case 'fair': return 'Acceptabilă';
-      default: return condition;
+      case 'new':
+        return 'Nou';
+      case 'like_new':
+        return 'Ca nou';
+      case 'good':
+        return 'Bună';
+      case 'fair':
+        return 'Acceptabilă';
+      default:
+        return condition;
     }
   }
 }

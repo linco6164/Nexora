@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/listing.dart';
 import '../../api_service.dart';
+import '../../l10n/app_locale.dart';
 import '../../shared/widgets/product_grid.dart';
 import '../../shared/widgets/responsive_container.dart';
 import '../../shared/widgets/section_title.dart';
@@ -32,7 +33,7 @@ class _NewProductsState extends State<NewProducts> {
       if (!mounted) return;
 
       setState(() {
-        _products = products;
+        _products = products.reversed.toList();
         _loading = false;
       });
     } catch (e) {
@@ -58,11 +59,13 @@ class _NewProductsState extends State<NewProducts> {
     return ResponsiveContainer(
       child: Column(
         children: [
-          const SectionTitle(
-            title: "Produse noi",
-            subtitle: "Anunțuri adăugate recent",
+          SectionTitle(
+            title: context.tr('Produse noi'),
+            subtitle: appLocaleController.value == 'en'
+                ? 'Recently added listings'
+                : 'Anunțuri adăugate recent',
           ),
-          ProductGrid(products: _products),
+          ProductGrid(products: _products.take(10).toList()),
         ],
       ),
     );

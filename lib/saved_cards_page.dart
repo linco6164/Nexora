@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api_service.dart';
+import 'app_feedback.dart';
 
 class SavedCardsPage extends StatefulWidget {
   final bool embedded;
@@ -85,7 +86,7 @@ class _SavedCardsPageState extends State<SavedCardsPage>
       });
 
       if (_cards.isNotEmpty) {
-        _showMessage(message);
+        _showMessage(message, type: AppFeedbackType.error);
       }
     }
   }
@@ -95,7 +96,9 @@ class _SavedCardsPageState extends State<SavedCardsPage>
       await ApiService.setDefaultSavedCard(cardId);
       await _loadCards(showLoader: false);
     } catch (error) {
-      if (mounted) _showMessage(_cleanError(error));
+      if (mounted) {
+        _showMessage(_cleanError(error), type: AppFeedbackType.error);
+      }
     }
   }
 
@@ -141,7 +144,9 @@ class _SavedCardsPageState extends State<SavedCardsPage>
       await ApiService.deleteSavedCard(card['_id'].toString());
       await _loadCards(showLoader: false);
     } catch (error) {
-      if (mounted) _showMessage(_cleanError(error));
+      if (mounted) {
+        _showMessage(_cleanError(error), type: AppFeedbackType.error);
+      }
     }
   }
 
@@ -149,12 +154,11 @@ class _SavedCardsPageState extends State<SavedCardsPage>
     return error.toString().replaceFirst('ApiException: ', '');
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-      );
+  void _showMessage(
+    String message, {
+    AppFeedbackType type = AppFeedbackType.info,
+  }) {
+    AppFeedback.show(context: context, message: message, type: type);
   }
 
   Future<void> _pollEnrollment(String setupId) async {
@@ -185,7 +189,10 @@ class _SavedCardsPageState extends State<SavedCardsPage>
           await _loadCards(showLoader: false);
 
           if (mounted) {
-            _showMessage('Cardul a fost adăugat cu succes.');
+            _showMessage(
+              'Cardul a fost adăugat cu succes.',
+              type: AppFeedbackType.success,
+            );
           }
           return;
         }
@@ -196,6 +203,7 @@ class _SavedCardsPageState extends State<SavedCardsPage>
           _showMessage(
             result['errorMessage']?.toString() ??
                 'Cardul nu a putut fi adăugat.',
+            type: AppFeedbackType.error,
           );
           return;
         }
@@ -210,6 +218,7 @@ class _SavedCardsPageState extends State<SavedCardsPage>
     setState(() => _awaitingEnrollment = false);
     _showMessage(
       lastError ?? 'Confirmarea NETOPIA durează mai mult. Folosește butonul Actualizează.',
+      type: AppFeedbackType.warning,
     );
   }
 
@@ -241,36 +250,23 @@ class _SavedCardsPageState extends State<SavedCardsPage>
 
         unawaited(_pollEnrollment(session.setupId));
 
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Finalizează adăugarea la NETOPIA, apoi revino aici.',
-              ),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 12),
-              action: SnackBarAction(
-                label: 'Actualizează',
-                onPressed: () {
-                  _awaitingEnrollment = false;
-                  _loadCards(showLoader: false);
-                },
-              ),
-            ),
-          );
+        AppFeedback.show(
+          context: context,
+          title: 'Confirmă în NETOPIA',
+          message: 'Finalizează adăugarea, apoi revino aici.',
+          type: AppFeedbackType.info,
+          duration: const Duration(seconds: 12),
+          actionLabel: 'Actualizează',
+          onAction: () {
+            _awaitingEnrollment = false;
+            _loadCards(showLoader: false);
+          },
+        );
       } catch (error) {
         if (!mounted || !promptContext.mounted) return;
 
         setPromptState(() => _promptIsBusy = false);
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(_cleanError(error)),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+        _showMessage(_cleanError(error), type: AppFeedbackType.error);
       }
     }
 
@@ -344,7 +340,7 @@ class _SavedCardsPageState extends State<SavedCardsPage>
         top: !widget.embedded,
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
+            constraints: BoxConstraints(maxWidth: widget.embedded ? 760 : 820),
             child: _buildBody(),
           ),
         ),
@@ -366,9 +362,9 @@ class _SavedCardsPageState extends State<SavedCardsPage>
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          widget.embedded ? 28 : 16,
-          widget.embedded ? 36 : 8,
-          widget.embedded ? 28 : 16,
+          widget.embedded ? 24 : 16,
+          widget.embedded ? 24 : 8,
+          widget.embedded ? 24 : 16,
           36,
         ),
         children: [
@@ -414,7 +410,7 @@ class _SavedCardsPageState extends State<SavedCardsPage>
               Text(
                 '${_cards.length} ${_cards.length == 1 ? 'card salvat' : 'carduri salvate'}',
                 style: const TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.6,
                 ),

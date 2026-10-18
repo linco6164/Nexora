@@ -23,15 +23,26 @@ class BrandsSection extends StatelessWidget {
       child: Column(
         children: [
           const SectionTitle(
-            title: "Popular Brands",
+            title: "Branduri populare",
+            subtitle: "Descoperă rapid produsele brandurilor cunoscute",
           ),
           Wrap(
-            spacing: 20,
-            runSpacing: 20,
+            spacing: 10,
+            runSpacing: 10,
             children: brands
                 .map(
                   (brand) => Chip(
-                    label: Text(brand),
+                    avatar: CircleAvatar(
+                      radius: 11,
+                      child: Text(
+                        brand.substring(0, 1),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                    label: Text(
+                      brand,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 )
                 .toList(),

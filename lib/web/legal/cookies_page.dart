@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'web_legal_page.dart';
 
 class CookiesPage extends StatelessWidget {

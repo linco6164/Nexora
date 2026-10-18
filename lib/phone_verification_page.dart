@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import '../api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class PhoneVerificationPage extends StatefulWidget {
   const PhoneVerificationPage({
@@ -12,12 +15,10 @@ class PhoneVerificationPage extends StatefulWidget {
   final bool phoneVerified;
 
   @override
-  State<PhoneVerificationPage> createState() =>
-      _PhoneVerificationPageState();
+  State<PhoneVerificationPage> createState() => _PhoneVerificationPageState();
 }
 
-class _PhoneVerificationPageState
-    extends State<PhoneVerificationPage> {
+class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
   late bool _phoneVerified;
   late String? _phone;
 
@@ -72,8 +73,7 @@ class _PhoneVerificationPageState
 
       setState(() {
         _codeSent = true;
-        _success =
-            'Codul de verificare a fost trimis prin SMS.';
+        _success = 'Codul de verificare a fost trimis prin SMS.';
       });
     } catch (e) {
       if (!mounted) return;
@@ -115,8 +115,7 @@ class _PhoneVerificationPageState
         _phoneVerified = true;
         _codeSent = false;
         _codeController.clear();
-        _success =
-            'Numărul de telefon a fost verificat cu succes.';
+        _success = 'Numărul de telefon a fost verificat cu succes.';
       });
     } catch (e) {
       if (!mounted) return;
@@ -167,8 +166,7 @@ class _PhoneVerificationPageState
 
       setState(() {
         _codeSent = true;
-        _success =
-            'Codul pentru schimbarea numărului a fost trimis prin SMS.';
+        _success = 'Codul pentru schimbarea numărului a fost trimis prin SMS.';
         _passwordController.clear();
       });
     } catch (e) {
@@ -203,9 +201,7 @@ class _PhoneVerificationPageState
     });
 
     try {
-      await ApiService.confirmPhoneChange(
-        code: code,
-      );
+      await ApiService.confirmPhoneChange(code: code);
 
       if (!mounted) return;
 
@@ -217,8 +213,7 @@ class _PhoneVerificationPageState
 
         _codeController.clear();
 
-        _success =
-            'Numărul de telefon a fost schimbat și verificat.';
+        _success = 'Numărul de telefon a fost schimbat și verificat.';
       });
     } catch (e) {
       if (!mounted) return;
@@ -273,47 +268,46 @@ class _PhoneVerificationPageState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Telefon'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(theme),
-              const SizedBox(height: 24),
+    final body = SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildHeader(theme),
+            const SizedBox(height: 24),
 
-              if (_error != null) ...[
-                _buildMessage(
-                  _error!,
-                  isError: true,
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              if (_success != null) ...[
-                _buildMessage(
-                  _success!,
-                  isError: false,
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              if (!_phoneVerified && !_changingPhone)
-                _buildVerificationSection(theme),
-
-              if (_phoneVerified && !_changingPhone)
-                _buildVerifiedSection(theme),
-
-              if (_changingPhone)
-                _buildChangeSection(theme),
+            if (_error != null) ...[
+              _buildMessage(_error!, isError: true),
+              const SizedBox(height: 16),
             ],
-          ),
+
+            if (_success != null) ...[
+              _buildMessage(_success!, isError: false),
+              const SizedBox(height: 16),
+            ],
+
+            if (!_phoneVerified && !_changingPhone)
+              _buildVerificationSection(theme),
+
+            if (_phoneVerified && !_changingPhone) _buildVerifiedSection(theme),
+
+            if (_changingPhone) _buildChangeSection(theme),
+          ],
         ),
       ),
+    );
+
+    return Scaffold(
+      appBar: kIsWeb ? null : AppBar(title: const Text('Telefon')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Verificare telefon',
+              subtitle: 'Confirmă numărul folosit pentru securitatea contului',
+              maxWidth: 720,
+              child: body,
+            )
+          : body,
     );
   }
 
@@ -389,47 +383,32 @@ class _PhoneVerificationPageState
 
         if (!_codeSent)
           FilledButton.icon(
-            onPressed:
-                _sending ? null : _sendVerificationCode,
+            onPressed: _sending ? null : _sendVerificationCode,
             icon: _sending
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.sms_outlined),
-            label: Text(
-              _sending
-                  ? 'Se trimite...'
-                  : 'Trimite codul',
-            ),
+            label: Text(_sending ? 'Se trimite...' : 'Trimite codul'),
           ),
 
         if (_codeSent) ...[
           FilledButton.icon(
-            onPressed:
-                _loading ? null : _verifyPhone,
+            onPressed: _loading ? null : _verifyPhone,
             icon: _loading
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.verified_outlined),
-            label: Text(
-              _loading
-                  ? 'Se verifică...'
-                  : 'Verifică telefonul',
-            ),
+            label: Text(_loading ? 'Se verifică...' : 'Verifică telefonul'),
           ),
           const SizedBox(height: 10),
           OutlinedButton(
-            onPressed:
-                _sending ? null : _sendVerificationCode,
+            onPressed: _sending ? null : _sendVerificationCode,
             child: const Text('Trimite din nou codul'),
           ),
         ],
@@ -444,8 +423,7 @@ class _PhoneVerificationPageState
         _buildInfoCard(
           icon: Icons.verified,
           title: 'Telefon verificat',
-          text:
-              'Numărul tău de telefon este verificat și asociat contului.',
+          text: 'Numărul tău de telefon este verificat și asociat contului.',
         ),
 
         const SizedBox(height: 24),
@@ -466,8 +444,7 @@ class _PhoneVerificationPageState
         _buildInfoCard(
           icon: Icons.edit_outlined,
           title: 'Modifică numărul',
-          text:
-              'Introdu noul număr și parola actuală. Vom trimite un cod SMS către noul număr.',
+          text: 'Introdu noul număr și parola actuală. Vom trimite un cod SMS către noul număr.',
         ),
 
         const SizedBox(height: 24),
@@ -501,22 +478,15 @@ class _PhoneVerificationPageState
           const SizedBox(height: 16),
 
           FilledButton.icon(
-            onPressed:
-                _sending ? null : _requestPhoneChange,
+            onPressed: _sending ? null : _requestPhoneChange,
             icon: _sending
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.sms_outlined),
-            label: Text(
-              _sending
-                  ? 'Se trimite...'
-                  : 'Trimite codul',
-            ),
+            label: Text(_sending ? 'Se trimite...' : 'Trimite codul'),
           ),
         ],
 
@@ -537,32 +507,22 @@ class _PhoneVerificationPageState
           const SizedBox(height: 8),
 
           FilledButton.icon(
-            onPressed:
-                _loading ? null : _confirmPhoneChange,
+            onPressed: _loading ? null : _confirmPhoneChange,
             icon: _loading
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check_circle_outline),
-            label: Text(
-              _loading
-                  ? 'Se confirmă...'
-                  : 'Confirmă schimbarea',
-            ),
+            label: Text(_loading ? 'Se confirmă...' : 'Confirmă schimbarea'),
           ),
         ],
 
         const SizedBox(height: 10),
 
         OutlinedButton(
-          onPressed:
-              _sending || _loading
-                  ? null
-                  : _cancelPhoneChange,
+          onPressed: _sending || _loading ? null : _cancelPhoneChange,
           child: const Text('Anulează'),
         ),
       ],
@@ -573,8 +533,7 @@ class _PhoneVerificationPageState
     return _buildInfoCard(
       icon: Icons.phone_disabled_outlined,
       title: 'Număr de telefon lipsă',
-      text:
-          'Adaugă mai întâi un număr de telefon în profilul tău.',
+      text: 'Adaugă mai întâi un număr de telefon în profilul tău.',
     );
   }
 
@@ -594,29 +553,20 @@ class _PhoneVerificationPageState
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: theme.colorScheme.primary,
-          ),
+          Icon(icon, color: theme.colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 5),
                 Text(
                   text,
-                  style: TextStyle(
-                    color:
-                        theme.colorScheme.onSurfaceVariant,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -626,10 +576,7 @@ class _PhoneVerificationPageState
     );
   }
 
-  Widget _buildMessage(
-    String message, {
-    required bool isError,
-  }) {
+  Widget _buildMessage(String message, {required bool isError}) {
     final theme = Theme.of(context);
 
     return Container(
@@ -644,9 +591,7 @@ class _PhoneVerificationPageState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            isError
-                ? Icons.error_outline
-                : Icons.check_circle_outline,
+            isError ? Icons.error_outline : Icons.check_circle_outline,
             color: isError
                 ? theme.colorScheme.onErrorContainer
                 : theme.colorScheme.onPrimaryContainer,

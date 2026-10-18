@@ -23,8 +23,18 @@ subprojects {
     plugins.withId("com.android.library") {
         extensions.configure<com.android.build.gradle.LibraryExtension> {
             compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
+                // pay_android 3.2.0 fixează încă jvmTarget Kotlin la 1.8.
+                // Păstrăm Java la aceeași țintă doar pentru acest plugin;
+                // aplicația și restul modulelor continuă să folosească JVM 17.
+                val javaTarget =
+                    if (project.name == "pay_android") {
+                        JavaVersion.VERSION_1_8
+                    } else {
+                        JavaVersion.VERSION_17
+                    }
+
+                sourceCompatibility = javaTarget
+                targetCompatibility = javaTarget
             }
         }
     }

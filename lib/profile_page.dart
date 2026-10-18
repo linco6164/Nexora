@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -14,10 +15,12 @@ import 'addresses_page.dart';
 import 'security_page.dart';
 import 'my_listings_page.dart';
 import 'my_reviews_page.dart';
-import 'order_page.dart';
+import 'selling_orders_page.dart';
 import 'promotion_page.dart';
 import 'api_service.dart';
 import 'saved_cards_page.dart';
+import 'invite_friend_page.dart';
+import 'legal/legal_center_page.dart';
 import 'providers/auth_provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -245,14 +248,24 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     if (_isLoadingUser) {
       return Scaffold(
-        appBar: widget.embedded ? null : AppBar(title: const Text('Profil')),
+        appBar: widget.embedded
+            ? null
+            : AppBar(
+                automaticallyImplyLeading: false,
+                title: const Text('Profil'),
+              ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_loadError != null || _user == null) {
       return Scaffold(
-        appBar: widget.embedded ? null : AppBar(title: const Text('Profil')),
+        appBar: widget.embedded
+            ? null
+            : AppBar(
+                automaticallyImplyLeading: false,
+                title: const Text('Profil'),
+              ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -307,7 +320,11 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: widget.embedded
           ? null
-          : AppBar(title: const Text('Profil'), centerTitle: false),
+          : AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('Profil'),
+              centerTitle: false,
+            ),
 
       body: SafeArea(
         bottom: false,
@@ -315,12 +332,17 @@ class _ProfilePageState extends State<ProfilePage> {
           onRefresh: _loadUser,
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
+              constraints: BoxConstraints(
+                maxWidth: widget.embedded ? 820 : 900,
+              ),
               child: ListView(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
 
-                padding: const EdgeInsets.only(top: 24, bottom: 100),
+                padding: EdgeInsets.only(
+                  top: widget.embedded ? 20 : 24,
+                  bottom: widget.embedded ? 48 : 100,
+                ),
 
                 children: [
                   // ─────────────────────────────
@@ -333,7 +355,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           alignment: Alignment.bottomRight,
                           children: [
                             CircleAvatar(
-                              radius: 52,
+                              radius: widget.embedded ? 42 : 52,
                               backgroundColor: Theme.of(context)
                                   .colorScheme
                                   .primaryContainer,
@@ -345,8 +367,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                       fullName.isNotEmpty
                                           ? fullName[0].toUpperCase()
                                           : '?',
-                                      style: const TextStyle(
-                                        fontSize: 38,
+                                      style: TextStyle(
+                                        fontSize: widget.embedded ? 30 : 38,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )
@@ -577,10 +599,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: _ProfileStat(
                               value: '${_stats?['sold'] ?? 0}',
                               label: 'Vânzări',
-                              onTap: () => _openDestination(
-                                'sales',
-                                const OrderPage(initialTab: 1),
-                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const SellingOrdersPage(),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           Expanded(
@@ -594,6 +620,19 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _InviteProfileCard(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const InviteFriendPage(),
+                        ),
                       ),
                     ),
                   ),
@@ -634,13 +673,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
 
                     ListTile(
-                      leading: const Icon(Icons.receipt_long),
-                      title: const Text('Comenzile mele'),
+                      leading: const Icon(Icons.sell_outlined),
+                      title: const Text('Vânzările mele'),
+                      subtitle: const Text('Comenzi primite și expediere'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const OrderPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const SellingOrdersPage(),
+                          ),
                         );
                       },
                     ),
@@ -763,6 +805,38 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
 
+                    if (!kIsWeb) ...[
+                      const Divider(),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Text(
+                          'JURIDIC',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                            fontSize: 12,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.gavel_outlined),
+                        title: const Text('Informații juridice'),
+                        subtitle: const Text(
+                          'Termeni, confidențialitate, livrare și retur',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LegalCenterPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+
                     const Divider(),
 
                     const SizedBox(height: 16),
@@ -804,6 +878,62 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InviteProfileCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _InviteProfileCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.primaryContainer.withValues(alpha: .5),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(Icons.group_add_rounded, color: colors.primary),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Invită un prieten',
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Câștigați amândoi câte 100 RON',
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: colors.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
           ),
         ),
       ),

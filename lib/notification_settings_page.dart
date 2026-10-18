@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart';
+import 'app_feedback.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -11,8 +14,7 @@ class NotificationSettingsPage extends StatefulWidget {
       _NotificationSettingsPageState();
 }
 
-class _NotificationSettingsPageState
-    extends State<NotificationSettingsPage> {
+class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   bool _loading = true;
   bool _saving = false;
 
@@ -32,8 +34,7 @@ class _NotificationSettingsPageState
 
   Future<void> _loadSettings() async {
     try {
-      final settings =
-          await ApiService.getNotificationSettings();
+      final settings = await ApiService.getNotificationSettings();
 
       if (!mounted) return;
 
@@ -67,55 +68,39 @@ class _NotificationSettingsPageState
     final prefs = await SharedPreferences.getInstance();
 
     push = prefs.getBool('notifications_push') ?? true;
-    messages =
-        prefs.getBool('notifications_messages') ?? true;
-    favorites =
-        prefs.getBool('notifications_favorites') ?? true;
-    offers =
-        prefs.getBool('notifications_offers') ?? true;
-    account =
-        prefs.getBool('notifications_account') ?? true;
-    sound =
-        prefs.getBool('notifications_sound') ?? true;
-    vibration =
-        prefs.getBool('notifications_vibration') ?? true;
+    messages = prefs.getBool('notifications_messages') ?? true;
+    favorites = prefs.getBool('notifications_favorites') ?? true;
+    offers = prefs.getBool('notifications_offers') ?? true;
+    account = prefs.getBool('notifications_account') ?? true;
+    sound = prefs.getBool('notifications_sound') ?? true;
+    vibration = prefs.getBool('notifications_vibration') ?? true;
   }
 
   Future<void> _saveLocalCache() async {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setBool('notifications_push', push);
-    await prefs.setBool(
-      'notifications_messages',
-      messages,
-    );
-    await prefs.setBool(
-      'notifications_favorites',
-      favorites,
-    );
-    await prefs.setBool(
-      'notifications_offers',
-      offers,
-    );
-    await prefs.setBool(
-      'notifications_account',
-      account,
-    );
-    await prefs.setBool(
-      'notifications_sound',
-      sound,
-    );
-    await prefs.setBool(
-      'notifications_vibration',
-      vibration,
-    );
+    await prefs.setBool('notifications_messages', messages);
+    await prefs.setBool('notifications_favorites', favorites);
+    await prefs.setBool('notifications_offers', offers);
+    await prefs.setBool('notifications_account', account);
+    await prefs.setBool('notifications_sound', sound);
+    await prefs.setBool('notifications_vibration', vibration);
   }
 
-  Future<void> _updateSetting(
-    String key,
-    bool value,
-  ) async {
+  Future<void> _updateSetting(String key, bool value) async {
     if (_saving) return;
+
+    final previousValue = switch (key) {
+      'push' => push,
+      'messages' => messages,
+      'favorites' => favorites,
+      'offers' => offers,
+      'account' => account,
+      'sound' => sound,
+      'vibration' => vibration,
+      _ => value,
+    };
 
     setState(() {
       switch (key) {
@@ -150,18 +135,42 @@ class _NotificationSettingsPageState
     });
 
     try {
-      await ApiService.updateNotificationSettings({
-        key: value,
-      });
+      await ApiService.updateNotificationSettings({key: value});
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('ApiException: ', ''),
-          ),
-        ),
+      setState(() {
+        switch (key) {
+          case 'push':
+            push = previousValue;
+            break;
+          case 'messages':
+            messages = previousValue;
+            break;
+          case 'favorites':
+            favorites = previousValue;
+            break;
+          case 'offers':
+            offers = previousValue;
+            break;
+          case 'account':
+            account = previousValue;
+            break;
+          case 'sound':
+            sound = previousValue;
+            break;
+          case 'vibration':
+            vibration = previousValue;
+            break;
+        }
+      });
+      await _saveLocalCache();
+
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        e,
+        fallback: 'Preferința nu a putut fi salvată.',
       );
     } finally {
       if (mounted) {
@@ -193,78 +202,75 @@ class _NotificationSettingsPageState
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final body = ListView(
+      padding: EdgeInsets.all(kIsWeb ? 10 : 0),
+      children: [
+        _settingTile(
+          title: 'Notificări push',
+          subtitle: 'Primește notificări de la Nexora',
+          value: push,
+          keyName: 'push',
+        ),
+
+        _settingTile(
+          title: 'Mesaje',
+          subtitle: 'Primește notificări când primești mesaje noi',
+          value: messages,
+          keyName: 'messages',
+        ),
+
+        _settingTile(
+          title: 'Favorite',
+          subtitle: 'Actualizări legate de produsele favorite',
+          value: favorites,
+          keyName: 'favorites',
+        ),
+
+        _settingTile(
+          title: 'Oferte',
+          subtitle: 'Primește notificări despre oferte și activitate',
+          value: offers,
+          keyName: 'offers',
+        ),
+
+        _settingTile(
+          title: 'Activitatea contului',
+          subtitle: 'Securitate și activitate importantă a contului',
+          value: account,
+          keyName: 'account',
+        ),
+
+        const Divider(),
+
+        _settingTile(
+          title: 'Sunet',
+          subtitle: 'Redă un sunet pentru notificări',
+          value: sound,
+          keyName: 'sound',
+        ),
+
+        _settingTile(
+          title: 'Vibrații',
+          subtitle: 'Vibrează telefonul la primirea notificărilor',
+          value: vibration,
+          keyName: 'vibration',
+        ),
+      ],
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notificări'),
-      ),
-      body: ListView(
-        children: [
-          _settingTile(
-            title: 'Notificări push',
-            subtitle:
-                'Primește notificări de la Nexora',
-            value: push,
-            keyName: 'push',
-          ),
-
-          _settingTile(
-            title: 'Mesaje',
-            subtitle:
-                'Primește notificări când primești mesaje noi',
-            value: messages,
-            keyName: 'messages',
-          ),
-
-          _settingTile(
-            title: 'Favorite',
-            subtitle:
-                'Actualizări legate de produsele favorite',
-            value: favorites,
-            keyName: 'favorites',
-          ),
-
-          _settingTile(
-            title: 'Oferte',
-            subtitle:
-                'Primește notificări despre oferte și activitate',
-            value: offers,
-            keyName: 'offers',
-          ),
-
-          _settingTile(
-            title: 'Activitatea contului',
-            subtitle:
-                'Securitate și activitate importantă a contului',
-            value: account,
-            keyName: 'account',
-          ),
-
-          const Divider(),
-
-          _settingTile(
-            title: 'Sunet',
-            subtitle:
-                'Redă un sunet pentru notificări',
-            value: sound,
-            keyName: 'sound',
-          ),
-
-          _settingTile(
-            title: 'Vibrații',
-            subtitle:
-                'Vibrează telefonul la primirea notificărilor',
-            value: vibration,
-            keyName: 'vibration',
-          ),
-        ],
-      ),
+      appBar: kIsWeb ? null : AppBar(title: const Text('Notificări')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Preferințe notificări',
+              subtitle: 'Alege ce actualizări vrei să primești',
+              maxWidth: 820,
+              child: body,
+            )
+          : body,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../l10n/app_locale.dart';
 
 import 'web_home.dart';
 import '../web/widgets/web_explore.dart';
@@ -26,6 +27,7 @@ import '../support_page.dart';
 import '../theme_settings_page.dart';
 
 import 'legal/cookie_banner.dart';
+import 'widgets/header/web_language_selector.dart';
 
 class WebShell extends StatefulWidget {
   final int initialIndex;
@@ -84,7 +86,7 @@ class _WebShellState extends State<WebShell> {
     final theme = Theme.of(context);
 
     return Container(
-      height: 72,
+      height: 64,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
@@ -93,41 +95,45 @@ class _WebShellState extends State<WebShell> {
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1440),
+          constraints: const BoxConstraints(maxWidth: 1200),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxWidth < 1050;
               final narrow = constraints.maxWidth < 650;
 
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 32),
+                padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 24),
                 child: Row(
                   children: [
                     _buildLogo(context, compact: compact),
-                    SizedBox(width: compact ? 12 : 36),
+                    SizedBox(width: compact ? 10 : 24),
                     Expanded(child: _buildSearch(context)),
-                    SizedBox(width: compact ? 6 : 28),
+                    SizedBox(width: compact ? 6 : 16),
                     if (!narrow) ...[
                       _buildHeaderAction(
                         context,
                         icon: Icons.favorite_border_rounded,
-                        label: 'Favorite',
+                        label: context.tr('Favorite'),
                         onTap: () => _selectSection(8),
                       ),
                       _buildHeaderAction(
                         context,
                         icon: Icons.chat_bubble_outline_rounded,
-                        label: 'Mesaje',
+                        label: context.tr('Mesaje'),
                         onTap: () => _selectSection(2),
                       ),
                       _buildHeaderAction(
                         context,
                         icon: Icons.notifications_none_rounded,
-                        label: 'Notificări',
+                        label: context.tr('Notificări'),
                         onTap: () => _selectSection(12),
                       ),
                     ],
                     SizedBox(width: compact ? 4 : 12),
+                    if (!narrow) ...[
+                      const WebLanguageSelector(),
+                      SizedBox(width: compact ? 6 : 10),
+                    ],
                     _buildSellButton(context, compact: compact),
                     SizedBox(width: compact ? 6 : 16),
                     _buildProfileButton(context),
@@ -157,8 +163,8 @@ class _WebShellState extends State<WebShell> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary,
                 borderRadius: BorderRadius.circular(11),
@@ -166,7 +172,7 @@ class _WebShellState extends State<WebShell> {
               child: const Icon(
                 Icons.storefront_rounded,
                 color: Colors.white,
-                size: 21,
+                size: 19,
               ),
             ),
 
@@ -175,7 +181,7 @@ class _WebShellState extends State<WebShell> {
               Text(
                 'Nexora',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.7,
                   color: theme.colorScheme.onSurface,
@@ -192,7 +198,7 @@ class _WebShellState extends State<WebShell> {
     final theme = Theme.of(context);
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 620),
+      constraints: const BoxConstraints(maxWidth: 520),
       child: TextField(
         controller: _searchController,
         textInputAction: TextInputAction.search,
@@ -204,20 +210,20 @@ class _WebShellState extends State<WebShell> {
           });
         },
         decoration: InputDecoration(
-          hintText: 'Caută produse, branduri, categorii...',
+          hintText: context.tr('Caută produse, branduri, categorii...'),
           prefixIcon: const Icon(Icons.search_rounded),
           filled: true,
           fillColor: theme.colorScheme.onSurface.withValues(alpha: 0.045),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(
               color: theme.colorScheme.primary,
               width: 1.3,
@@ -225,7 +231,7 @@ class _WebShellState extends State<WebShell> {
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 14,
+            vertical: 10,
           ),
         ),
       ),
@@ -244,7 +250,7 @@ class _WebShellState extends State<WebShell> {
       message: label,
       child: IconButton(
         onPressed: onTap,
-        icon: Icon(icon, size: 23),
+        icon: Icon(icon, size: 20),
         color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
       ),
     );
@@ -257,7 +263,7 @@ class _WebShellState extends State<WebShell> {
       return IconButton.filled(
         onPressed: () => _selectSection(16),
         icon: const Icon(Icons.add_rounded),
-        tooltip: 'Adaugă anunț',
+        tooltip: context.tr('Adaugă anunț'),
       );
     }
 
@@ -265,11 +271,14 @@ class _WebShellState extends State<WebShell> {
       onPressed: () {
         _selectSection(16);
       },
-      icon: const Icon(Icons.add_rounded, size: 19),
-      label: const Text('Vinde', style: TextStyle(fontWeight: FontWeight.w800)),
+      icon: const Icon(Icons.add_rounded, size: 18),
+      label: Text(
+        context.tr('Vinde'),
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
       style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         backgroundColor: theme.colorScheme.primary,
       ),
     );
@@ -350,7 +359,7 @@ class _WebShellState extends State<WebShell> {
         .toDouble();
 
     return PopupMenuButton<String>(
-      tooltip: 'Cont',
+      tooltip: context.tr('Cont'),
       offset: const Offset(0, 12),
       elevation: 16,
       color: theme.colorScheme.surface,
@@ -516,8 +525,8 @@ class _WebShellState extends State<WebShell> {
               child: _profileMenuItem(
                 context,
                 icon: Icons.login_rounded,
-                title: 'Autentificare',
-                subtitle: 'Intră în contul tău',
+                title: context.tr('Autentificare'),
+                subtitle: context.tr('Intră în contul tău'),
                 color: theme.colorScheme.primary,
               ),
             ),
@@ -527,8 +536,8 @@ class _WebShellState extends State<WebShell> {
               child: _profileMenuItem(
                 context,
                 icon: Icons.person_add_alt_1_rounded,
-                title: 'Creează cont',
-                subtitle: 'Înregistrează-te gratuit',
+                title: context.tr('Creează cont'),
+                subtitle: context.tr('Înregistrează-te gratuit'),
                 color: theme.colorScheme.primary,
               ),
             ),
@@ -627,8 +636,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.person_outline_rounded,
-              title: 'Profilul meu',
-              subtitle: 'Vezi și editează profilul',
+              title: context.tr('Profilul meu'),
+              subtitle: context.tr('Vezi și editează profilul'),
             ),
           ),
 
@@ -637,8 +646,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.inventory_2_outlined,
-              title: 'Anunțurile mele',
-              subtitle: 'Produsele pe care le vinzi',
+              title: context.tr('Anunțurile mele'),
+              subtitle: context.tr('Produsele pe care le vinzi'),
             ),
           ),
 
@@ -649,8 +658,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.shopping_bag_outlined,
-              title: 'Comenzile mele',
-              subtitle: 'Produsele cumpărate',
+              title: context.tr('Comenzile mele'),
+              subtitle: context.tr('Produsele cumpărate'),
             ),
           ),
 
@@ -659,8 +668,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Sold și încasări',
-              subtitle: 'Tranzacții și retrageri',
+              title: context.tr('Sold și încasări'),
+              subtitle: context.tr('Tranzacții și retrageri'),
             ),
           ),
 
@@ -669,8 +678,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.sell_outlined,
-              title: 'Vânzările mele',
-              subtitle: 'Produsele vândute',
+              title: context.tr('Vânzările mele'),
+              subtitle: context.tr('Produsele vândute'),
             ),
           ),
 
@@ -679,8 +688,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.credit_card_outlined,
-              title: 'Cardurile mele',
-              subtitle: 'Metodele tale de plată',
+              title: context.tr('Cardurile mele'),
+              subtitle: context.tr('Metodele tale de plată'),
             ),
           ),
 
@@ -689,8 +698,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.rocket_launch_outlined,
-              title: 'Promovări',
-              subtitle: 'Promovează anunțurile tale',
+              title: context.tr('Promovări'),
+              subtitle: context.tr('Promovează anunțurile tale'),
             ),
           ),
 
@@ -699,8 +708,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.location_on_outlined,
-              title: 'Adrese salvate',
-              subtitle: 'Adrese pentru livrare',
+              title: context.tr('Adrese salvate'),
+              subtitle: context.tr('Adrese pentru livrare'),
             ),
           ),
 
@@ -709,8 +718,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.star_border_rounded,
-              title: 'Recenziile mele',
-              subtitle: 'Evaluările primite de la cumpărători',
+              title: context.tr('Recenziile mele'),
+              subtitle: context.tr('Evaluările primite de la cumpărători'),
             ),
           ),
 
@@ -721,8 +730,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.settings_outlined,
-              title: 'Setări',
-              subtitle: 'Preferințe și securitate',
+              title: context.tr('Setări'),
+              subtitle: context.tr('Preferințe și securitate'),
             ),
           ),
 
@@ -731,8 +740,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.security_outlined,
-              title: 'Securitate',
-              subtitle: 'Parolă, 2FA și sesiuni',
+              title: context.tr('Securitate'),
+              subtitle: context.tr('Parolă, 2FA și sesiuni'),
             ),
           ),
 
@@ -741,8 +750,8 @@ class _WebShellState extends State<WebShell> {
             child: _profileMenuItem(
               context,
               icon: Icons.help_outline_rounded,
-              title: 'Ajutor și suport',
-              subtitle: 'Ai nevoie de ajutor?',
+              title: context.tr('Ajutor și suport'),
+              subtitle: context.tr('Ai nevoie de ajutor?'),
             ),
           ),
 
@@ -767,7 +776,7 @@ class _WebShellState extends State<WebShell> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Deconectare',
+                  context.tr('Deconectare'),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: theme.colorScheme.error,
@@ -931,7 +940,7 @@ class _WebShellState extends State<WebShell> {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(24),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1000),
@@ -939,14 +948,16 @@ class _WebShellState extends State<WebShell> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Setări',
+                context.tr('Setări'),
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                'Gestionează preferințele, securitatea și datele contului.',
+                context.tr(
+                  'Gestionează preferințele, securitatea și datele contului.',
+                ),
                 style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 28),
@@ -963,32 +974,38 @@ class _WebShellState extends State<WebShell> {
                         context,
                         width: width,
                         icon: Icons.security_outlined,
-                        title: 'Securitate',
-                        subtitle: 'Parolă, autentificare 2FA și sesiuni active',
+                        title: context.tr('Securitate'),
+                        subtitle: context.tr(
+                          'Parolă, autentificare 2FA și sesiuni active',
+                        ),
                         page: const SecurityPage(),
                       ),
                       _settingsCard(
                         context,
                         width: width,
                         icon: Icons.notifications_outlined,
-                        title: 'Preferințe notificări',
-                        subtitle: 'Mesaje, oferte și activitatea contului',
+                        title: context.tr('Preferințe notificări'),
+                        subtitle: context.tr(
+                          'Mesaje, oferte și activitatea contului',
+                        ),
                         page: const NotificationSettingsPage(),
                       ),
                       _settingsCard(
                         context,
                         width: width,
                         icon: Icons.dark_mode_outlined,
-                        title: 'Tema aplicației',
-                        subtitle: 'Luminos, întunecat sau automat',
+                        title: context.tr('Tema aplicației'),
+                        subtitle: context.tr('Luminos, întunecat sau automat'),
                         page: const ThemeSettingsPage(),
                       ),
                       _settingsCard(
                         context,
                         width: width,
                         icon: Icons.location_on_outlined,
-                        title: 'Adrese salvate',
-                        subtitle: 'Gestionează adresele pentru livrare',
+                        title: context.tr('Adrese salvate'),
+                        subtitle: context.tr(
+                          'Gestionează adresele pentru livrare',
+                        ),
                         page: const AddressesPage(),
                       ),
                     ],

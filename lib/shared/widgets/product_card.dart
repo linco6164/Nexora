@@ -27,16 +27,19 @@ class ProductCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Card(
-        elevation: 1,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
+            AspectRatio(
+              aspectRatio: 4 / 3,
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -45,7 +48,7 @@ class ProductCard extends StatelessWidget {
                             color: Colors.grey.shade200,
                             child: const Icon(
                               Icons.image_not_supported_outlined,
-                              size: 48,
+                              size: 34,
                             ),
                           )
                         : Image.network(
@@ -56,22 +59,28 @@ class ProductCard extends StatelessWidget {
                                 color: Colors.grey.shade200,
                                 child: const Icon(
                                   Icons.broken_image_outlined,
-                                  size: 48,
+                                  size: 34,
                                 ),
                               );
                             },
                           ),
                   ),
                   Positioned(
-                    top: 10,
-                    right: 10,
+                    top: 8,
+                    right: 8,
                     child: Material(
-                      color: Colors.white,
+                      color: theme.colorScheme.surface.withValues(alpha: .92),
                       borderRadius: BorderRadius.circular(50),
                       child: IconButton(
+                        constraints: const BoxConstraints.tightFor(
+                          width: 34,
+                          height: 34,
+                        ),
+                        padding: EdgeInsets.zero,
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: Colors.red,
+                          size: 19,
                         ),
                         onPressed: onFavorite,
                       ),
@@ -81,33 +90,34 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
               child: Text(
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 "${price.toStringAsFixed(2)} RON",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
               child: Row(
                 children: [
                   const Icon(
                     Icons.location_on_outlined,
-                    size: 16,
+                    size: 14,
                     color: Colors.grey,
                   ),
                   const SizedBox(width: 4),
@@ -115,7 +125,7 @@ class ProductCard extends StatelessWidget {
                     child: Text(
                       location,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                     ),
                   ),
                 ],

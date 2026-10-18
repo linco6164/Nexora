@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../catalog/category_catalog.dart';
+import '../l10n/app_locale.dart';
 import '../api_service.dart';
-import '../chat_page.dart';
 import '../models/listing.dart';
 import '../public_profile_page.dart';
 import 'widgets/product/product_gallery.dart';
@@ -10,6 +11,7 @@ import 'widgets/product/product_description.dart';
 import 'widgets/product/product_specifications.dart';
 import 'widgets/product/seller_card.dart';
 import 'widgets/product/shipping_card.dart';
+import 'widgets/header/web_language_selector.dart';
 import 'widgets/product/related_products.dart';
 import 'widgets/product/product_breadcrumb.dart';
 import 'widgets/web_explore.dart';
@@ -28,7 +30,6 @@ class _WebProductPageState extends State<WebProductPage> {
 
   bool loading = true;
   String? error;
-  bool _openingChat = false;
 
   @override
   void initState() {
@@ -53,44 +54,6 @@ class _WebProductPageState extends State<WebProductPage> {
         loading = false;
         error = e.toString();
       });
-    }
-  }
-
-  Future<void> _openChat() async {
-    final product = listing;
-    if (product == null || _openingChat) return;
-
-    setState(() => _openingChat = true);
-    try {
-      final me = await ApiService.getCurrentUser();
-      final myUserId = me['_id']?.toString() ?? '';
-      final conversation = await ApiService.startConversation(product.id);
-      final other = conversation.otherParticipant(myUserId);
-
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChatPage(
-            conversationId: conversation.id,
-            otherUsername:
-                other?.username ?? product.seller?.username ?? 'Vânzător',
-            myUserId: myUserId,
-          ),
-        ),
-      );
-    } catch (exception) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            exception is ApiException
-                ? exception.message
-                : 'Conversația nu a putut fi deschisă.',
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _openingChat = false);
     }
   }
 
@@ -130,7 +93,7 @@ class _WebProductPageState extends State<WebProductPage> {
                     _loadListing();
                   },
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Reîncearcă'),
+                  label: Text(context.tr('Reîncearcă')),
                 ),
               ],
             ),
@@ -140,22 +103,72 @@ class _WebProductPageState extends State<WebProductPage> {
     }
 
     final product = listing!;
+    final compact = MediaQuery.sizeOf(context).width < 720;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(product.title)),
+      appBar: AppBar(
+        toolbarHeight: 58,
+        titleSpacing: 4,
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(
+                Icons.storefront_rounded,
+                size: 18,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Nexora',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
+        actions: [
+          const WebLanguageSelector(),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () =>
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/', (route) => false),
+            tooltip: appLocaleController.value == 'en'
+                ? 'Home page'
+                : 'Pagina principală',
+            icon: const Icon(Icons.home_outlined),
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.fromLTRB(
+          compact ? 16 : 24,
+          22,
+          compact ? 16 : 24,
+          48,
+        ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1400),
+            constraints: const BoxConstraints(maxWidth: 1080),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ProductBreadcrumb(
-                  category: product.category,
+                  category:
+                      findCategoryBySlug(product.category)
+                          ?.label(appLocaleController.value) ??
+                      product.category,
                   title: product.title,
                   onHome: () {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    Navigator.of(context)
+                        .pushNamedAndRemoveUntil('/', (route) => false);
                   },
                   onCategory: () {
                     Navigator.of(context).push(
@@ -167,56 +180,97 @@ class _WebProductPageState extends State<WebProductPage> {
                   },
                 ),
 
+                const SizedBox(height: 14),
+
+                Container(
+                  padding: EdgeInsets.all(compact ? 16 : 22),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.shadow.withValues(alpha: .045),
+                        blurRadius: 28,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final gallery = ProductGallery(images: product.images);
+                      final info = ProductInfo(listing: product);
+
+                      if (constraints.maxWidth < 780) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [gallery, const SizedBox(height: 24), info],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 6, child: gallery),
+                          const SizedBox(width: 30),
+                          Expanded(flex: 5, child: info),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+
                 const SizedBox(height: 24),
 
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final gallery = ProductGallery(images: product.images);
-                    final info = ProductInfo(listing: product);
+                    final primaryDetails = Column(
+                      children: [
+                        ProductDescription(description: product.description),
+                        const SizedBox(height: 18),
+                        ProductSpecifications(listing: product),
+                      ],
+                    );
+                    final secondaryDetails = Column(
+                      children: [
+                        const ShippingCard(),
+                        const SizedBox(height: 18),
+                        SellerCard(
+                          sellerName:
+                              product.seller?.username ?? "Utilizator Nexora",
+                          avatar: product.seller?.avatar,
+                          verified: product.seller?.verified ?? false,
+                          listingsCount: null,
+                          memberSince: null,
+                          onProfile: product.seller == null
+                              ? null
+                              : _openSellerProfile,
+                        ),
+                      ],
+                    );
 
-                    if (constraints.maxWidth < 900) {
+                    if (constraints.maxWidth < 820) {
                       return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [gallery, const SizedBox(height: 24), info],
+                        children: [
+                          primaryDetails,
+                          const SizedBox(height: 18),
+                          secondaryDetails,
+                        ],
                       );
                     }
 
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 6, child: gallery),
-                        const SizedBox(width: 40),
-                        Expanded(flex: 5, child: info),
+                        Expanded(flex: 7, child: primaryDetails),
+                        const SizedBox(width: 18),
+                        Expanded(flex: 5, child: secondaryDetails),
                       ],
                     );
                   },
                 ),
 
-                const SizedBox(height: 40),
-
-                ProductDescription(description: product.description),
-
-                const SizedBox(height: 30),
-
-                ProductSpecifications(listing: product),
-
-                const SizedBox(height: 30),
-
-                const ShippingCard(),
-
-                const SizedBox(height: 30),
-
-                SellerCard(
-                  sellerName: product.seller?.username ?? "Nexora User",
-                  avatar: product.seller?.avatar,
-                  verified: product.seller?.verified ?? false,
-                  listingsCount: null,
-                  memberSince: null,
-                  onMessage: _openingChat ? null : _openChat,
-                  onProfile: product.seller == null ? null : _openSellerProfile,
-                ),
-
-                const SizedBox(height: 40),
+                const SizedBox(height: 42),
 
                 RelatedProducts(currentListingId: product.id),
               ],

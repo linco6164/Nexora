@@ -5,6 +5,8 @@ import 'api_service.dart';
 import 'models/listing.dart';
 import 'listing_detail_page.dart';
 import 'web/web_product_page.dart';
+import 'shared/widgets/product_grid.dart';
+import 'shared/widgets/responsive_container.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -31,7 +33,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorite')),
+      appBar: kIsWeb ? null : AppBar(title: const Text('Favorite')),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: FutureBuilder<List<Listing>>(
@@ -55,6 +57,56 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   SizedBox(height: 16),
                   Center(child: Text('Niciun anunț favorit încă')),
                 ],
+              );
+            }
+
+            if (kIsWeb) {
+              final theme = Theme.of(context);
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 28),
+                child: ResponsiveContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Favorite',
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${favorites.length} produse salvate',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _refresh,
+                            tooltip: 'Reîncarcă',
+                            icon: const Icon(Icons.refresh_rounded),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      ProductGrid(
+                        products: favorites,
+                        productsAreFavorites: true,
+                        onFavoriteRemoved: (_) => _refresh(),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
               );
             }
 

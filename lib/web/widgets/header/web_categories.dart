@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_locale.dart';
 import '../../data/demo_categories.dart';
 
 class WebCategories extends StatelessWidget {
@@ -33,7 +34,7 @@ class WebCategories extends StatelessWidget {
                   Icon(category.icon, color: category.color, size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    category.name,
+                    category.localizedName(appLocaleController.value),
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],

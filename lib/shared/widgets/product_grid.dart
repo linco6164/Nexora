@@ -9,12 +9,16 @@ class ProductGrid extends StatefulWidget {
   final List<Listing> products;
   final bool shrinkWrap;
   final ScrollPhysics? physics;
+  final ValueChanged<String>? onFavoriteRemoved;
+  final bool productsAreFavorites;
 
   const ProductGrid({
     super.key,
     required this.products,
     this.shrinkWrap = true,
     this.physics = const NeverScrollableScrollPhysics(),
+    this.onFavoriteRemoved,
+    this.productsAreFavorites = false,
   });
 
   @override
@@ -28,7 +32,11 @@ class _ProductGridState extends State<ProductGrid> {
   @override
   void initState() {
     super.initState();
-    _loadFavorites();
+    if (widget.productsAreFavorites) {
+      _favoriteIds.addAll(widget.products.map((product) => product.id));
+    } else {
+      _loadFavorites();
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -62,6 +70,7 @@ class _ProductGridState extends State<ProductGrid> {
       setState(() {
         favorite ? _favoriteIds.add(listingId) : _favoriteIds.remove(listingId);
       });
+      if (!favorite) widget.onFavoriteRemoved?.call(listingId);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -90,7 +99,7 @@ class _ProductGridState extends State<ProductGrid> {
     if (widget.products.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(40),
+          padding: EdgeInsets.all(24),
           child: Text("Nu există produse."),
         ),
       );
@@ -98,25 +107,17 @@ class _ProductGridState extends State<ProductGrid> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        int columns = 2;
-
-        if (constraints.maxWidth >= 1400) {
-          columns = 5;
-        } else if (constraints.maxWidth >= 1100) {
-          columns = 4;
-        } else if (constraints.maxWidth >= 800) {
-          columns = 3;
-        }
+        final compact = constraints.maxWidth < 600;
 
         return GridView.builder(
           shrinkWrap: widget.shrinkWrap,
           physics: widget.physics,
           itemCount: widget.products.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: 24,
-            mainAxisSpacing: 24,
-            childAspectRatio: .68,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: compact ? 205 : 235,
+            crossAxisSpacing: compact ? 12 : 16,
+            mainAxisSpacing: compact ? 12 : 16,
+            childAspectRatio: compact ? .70 : .78,
           ),
           itemBuilder: (_, index) {
             final product = widget.products[index];

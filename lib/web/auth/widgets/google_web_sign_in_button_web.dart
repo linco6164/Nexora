@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_sign_in_web/web_only.dart' as google_web;
 
+import '../../../google_sign_in_service.dart';
+
 class GoogleWebSignInButton extends StatefulWidget {
   final bool loading;
   final Future<void> Function(String idToken) onCredential;
@@ -21,22 +23,37 @@ class GoogleWebSignInButton extends StatefulWidget {
 }
 
 class _GoogleWebSignInButtonState extends State<GoogleWebSignInButton> {
-  static const _clientId =
-      '704537003987-nhbquge06mbasglpsush74qpj8a42t1n.apps.googleusercontent.com';
-
-  late final GoogleSignIn _googleSignIn;
-  StreamSubscription<GoogleSignInAccount?>? _accountSubscription;
+  StreamSubscription<GoogleSignInAuthenticationEvent>?
+  _authenticationSubscription;
   bool _handlingCredential = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _googleSignIn = GoogleSignIn(clientId: _clientId);
-    _accountSubscription = _googleSignIn.onCurrentUserChanged.listen((account) {
-      if (account != null) {
-        unawaited(_handleAccount(account));
-      }
-    }, onError: (Object error) => widget.onError(error));
+    unawaited(_initializeGoogleSignIn());
+  }
+
+  Future<void> _initializeGoogleSignIn() async {
+    try {
+      await GoogleSignInService.initialized;
+
+      if (!mounted) return;
+
+      _authenticationSubscription = GoogleSignInService
+          .instance
+          .authenticationEvents
+          .listen((event) {
+            if (event is GoogleSignInAuthenticationEventSignIn) {
+              unawaited(_handleAccount(event.user));
+            }
+          }, onError: (Object error) => widget.onError(error));
+
+      setState(() => _isInitialized = true);
+      await GoogleSignInService.instance.attemptLightweightAuthentication();
+    } catch (error) {
+      widget.onError(error);
+    }
   }
 
   Future<void> _handleAccount(GoogleSignInAccount account) async {
@@ -44,7 +61,7 @@ class _GoogleWebSignInButtonState extends State<GoogleWebSignInButton> {
     _handlingCredential = true;
 
     try {
-      final authentication = await account.authentication;
+      final authentication = account.authentication;
       final idToken = authentication.idToken;
 
       if (idToken == null || idToken.isEmpty) {
@@ -63,13 +80,20 @@ class _GoogleWebSignInButtonState extends State<GoogleWebSignInButton> {
 
   @override
   void dispose() {
-    _accountSubscription?.cancel();
+    _authenticationSubscription?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (!_isInitialized) {
+      return const SizedBox(
+        height: 44,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
 
     return IgnorePointer(
       ignoring: widget.loading,

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../l10n/app_locale.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../api_service.dart';
+import '../../app_feedback.dart';
 import '../../forgotten_password.dart';
 import '../../notification_service.dart';
 import '../../providers/auth_provider.dart';
@@ -134,23 +138,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showError(Object error) {
-    final fallback = error
-        .toString()
-        .replaceFirst('Exception: ', '')
-        .replaceFirst('Bad state: ', '')
-        .replaceFirst('FormatException: ', '')
-        .trim();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          error is ApiException
-              ? error.message
-              : fallback.isEmpty
-              ? 'Autentificarea nu a putut fi finalizată.'
-              : fallback,
-        ),
-      ),
+    AppFeedback.error(
+      context,
+      error is ApiException ? error.message : error,
+      fallback: 'Autentificarea nu a putut fi finalizată.',
     );
   }
 
@@ -166,9 +157,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthHeader(
-                    title: "Bine ai revenit",
-                    subtitle: "Autentifică-te pentru a continua în Nexora.",
+                  AuthHeader(
+                    title: appLocaleController.value == 'en'
+                        ? 'Welcome back'
+                        : 'Bine ai revenit',
+                    subtitle: appLocaleController.value == 'en'
+                        ? 'Sign in to continue to Nexora.'
+                        : 'Autentifică-te pentru a continua în Nexora.',
                   ),
 
                   const SizedBox(height: 32),
@@ -186,13 +181,17 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: _obscurePassword,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Introdu parola";
+                        return appLocaleController.value == 'en'
+                            ? 'Enter your password'
+                            : 'Introdu parola';
                       }
 
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: "Parolă",
+                      labelText: appLocaleController.value == 'en'
+                          ? 'Password'
+                          : 'Parolă',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         onPressed: () {
@@ -224,7 +223,11 @@ class _LoginPageState extends State<LoginPage> {
                           });
                         },
                       ),
-                      const Text("Ține-mă minte"),
+                      Text(
+                        appLocaleController.value == 'en'
+                            ? 'Remember me'
+                            : 'Ține-mă minte',
+                      ),
                       const Spacer(),
                       TextButton(
                         onPressed: () {
@@ -234,7 +237,11 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           );
                         },
-                        child: const Text("Ai uitat parola?"),
+                        child: Text(
+                          appLocaleController.value == 'en'
+                              ? 'Forgot password?'
+                              : 'Ai uitat parola?',
+                        ),
                       ),
                     ],
                   ),
@@ -249,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text("Autentificare"),
+                        : Text(context.tr('Autentificare')),
                   ),
 
                   const SizedBox(height: 24),
@@ -270,7 +277,11 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Nu ai cont?"),
+                      Text(
+                        appLocaleController.value == 'en'
+                            ? "Don't have an account?"
+                            : 'Nu ai cont?',
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -280,7 +291,11 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           );
                         },
-                        child: const Text("Înregistrează-te"),
+                        child: Text(
+                          appLocaleController.value == 'en'
+                              ? 'Register'
+                              : 'Înregistrează-te',
+                        ),
                       ),
                     ],
                   ),

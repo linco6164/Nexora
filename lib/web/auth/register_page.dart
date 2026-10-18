@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_locale.dart';
+
 import '../../api_service.dart';
+import '../../app_feedback.dart';
 import 'login_page.dart';
 import '../legal/privacy_page.dart';
 import '../legal/terms_page.dart';
@@ -29,6 +32,11 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscureConfirm = true;
   bool _acceptTerms = false;
 
+  String? get _referralCode {
+    final value = Uri.base.queryParameters['ref']?.trim().toUpperCase();
+    return value == null || value.isEmpty ? null : value;
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -42,10 +50,9 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_acceptTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Trebuie să accepți termenii și condițiile."),
-        ),
+      AppFeedback.warning(
+        context,
+        'Trebuie să accepți termenii și condițiile.',
       );
       return;
     }
@@ -59,15 +66,12 @@ class _RegisterPageState extends State<RegisterPage> {
         username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        referralCode: _referralCode,
       );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Contul a fost creat. Te poți autentifica."),
-        ),
-      );
+      AppFeedback.success(context, 'Contul a fost creat. Te poți autentifica.');
 
       Navigator.pushReplacement(
         context,
@@ -76,9 +80,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst("Exception: ", ""))),
-      );
+      AppFeedback.error(context, e, fallback: 'Contul nu a putut fi creat.');
     }
 
     if (!mounted) return;
@@ -100,11 +102,49 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const AuthHeader(
-                    title: "Creează un cont",
-                    subtitle:
-                        "Alătură-te Nexora și începe să cumperi sau să vinzi.",
+                  AuthHeader(
+                    title: appLocaleController.value == 'en'
+                        ? 'Create an account'
+                        : 'Creează un cont',
+                    subtitle: appLocaleController.value == 'en'
+                        ? 'Join Nexora and start buying or selling.'
+                        : 'Alătură-te Nexora și începe să cumperi sau să vinzi.',
                   ),
+
+                  if (_referralCode != null) ...[
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer
+                            .withValues(alpha: .55),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.card_giftcard_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              appLocaleController.value == 'en'
+                                  ? 'Invitation applied: $_referralCode'
+                                  : 'Invitație aplicată: $_referralCode',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 32),
 
@@ -114,12 +154,16 @@ class _RegisterPageState extends State<RegisterPage> {
                     validator: (value) {
                       final username = value?.trim() ?? '';
                       if (username.length < 3) {
-                        return 'Introdu minimum 3 caractere';
+                        return appLocaleController.value == 'en'
+                            ? 'Enter at least 3 characters'
+                            : 'Introdu minimum 3 caractere';
                       }
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: 'Nume de utilizator',
+                      labelText: appLocaleController.value == 'en'
+                          ? 'Username'
+                          : 'Nume de utilizator',
                       prefixIcon: const Icon(Icons.person_outline_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -143,13 +187,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     onChanged: (_) => setState(() {}),
                     validator: (value) {
                       if (value == null || value.length < 8) {
-                        return "Parola trebuie să aibă minimum 8 caractere";
+                        return appLocaleController.value == 'en'
+                            ? 'The password must have at least 8 characters'
+                            : 'Parola trebuie să aibă minimum 8 caractere';
                       }
 
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: "Parolă",
+                      labelText: appLocaleController.value == 'en'
+                          ? 'Password'
+                          : 'Parolă',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         onPressed: () {
@@ -180,13 +228,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     obscureText: _obscureConfirm,
                     validator: (value) {
                       if (value != _passwordController.text) {
-                        return "Parolele nu coincid";
+                        return appLocaleController.value == 'en'
+                            ? 'Passwords do not match'
+                            : 'Parolele nu coincid';
                       }
 
                       return null;
                     },
                     decoration: InputDecoration(
-                      labelText: "Confirmă parola",
+                      labelText: appLocaleController.value == 'en'
+                          ? 'Confirm password'
+                          : 'Confirmă parola',
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         onPressed: () {
@@ -218,7 +270,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                     title: Wrap(
                       children: [
-                        const Text('Accept '),
+                        Text(
+                          appLocaleController.value == 'en'
+                              ? 'I accept '
+                              : 'Accept ',
+                        ),
                         GestureDetector(
                           onTap: () {
                             Navigator.of(context).push(
@@ -228,14 +284,18 @@ class _RegisterPageState extends State<RegisterPage> {
                             );
                           },
                           child: Text(
-                            'Termenii și condițiile',
+                            appLocaleController.value == 'en'
+                                ? 'Terms and conditions'
+                                : 'Termenii și condițiile',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
                               decoration: TextDecoration.underline,
                             ),
                           ),
                         ),
-                        const Text(' și '),
+                        Text(
+                          appLocaleController.value == 'en' ? ' and ' : ' și ',
+                        ),
                         GestureDetector(
                           onTap: () {
                             Navigator.of(context).push(
@@ -245,7 +305,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             );
                           },
                           child: Text(
-                            'Politica de confidențialitate',
+                            appLocaleController.value == 'en'
+                                ? 'Privacy policy'
+                                : 'Politica de confidențialitate',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
                               decoration: TextDecoration.underline,
@@ -267,7 +329,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text("Creează contul"),
+                        : Text(
+                            appLocaleController.value == 'en'
+                                ? 'Create account'
+                                : 'Creează contul',
+                          ),
                   ),
 
                   const SizedBox(height: 24),
@@ -275,7 +341,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Ai deja un cont?"),
+                      Text(
+                        appLocaleController.value == 'en'
+                            ? 'Already have an account?'
+                            : 'Ai deja un cont?',
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.pushReplacement(
@@ -285,7 +355,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           );
                         },
-                        child: const Text("Autentificare"),
+                        child: Text(context.tr('Autentificare')),
                       ),
                     ],
                   ),

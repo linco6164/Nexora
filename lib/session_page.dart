@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import 'api_service.dart';
+import 'web/widgets/web_page_frame.dart';
 
 class SessionsPage extends StatefulWidget {
   const SessionsPage({super.key});
@@ -37,27 +40,18 @@ class _SessionsPageState extends State<SessionsPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     }
   }
 
-  Future<void> _deleteSession(
-    String sessionId,
-    String deviceName,
-  ) async {
+  Future<void> _deleteSession(String sessionId, String deviceName) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Închizi sesiunea?'),
-          content: Text(
-            'Sesiunea de pe „$deviceName” va fi închisă.',
-          ),
+          content: Text('Sesiunea de pe „$deviceName” va fi închisă.'),
           actions: [
             TextButton(
               onPressed: () {
@@ -89,20 +83,14 @@ class _SessionsPageState extends State<SessionsPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sesiunea a fost închisă.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sesiunea a fost închisă.')));
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     } finally {
       if (mounted) {
@@ -118,9 +106,7 @@ class _SessionsPageState extends State<SessionsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text(
-            'Închizi celelalte sesiuni?',
-          ),
+          title: const Text('Închizi celelalte sesiuni?'),
           content: const Text(
             'Toate celelalte dispozitive vor fi deconectate. '
             'Sesiunea de pe acest dispozitiv va rămâne activă.',
@@ -157,21 +143,13 @@ class _SessionsPageState extends State<SessionsPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Celelalte sesiuni au fost închise.',
-          ),
-        ),
+        const SnackBar(content: Text('Celelalte sesiuni au fost închise.')),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     } finally {
       if (mounted) {
@@ -224,131 +202,98 @@ class _SessionsPageState extends State<SessionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final body = _loading
+        ? const Center(child: CircularProgressIndicator())
+        : RefreshIndicator(
+            onRefresh: _loadSessions,
+            child: _sessions.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 180),
+                      Center(child: Text('Nu există sesiuni active.')),
+                    ],
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      const Text(
+                        'Dispozitive conectate',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Aici poți vedea și închide sesiunile active ale contului tău.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 20),
+                      ..._sessions.map(_buildSessionCard),
+                      const SizedBox(height: 16),
+                      if (_sessions.any(
+                        (session) => session['isCurrent'] != true,
+                      ))
+                        OutlinedButton(
+                          onPressed: _deleting ? null : _deleteOtherSessions,
+                          child: const Text('Închide toate celelalte sesiuni'),
+                        ),
+                    ],
+                  ),
+          );
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sesiuni și dispozitive'),
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(),
+      appBar: kIsWeb
+          ? null
+          : AppBar(title: const Text('Sesiuni și dispozitive')),
+      body: kIsWeb
+          ? WebPageFrame(
+              title: 'Sesiuni și dispozitive',
+              subtitle: 'Controlează dispozitivele conectate la cont',
+              maxWidth: 860,
+              child: body,
             )
-          : RefreshIndicator(
-              onRefresh: _loadSessions,
-              child: _sessions.isEmpty
-                  ? ListView(
-                      physics:
-                          const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 180),
-                        Center(
-                          child: Text(
-                            'Nu există sesiuni active.',
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        const Text(
-                          'Dispozitive conectate',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        const Text(
-                          'Aici poți vedea și închide sesiunile active ale contului tău.',
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        ..._sessions.map(
-                          (session) => _buildSessionCard(
-                            session,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        if (_sessions.any(
-                          (session) =>
-                              session['isCurrent'] != true,
-                        ))
-                          OutlinedButton(
-                            onPressed: _deleting
-                                ? null
-                                : _deleteOtherSessions,
-                            child: const Text(
-                              'Închide toate celelalte sesiuni',
-                            ),
-                          ),
-                      ],
-                    ),
-            ),
+          : body,
     );
   }
 
-  Widget _buildSessionCard(
-    Map<String, dynamic> session,
-  ) {
-    final isCurrent =
-        session['isCurrent'] == true;
+  Widget _buildSessionCard(Map<String, dynamic> session) {
+    final isCurrent = session['isCurrent'] == true;
 
     final deviceName =
-        session['deviceName']?.toString() ??
-            'Dispozitiv necunoscut';
+        session['deviceName']?.toString() ?? 'Dispozitiv necunoscut';
 
-    final platform =
-        session['platform']?.toString() ??
-            'unknown';
+    final platform = session['platform']?.toString() ?? 'unknown';
 
-    final browser =
-        session['browser']?.toString() ?? '';
+    final browser = session['browser']?.toString() ?? '';
 
-    final ipAddress =
-        session['ipAddress']?.toString() ?? '';
+    final ipAddress = session['ipAddress']?.toString() ?? '';
 
-    final lastActive =
-        _formatDate(session['lastActiveAt']);
+    final lastActive = _formatDate(session['lastActiveAt']);
 
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 12,
-      ),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer,
-                borderRadius:
-                    BorderRadius.circular(14),
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                _platformIcon(platform),
-              ),
+              child: Icon(_platformIcon(platform)),
             ),
 
             const SizedBox(width: 14),
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
@@ -357,35 +302,27 @@ class _SessionsPageState extends State<SessionsPage> {
                           deviceName,
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight:
-                                FontWeight.w600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
 
                       if (isCurrent)
                         Container(
-                          padding:
-                              const EdgeInsets
-                                  .symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
-                          decoration:
-                              BoxDecoration(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(20),
-                            color: Colors.green
-                                .withValues(alpha: 0.12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.green.withValues(alpha: 0.12),
                           ),
                           child: const Text(
                             'Activ acum',
                             style: TextStyle(
                               color: Colors.green,
                               fontSize: 11,
-                              fontWeight:
-                                  FontWeight.w600,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -394,20 +331,13 @@ class _SessionsPageState extends State<SessionsPage> {
 
                   const SizedBox(height: 6),
 
-                  Text(
-                    platform,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
+                  Text(platform, style: TextStyle(color: Colors.grey.shade600)),
 
                   if (browser.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       browser,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
+                      style: TextStyle(color: Colors.grey.shade600),
                     ),
                   ],
 
@@ -426,29 +356,22 @@ class _SessionsPageState extends State<SessionsPage> {
 
                   Text(
                     'Ultima activitate: $lastActive',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
 
                   if (!isCurrent) ...[
                     const SizedBox(height: 12),
 
                     Align(
-                      alignment:
-                          Alignment.centerLeft,
+                      alignment: Alignment.centerLeft,
                       child: TextButton(
                         onPressed: _deleting
                             ? null
                             : () => _deleteSession(
-                                  session['id']
-                                      .toString(),
-                                  deviceName,
-                                ),
-                        child: const Text(
-                          'Închide sesiunea',
-                        ),
+                                session['id'].toString(),
+                                deviceName,
+                              ),
+                        child: const Text('Închide sesiunea'),
                       ),
                     ),
                   ],

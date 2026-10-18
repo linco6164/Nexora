@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_locale.dart';
 import 'google_web_sign_in_button.dart';
 
 class SocialLoginButtons extends StatelessWidget {
@@ -42,7 +43,11 @@ class SocialLoginButtons extends StatelessWidget {
                   textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 icon: const Icon(Icons.facebook),
-                label: const Text("Continuă cu Facebook"),
+                label: Text(
+                  appLocaleController.value == 'en'
+                      ? 'Continue with Facebook'
+                      : 'Continuă cu Facebook',
+                ),
               ),
             ),
           ],
