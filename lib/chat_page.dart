@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
+import 'checkout_page.dart';
+import 'shared/widgets/offer_purchase_action.dart';
 import 'app_navigator.dart';
 import 'app_feedback.dart';
 import 'models/chat_models.dart';
@@ -43,6 +45,8 @@ class _ChatPageState extends State<ChatPage>
   final List<String> _recentEmojis = <String>[];
 
   bool _isLoading = true;
+  int _messageLoadVersion = 0;
+  final Set<String> _updatingOfferIds = {};
   bool _isSending = false;
   bool _otherIsTyping = false;
   bool _typingWasSent = false;
@@ -118,7 +122,7 @@ class _ChatPageState extends State<ChatPage>
         _handleConversationEvent,
       );
       SocketService.joinConversation(widget.conversationId);
-      await _markConversationAsSeen();
+      await _loadMessages(showLoading: false);
     } catch (error) {
       if (mounted) {
         _showError(error, 'Conexiunea în timp real nu este disponibilă.');
@@ -153,6 +157,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _loadMessages({bool showLoading = true}) async {
+    final version = ++_messageLoadVersion;
     if (mounted && showLoading) {
       setState(() {
         _isLoading = true;
@@ -162,7 +167,7 @@ class _ChatPageState extends State<ChatPage>
 
     try {
       final messages = await ApiService.getMessages(widget.conversationId);
-      if (!mounted) return;
+      if (!mounted || version != _messageLoadVersion) return;
 
       setState(() {
         _messages
@@ -170,12 +175,17 @@ class _ChatPageState extends State<ChatPage>
           ..addAll(messages)
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
         _isLoading = false;
+        _loadError = null;
       });
 
       await _markConversationAsSeen();
       _scrollToBottom(jump: true);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || version != _messageLoadVersion) return;
+      if (!showLoading && _messages.isNotEmpty) {
+        debugPrint('Chat refresh: $error');
+        return;
+      }
       setState(() {
         _isLoading = false;
         _loadError = _errorMessage(error, 'Mesajele nu au putut fi încărcate.');
@@ -357,23 +367,60 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _acceptOffer(Offer offer) async {
+    if (!_updatingOfferIds.add(offer.id)) return;
+    setState(() {});
     try {
-      await ApiService.acceptOffer(offer.id);
-      await _loadMessages();
-      if (mounted) _showInfo('Oferta a fost acceptată.');
+      final accepted = await ApiService.acceptOffer(offer.id);
+      _updateOffer(accepted);
+      await _loadMessages(showLoading: false);
+      if (mounted) {
+        _showInfo(
+          'Oferta a fost acceptată. Cumpărătorul poate finaliza comanda.',
+        );
+      }
     } catch (error) {
       if (mounted) _showError(error, 'Oferta nu a putut fi acceptată.');
+    } finally {
+      if (mounted) setState(() => _updatingOfferIds.remove(offer.id));
     }
   }
 
   Future<void> _rejectOffer(Offer offer) async {
+    if (!_updatingOfferIds.add(offer.id)) return;
+    setState(() {});
     try {
-      await ApiService.rejectOffer(offer.id);
-      await _loadMessages();
+      final rejected = await ApiService.rejectOffer(offer.id);
+      _updateOffer(rejected);
+      await _loadMessages(showLoading: false);
       if (mounted) _showInfo('Oferta a fost refuzată.');
     } catch (error) {
       if (mounted) _showError(error, 'Oferta nu a putut fi refuzată.');
+    } finally {
+      if (mounted) setState(() => _updatingOfferIds.remove(offer.id));
     }
+  }
+
+  void _updateOffer(Offer updated) {
+    if (!mounted) return;
+    // Apply the confirmed response immediately, even if the list refresh fails.
+    setState(() {
+      for (var index = 0; index < _messages.length; index++) {
+        if (_messages[index].offer?.id == updated.id) {
+          _messages[index] = _messages[index].withOffer(updated);
+        }
+      }
+    });
+  }
+
+  Future<void> _purchaseOffer(Offer offer) async {
+    if (!offer.canBePurchasedBy(widget.myUserId)) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            CheckoutPage(listingId: offer.listingId, offerId: offer.id),
+      ),
+    );
+    if (mounted) await _loadMessages(showLoading: false);
   }
 
   Future<void> _deleteMessage(ChatMessage message, String mode) async {
@@ -586,6 +633,8 @@ class _ChatPageState extends State<ChatPage>
                     maxWidth: maxBubbleWidth,
                     onAccept: () => _acceptOffer(message.offer!),
                     onReject: () => _rejectOffer(message.offer!),
+                    onPurchase: () => _purchaseOffer(message.offer!),
+                    isUpdating: _updatingOfferIds.contains(message.offer!.id),
                     onOptions: () => _showMessageActions(message),
                   )
                 : _MessageBubble(
@@ -1694,6 +1743,8 @@ class _PendingImagePreviewState extends State<_PendingImagePreview> {
 }
 
 class _OfferMessageCard extends StatelessWidget {
+  final VoidCallback onPurchase;
+  final bool isUpdating;
   final ChatMessage message;
   final Offer offer;
   final bool isMine;
@@ -1704,6 +1755,8 @@ class _OfferMessageCard extends StatelessWidget {
   final VoidCallback onOptions;
 
   const _OfferMessageCard({
+    required this.onPurchase,
+    required this.isUpdating,
     required this.message,
     required this.offer,
     required this.isMine,
@@ -1804,18 +1857,28 @@ class _OfferMessageCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: FilledButton(
-                      onPressed: onAccept,
-                      child: const Text('Acceptă'),
+                      onPressed: isUpdating ? null : onAccept,
+                      child: Text(
+                        isUpdating ? 'Se actualizează...' : 'Acceptă',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: onReject,
+                      onPressed: isUpdating ? null : onReject,
                       child: const Text('Refuză'),
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (offer.isAccepted) ...[
+              const SizedBox(height: 12),
+              OfferPurchaseAction(
+                offer: offer,
+                userId: myUserId,
+                onPurchase: onPurchase,
               ),
             ],
             Align(

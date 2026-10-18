@@ -16,8 +16,9 @@ import 'sameday/easybox_picker_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   final String listingId;
+  final String? offerId;
 
-  const CheckoutPage({super.key, required this.listingId});
+  const CheckoutPage({super.key, required this.listingId, this.offerId});
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -154,6 +155,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       final result = await ApiService.getCheckout(
         listingId: widget.listingId,
+        offerId: widget.offerId,
 
         addressId: addressId,
 
@@ -174,6 +176,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _error = _cleanError(e);
 
         _loading = false;
+        _checkout = null;
       });
     }
   }
@@ -641,7 +644,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     const SizedBox(height: 8),
 
                     Text(
-                      _formatPrice(listing['price'], currency),
+                      _formatPrice(
+                        _price?['itemPrice'] ?? listing['price'],
+                        currency,
+                      ),
 
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
@@ -1274,7 +1280,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
           const SizedBox(height: 18),
 
           _PriceRow(
-            label: 'Preț produs',
+            label: widget.offerId == null
+                ? 'Preț produs'
+                : 'Preț ofertă acceptată',
 
             value: _formatPrice(price['itemPrice'], currency),
           ),
@@ -1338,7 +1346,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       height: 56,
 
       child: FilledButton(
-        onPressed: _isPaying || price == null ? null : _pay,
+        onPressed: _isPaying || _loading || price == null ? null : _pay,
 
         style: FilledButton.styleFrom(
           backgroundColor: colors.primary,
@@ -1430,6 +1438,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         (_deliveryMethod != 'pickup_point' || _selectedEasybox != null);
     final enabled =
         !_isPaying &&
+        !_loading &&
         price != null &&
         totalValue != null &&
         totalValue > 0 &&
@@ -1492,7 +1501,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _completeGooglePay(Map<String, dynamic> paymentData) async {
-    if (_isPaying) return;
+    if (_isPaying || _loading) return;
 
     final addressId = _selectedAddressId;
     final price = _price;
@@ -1517,6 +1526,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       var result = await ApiService.completeGooglePayPayment(
         listingId: widget.listingId,
+        offerId: widget.offerId,
         addressId: addressId,
         deliveryMethod: _deliveryMethod,
         paymentData: paymentData,
@@ -1633,7 +1643,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _pay() async {
-    if (_isPaying) return;
+    if (_isPaying || _loading || _price == null) return;
 
     if (_selectedPaymentMethod == 'google_pay') return;
 
@@ -1661,6 +1671,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       final payment = await ApiService.createNetopiaPayment(
         listingId: widget.listingId,
+        offerId: widget.offerId,
 
         addressId: _selectedAddressId!,
 

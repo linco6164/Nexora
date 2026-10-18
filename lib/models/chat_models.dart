@@ -117,6 +117,7 @@ class OfferListing {
   final double price;
   final String currency;
   final List<String> images;
+  final String status;
 
   OfferListing({
     required this.id,
@@ -124,6 +125,7 @@ class OfferListing {
     required this.price,
     required this.currency,
     required this.images,
+    this.status = 'active',
   });
 
   factory OfferListing.fromJson(Map<String, dynamic> json) {
@@ -133,6 +135,7 @@ class OfferListing {
       price: _asDouble(json['price']),
       currency: json['currency']?.toString() ?? 'RON',
       images: _asStringList(json['images']),
+      status: json['status']?.toString() ?? 'active',
     );
   }
 }
@@ -187,7 +190,27 @@ class Offer {
   }
 
   bool get isPending => status == 'pending';
+  Offer withListing(OfferListing? value) => Offer(
+    id: id,
+    conversationId: conversationId,
+    listingId: listingId,
+    buyerId: buyerId,
+    sellerId: sellerId,
+    amount: amount,
+    currency: currency,
+    status: status,
+    listing: value,
+  );
   bool get isAccepted => status == 'accepted';
+  bool canBePurchasedBy(String userId) =>
+      isAccepted &&
+      buyerId == userId &&
+      userId.isNotEmpty &&
+      id.isNotEmpty &&
+      listingId.isNotEmpty &&
+      amount > 0 &&
+      amount.isFinite &&
+      (listing == null || listing!.status == 'active');
   bool get isRejected => status == 'rejected';
   bool get isCancelled => status == 'cancelled';
 }
@@ -204,6 +227,20 @@ class ChatMessage {
   final String type;
   final Offer? offer;
   final bool isDeleted;
+
+  ChatMessage withOffer(Offer updated) => ChatMessage(
+    id: id,
+    conversationId: conversationId,
+    sender: sender,
+    text: text,
+    images: images,
+    createdAt: createdAt,
+    deliveredTo: deliveredTo,
+    seenBy: seenBy,
+    type: type,
+    isDeleted: isDeleted,
+    offer: updated.withListing(updated.listing ?? offer?.listing),
+  );
 
   ChatMessage({
     required this.id,

@@ -1393,6 +1393,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> createNetopiaPayment({
     required String listingId,
+    String? offerId,
     required String addressId,
     required String deliveryMethod,
     required String paymentMethod,
@@ -1425,6 +1426,7 @@ class ApiService {
       'deliveryMethod': deliveryMethod,
 
       'paymentMethod': paymentMethod,
+      'offerId': ?offerId,
     };
 
     // ==========================================================
@@ -1486,6 +1488,11 @@ class ApiService {
     if (data is! Map) {
       throw ApiException('Serverul nu a returnat datele plății.');
     }
+    if (offerId != null && data['offerId'] != offerId) {
+      throw ApiException(
+        'Plata nu confirmă oferta acceptată. Reîncarcă pagina și încearcă din nou.',
+      );
+    }
 
     return Map<String, dynamic>.from(data);
   }
@@ -1529,6 +1536,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> completeGooglePayPayment({
     required String listingId,
+    String? offerId,
     required String addressId,
     required String deliveryMethod,
     required Map<String, dynamic> paymentData,
@@ -1546,6 +1554,7 @@ class ApiService {
       'addressId': addressId,
       'deliveryMethod': deliveryMethod,
       'paymentData': paymentData,
+      'offerId': ?offerId,
       'expectedAmount': expectedAmount,
       'destinationLockerId': ?destinationLockerId,
     };
@@ -2888,6 +2897,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getCheckout({
     required String listingId,
+    String? offerId,
     required String addressId,
     required String deliveryMethod,
   }) async {
@@ -2901,7 +2911,8 @@ class ApiService {
       '$baseUrl/checkout'
       '?listingId=${Uri.encodeComponent(listingId)}'
       '&addressId=${Uri.encodeComponent(addressId)}'
-      '&deliveryMethod=${Uri.encodeComponent(deliveryMethod)}',
+      '&deliveryMethod=${Uri.encodeComponent(deliveryMethod)}'
+      '${offerId == null ? '' : '&offerId=${Uri.encodeComponent(offerId)}'}',
     );
 
     final response = await _client.get(
@@ -2936,6 +2947,14 @@ class ApiService {
 
     if (result is! Map) {
       throw ApiException('Datele checkout-ului sunt invalide.');
+    }
+    if (offerId != null) {
+      final offer = result['offer'];
+      if (offer is! Map || offer['id']?.toString() != offerId) {
+        throw ApiException(
+          'Prețul ofertei nu a putut fi confirmat. Încearcă din nou mai târziu.',
+        );
+      }
     }
 
     return Map<String, dynamic>.from(result);
